@@ -66,3 +66,38 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+// Réception d'une notification push envoyée par la fonction Edge
+// "send-call-push".
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+
+  const title = data.title || 'Longcours';
+  const options = {
+    body: data.body || 'Nouvel appel',
+    icon: 'icon-192.png?v=3',
+    badge: 'icon-192.png?v=3',
+    tag: data.type === 'incoming_call' ? ('call-' + (data.call_id || 'x')) : undefined,
+    renotify: true,
+    requireInteraction: data.type === 'incoming_call', // reste affichée tant que l'utilisateur n'interagit pas
+    vibrate: data.type === 'incoming_call' ? [400, 200, 400, 200, 400] : [200],
+    data: data,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Clic sur la notification : ramène/ouvre l'app (le décroché se fait dans
+// l'UI de l'app elle-même, l'appel étant déjà en base dans dm_calls).
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./');
+    })
+  );
+});

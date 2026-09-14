@@ -7345,6 +7345,72 @@ function dmTeardownPresence(){
   dmOnlineUserIds = new Set();
   dmPresenceSynced = false;
 }
+
+// AJOUT (2026-09-14) : notifications push (Web Push), pour que les appels
+// entrants sonnent même quand l'app n'est pas ouverte / le téléphone est
+// verrouillé — le canal Supabase Realtime seul (dmEnsureGlobalCallListener)
+// ne fonctionne que tant que l'app tourne activement, un websocket ouvert.
+// Remplace 'REMPLACE_PAR_TA_VAPID_PUBLIC_KEY' par la clé publique VAPID
+// générée côté serveur (voir 01_migration_push_subscriptions.sql et la
+// fonction Edge send-call-push). Cette clé publique n'est pas un secret.
+const DM_VAPID_PUBLIC_KEY = 'BD0RJwf5mE1-MFw_hDxXL-cFe9uYIOd5S4fBqXRfytfLYBcWRq2OdwQW3hNriJymIyDNlJI2toj1MFdlITkQ33g';
+function _dmUrlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i=0;i<rawData.length;i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+let dmPushSetupDone = false;
+async function dmSetupPushNotifications(){
+  try{
+    if(dmPushSetupDone || !sbUser) return;
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if(!DM_VAPID_PUBLIC_KEY || DM_VAPID_PUBLIC_KEY.indexOf('REMPLACE_PAR') === 0) return;
+    dmPushSetupDone = true;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      // Ne demande la permission que si elle n'a jamais été refusée
+      // explicitement, pour ne pas re-solliciter l'utilisateur à chaque
+      // ouverture après un refus.
+      if(Notification.permission === 'denied') return;
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted') return;
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: _dmUrlBase64ToUint8Array(DM_VAPID_PUBLIC_KEY),
+      });
+    }
+    const json = sub.toJSON();
+    await sb.rpc('upsert_push_subscription', {
+      p_endpoint: json.endpoint,
+      p_p256dh: json.keys.p256dh,
+      p_auth: json.keys.auth,
+      p_user_agent: navigator.userAgent,
+    });
+  }catch(e){
+    dmPushSetupDone = false;
+    console.error('dmSetupPushNotifications', e);
+  }
+}
+// Prévient le destinataire d'un appel via notification push (best-effort :
+// si ça échoue — pas de réseau pour la fonction Edge, personne abonné,
+// etc. — l'appel Realtime/sonnerie classique continue de fonctionner
+// normalement pour quiconque a l'app ouverte).
+async function dmNotifyCalleePush(calleeId, callType, callId){
+  try{
+    await sb.functions.invoke('send-call-push', {
+      body: {
+        callee_id: calleeId,
+        call_type: callType,
+        call_id: callId,
+        caller_name: (state.player && state.player.firstName) || null,
+      },
+    });
+  }catch(e){ console.error('dmNotifyCalleePush', e); }
+}
 // Ré-applique le point vert / "En ligne" partout où c'est actuellement
 // affiché (recherche, liste de conversations, en-tête du chat ouvert),
 // sans devoir tout re-render depuis zéro.
@@ -8330,6 +8396,11 @@ async function dmStartCallInner(type){
       return;
     }
     dmState.currentCall = callRow;
+    // AJOUT (2026-09-14) : réveille le destinataire via notification push
+    // s'il a l'app fermée / le téléphone verrouillé — le canal Realtime
+    // (dmEnsureGlobalCallListener) ne le prévient que s'il a déjà l'app
+    // ouverte. Best-effort : ne bloque jamais l'établissement de l'appel.
+    dmNotifyCalleePush(dmState.callPeer.id, type, callRow.id);
     const iceServers = await dmGetIceServers();
     const pc = dmSetupPeerConnection(callRow.id, true, iceServers);
     dmState.pc = pc;
@@ -9636,6 +9707,7 @@ function enterApp(){
   // évite de rater un appel arrivé juste après l'ouverture de l'app.
   dmEnsureGlobalCallListener();
   dmSetupPresence();
+  dmSetupPushNotifications();
 }
 
 /* ---------- Déconnexion ----------
