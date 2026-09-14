@@ -7287,6 +7287,12 @@ const dmState = {
   // receiver_id (attribué au correspondant de l'appel, pas à celui du fil
   // ouvert). callPeer sert uniquement à l'UI d'appel (nom/avatar affichés).
   callPeer:null, ringTimeout:null, isMuted:false, isCamOff:false,
+  // AJOUT (2026-09-14) : minuteur de sondage de secours côté appelant — voir
+  // dmApplyCallerAccepted / dmStartCallInner. Filet de sécurité si l'événement
+  // Realtime "accepted" ne serait jamais reçu (connexion Realtime instable,
+  // etc.) : sans ce filet, seul le minuteur de 45s existait, qui finit
+  // toujours par marquer l'appel "manqué" même si la personne a décroché.
+  callPollTimer:null,
   iceCallerLen:0, iceCalleeLen:0, searchTimer:null, playingAudio:null,
   lastSearchResults:[], lastConvList:[],
   // AJOUT (2026-09-08) : état de la vidéo de bibliothèque admin diffusée
@@ -8344,6 +8350,24 @@ async function dmStartCallInner(type){
         dmTeardownCall('missed');
       }
     }, 45000);
+    // AJOUT (2026-09-14) : filet de sécurité — sonde directement la ligne
+    // dm_calls toutes les 3s pendant que ça sonne. Le canal Realtime est le
+    // chemin normal (quasi instantané), mais si son événement 'accepted' ne
+    // nous parvient jamais (websocket instable, coupure réseau furtive...),
+    // ce sondage garantit qu'on détecte quand même le décroché avant que le
+    // minuteur de 45s ne finisse par marquer l'appel "manqué" à tort.
+    // S'arrête tout seul dès que la connexion est établie (dmApplyCallerAccepted
+    // l'annule) ou que l'appel se termine (dmTeardownCall l'annule).
+    dmStopCallPolling();
+    dmState.callPollTimer = setInterval(async ()=>{
+      if(!dmState.currentCall || dmState.currentCall.id !== callRow.id || !dmState.isCaller){ dmStopCallPolling(); return; }
+      if(dmState.pc && dmState.pc.currentRemoteDescription){ dmStopCallPolling(); return; }
+      try{
+        const { data: fresh } = await sb.from('dm_calls').select().eq('id', callRow.id).maybeSingle();
+        if(fresh && fresh.status === 'accepted'){ dmState.currentCall = fresh; await dmApplyCallerAccepted(fresh); }
+        else if(fresh && (fresh.status === 'declined' || fresh.status === 'ended' || fresh.status === 'missed')){ dmStopCallPolling(); }
+      }catch(e){ /* échec réseau ponctuel : on retente au prochain tick */ }
+    }, 3000);
   }catch(e){
     console.error('dmStartCall', e);
     showToast('Appel impossible, vérifie ta connexion', '&#x26a0;&#xfe0f;');
@@ -8638,6 +8662,7 @@ function dmTeardownCall(finalStatus){
   if(audioBtn) audioBtn.disabled = false;
   if(videoBtn) videoBtn.disabled = false;
   if(dmState.ringTimeout){ clearTimeout(dmState.ringTimeout); dmState.ringTimeout = null; }
+  dmStopCallPolling();
   // AJOUT (2026-09-08) : arrête proprement une éventuelle vidéo de
   // bibliothèque admin en cours de diffusion (sinon l'élément <video> caché
   // continue de jouer en arrière-plan une fois l'appel terminé).
@@ -8678,6 +8703,41 @@ function dmTeardownCall(finalStatus){
   dmState.callPeer = null; dmState.isMuted = false; dmState.isCamOff = false; dmState.isSpeakerOn = true;
   dmState.callAcceptedAt = null;
 }
+// CORRECTIF (2026-09-14) : logique centralisée pour "l'appelé vient de
+// décrocher", appelée à la fois par l'événement Realtime (dmSubscribeCallUpdates)
+// et par le sondage de secours (dmStartCallInner) — un seul et même chemin de
+// code, pour ne pas dupliquer/désynchroniser la logique à deux endroits.
+// AVANT : l'arrêt de la sonnerie ET l'annulation du minuteur "pas de réponse"
+// (45s) étaient imbriqués dans LA MÊME condition que l'application du SDP
+// answer (pc présent, pas encore de remote description, sdp_answer complet).
+// Si l'un de ces éléments n'était pas encore prêt à l'instant précis de
+// réception de l'événement, le minuteur continuait de tourner en arrière-plan
+// et finissait par marquer l'appel "manqué" — alors même que la personne
+// avait décroché et que la connexion WebRTC était en train de s'établir.
+// MAINTENANT : dès que status==='accepted' est constaté, on coupe la
+// sonnerie et on annule le minuteur immédiatement et inconditionnellement ;
+// l'application du SDP answer reste une étape séparée, avec son propre
+// try/catch, qui n'influe plus sur l'annulation du minuteur.
+function dmStopCallPolling(){
+  if(dmState.callPollTimer){ clearInterval(dmState.callPollTimer); dmState.callPollTimer = null; }
+}
+async function dmApplyCallerAccepted(row){
+  if(!dmState.isCaller || !dmState.currentCall || dmState.currentCall.id !== row.id) return;
+  dmStopRingtone();
+  if(dmState.ringTimeout){ clearTimeout(dmState.ringTimeout); dmState.ringTimeout = null; }
+  dmStopCallPolling();
+  const pc = dmState.pc;
+  if(pc && !pc.currentRemoteDescription && row.sdp_answer && row.sdp_answer.type && row.sdp_answer.sdp){
+    try{
+      await pc.setRemoteDescription(new RTCSessionDescription(row.sdp_answer));
+      dmState.callAcceptedAt = Date.now();
+      const st = document.getElementById('dmCallStatus'); if(st) st.textContent = 'En appel';
+    }catch(e){
+      showToast('Échec de connexion à l\'appel', '&#x26a0;&#xfe0f;');
+      dmEndCall();
+    }
+  }
+}
 function dmSubscribeCallUpdates(callId, isCaller){
   if(dmState.callChannel) sb.removeChannel(dmState.callChannel);
   dmState.callChannel = sb.channel('dm_call_'+callId)
@@ -8690,17 +8750,8 @@ function dmSubscribeCallUpdates(callId, isCaller){
       if(row.status === 'declined'){ showToast('Appel refusé', '&#x1f4f5;'); dmTeardownCall('declined'); return; }
       if(row.status === 'ended' || row.status === 'missed'){ showToast('Appel terminé', '&#x1f4f4;'); dmTeardownCall(row.status); return; }
       const pc = dmState.pc;
-      if(isCaller && row.status === 'accepted' && pc && !pc.currentRemoteDescription && row.sdp_answer && row.sdp_answer.type && row.sdp_answer.sdp){
-        dmStopRingtone();
-        if(dmState.ringTimeout){ clearTimeout(dmState.ringTimeout); dmState.ringTimeout = null; }
-        try{
-          await pc.setRemoteDescription(new RTCSessionDescription(row.sdp_answer));
-          dmState.callAcceptedAt = Date.now();
-          const st = document.getElementById('dmCallStatus'); if(st) st.textContent = 'En appel';
-        }catch(e){
-          showToast('Échec de connexion à l\'appel', '&#x26a0;&#xfe0f;');
-          dmEndCall();
-        }
+      if(isCaller && row.status === 'accepted'){
+        await dmApplyCallerAccepted(row);
       } else if(isCaller && pc && pc.currentRemoteDescription && row.sdp_answer && row.sdp_answer.type && row.sdp_answer.sdp !== pc.currentRemoteDescription.sdp){
         // CORRECTIF (2026-09-08) : nouvelle réponse suite à un ICE restart —
         // sans ça la reconnexion automatique ne pouvait jamais aboutir.
