@@ -884,7 +884,7 @@
   .pin-dots{display:flex;gap:14px;justify-content:center;margin:22px 0;}
   .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--gold-deep);background:transparent;}
   .pin-dot.filled{background:var(--gold-deep);}
-  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:auto;}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px;}
   .key{
     background:var(--white);border-radius:var(--radius-sm);padding:16px 0;text-align:center;
     font-family:'Baloo 2';font-weight:700;font-size:20px;box-shadow:var(--shadow);cursor:pointer;
@@ -5979,25 +5979,25 @@ function renderMarketplaceProducts(){
   if(marketplaceState.category !== 'all') list = list.filter(p=> p.cat === marketplaceState.category);
   if(q) list = list.filter(p=> p.name.toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q));
   if(list.length === 0){
-    el.innerHTML = `<div class="marketplace-empty">Aucun produit trouvé pour cette recherche.</div>`;
+    el.innerHTML = `<div class="marketplace-empty">${t('mp_noResults')}</div>`;
     return;
   }
   el.innerHTML = list.map(p=> `
     <div class="marketplace-card" onclick="openMarketplaceDetail(${p.id})">
       <div class="marketplace-card-img-wrap">
         ${p.badge ? `<span class="marketplace-card-badge">${p.badge}</span>` : ''}
-        <img src="${p.image_url}" data-pid="${p.id}" alt="${esc(p.name || 'Produit')}" loading="lazy" decoding="async" onerror="marketplaceImageFallback(this, ${JSON.stringify(p._originalImageUrl || "")})">
+        <img src="${p.image_url}" data-pid="${p.id}" alt="${esc(p.name || t('mp_productAlt'))}" loading="lazy" decoding="async" onerror="marketplaceImageFallback(this, ${JSON.stringify(p._originalImageUrl || "")})">
       </div>
       <div class="marketplace-card-body">
         <div class="marketplace-card-brand">${p.brand||''}</div>
         <div class="marketplace-card-name">${p.name}</div>
         <div class="marketplace-card-rating">&#x2b50; ${Number(p.rating||0).toFixed(1)} (${p.reviews||0})</div>
-        <div class="marketplace-card-specs">${esc(marketplaceSpecsSummary(p) || 'Caractéristiques à venir')}</div>
+        <div class="marketplace-card-specs">${esc(marketplaceSpecsSummary(p) || t('mp_specsComingSoon'))}</div>
         <div class="marketplace-card-price-row">
           <div class="marketplace-card-price">${fmtAmt(p.price)} USDT</div>
           ${p.old_price ? `<div class="marketplace-card-oldprice">${fmtAmt(p.old_price)}</div>` : ''}
         </div>
-        <div class="marketplace-card-points">&#x1fa99; +${marketplacePointsFor(p.price).toLocaleString('fr-FR')} pts si commandé</div>
+        <div class="marketplace-card-points">${t('mp_ptsIfOrdered',{pts:marketplacePointsFor(p.price).toLocaleString(fmtLocale())})}</div>
       </div>
     </div>
   `).join('');
@@ -6009,7 +6009,7 @@ function openMarketplaceDetail(id){
   marketplaceState.currentProductId = id;
   const body = document.getElementById('marketplaceDetailBody');
   body.innerHTML = `
-    <img class="marketplace-detail-img" src="${p.image_url}" alt="${esc(p.name || 'Produit')}" loading="lazy" decoding="async" onerror="marketplaceImageFallback(this, ${JSON.stringify(p._originalImageUrl || "")})">
+    <img class="marketplace-detail-img" src="${p.image_url}" alt="${esc(p.name || t('mp_productAlt'))}" loading="lazy" decoding="async" onerror="marketplaceImageFallback(this, ${JSON.stringify(p._originalImageUrl || "")})">
     <div class="marketplace-detail-content">
       <div class="marketplace-detail-brand">${p.brand||''} ${p.model?('· '+p.model):''}</div>
       <div class="marketplace-detail-name">${p.name}</div>
@@ -6017,23 +6017,23 @@ function openMarketplaceDetail(id){
         <div class="marketplace-detail-price">${fmtAmt(p.price)} USDT</div>
         ${p.old_price ? `<div class="marketplace-detail-oldprice">${fmtAmt(p.old_price)} USDT</div>` : ''}
       </div>
-      <div class="marketplace-detail-rating">&#x2b50; ${Number(p.rating||0).toFixed(1)} <span>(${p.reviews||0} avis)</span></div>
+      <div class="marketplace-detail-rating">&#x2b50; ${Number(p.rating||0).toFixed(1)} <span>${t('mp_ratingReviews',{count:p.reviews||0})}</span></div>
       <div class="marketplace-detail-specs">
-        ${marketplaceNormalizeSpecField(p.storage) ? `<div><b>Stockage :</b> ${esc(marketplaceNormalizeSpecField(p.storage))}</div>` : ''}
-        ${marketplaceNormalizeSpecField(p.screen_size) ? `<div><b>Taille :</b> ${esc(marketplaceNormalizeSpecField(p.screen_size))}</div>` : ''}
-        ${marketplaceNormalizeSpecField(p.specs) ? `<div><b>Caractéristiques :</b> ${esc(marketplaceNormalizeSpecField(p.specs))}</div>` : ''}
-        ${!marketplaceSpecsSummary(p) ? `<div style="font-style:italic;">Caractéristiques non renseignées pour ce produit.</div>` : ''}
+        ${marketplaceNormalizeSpecField(p.storage) ? `<div><b>${t('mp_labelStorage')} :</b> ${esc(marketplaceNormalizeSpecField(p.storage))}</div>` : ''}
+        ${marketplaceNormalizeSpecField(p.screen_size) ? `<div><b>${t('mp_labelSize')} :</b> ${esc(marketplaceNormalizeSpecField(p.screen_size))}</div>` : ''}
+        ${marketplaceNormalizeSpecField(p.specs) ? `<div><b>${t('mp_labelSpecs')} :</b> ${esc(marketplaceNormalizeSpecField(p.specs))}</div>` : ''}
+        ${!marketplaceSpecsSummary(p) ? `<div style="font-style:italic;">${t('mp_specsNotProvided')}</div>` : ''}
       </div>
       <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:16px;">${p.description||''}</div>
       <div class="marketplace-trial-box">
-        <div class="h">&#x2705; Essai 30 jours inclus</div>
-        <p>Le montant est débité en garantie à la commande. Gardez-le après 30 jours et l'achat est validé automatiquement. Retournez-le et vous êtes remboursé intégralement. <a onclick="openMarketplaceCgv()">Voir les conditions complètes</a></p>
+        <div class="h">&#x2705; ${t('mp_trialTitle')}</div>
+        <p>${t('mp_trialDesc')} <a onclick="openMarketplaceCgv()">${t('mp_trialCgvLink')}</a></p>
       </div>
-      <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);font-weight:700;margin:-6px 0 16px;">&#x1f69a; Expédié depuis le Canada · livraison internationale 3 à 5 jours, toutes destinations</div>
-      <div class="havre-entry-info">Commander <b>${p.name}</b> en essai (${fmtAmt(p.price)} USDT) → <b>+${marketplacePointsFor(p.price).toLocaleString('fr-FR')} points</b> crédités tout de suite.</div>
-      ${lcActionsNeededHtml(marketplacePointsFor(p.price), 'achat comme celui-ci')}
+      <div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);font-weight:700;margin:-6px 0 16px;">&#x1f69a; ${t('mp_shipping')}</div>
+      <div class="havre-entry-info">${t('mp_orderTrialLine',{name:p.name, price:fmtAmt(p.price), points:marketplacePointsFor(p.price).toLocaleString(fmtLocale())})}</div>
+      ${lcActionsNeededHtml(marketplacePointsFor(p.price), t('mp_actionLabelPurchase'))}
       <div class="withdraw-error" id="marketplaceBuyError"></div>
-      <button class="btn btn-primary marketplace-buy-btn" id="marketplaceBuyBtn" onclick="buyMarketplaceProduct(${p.id})">&#x1f6d2; Commander en essai — ${fmtAmt(p.price)} USDT</button>
+      <button class="btn btn-primary marketplace-buy-btn" id="marketplaceBuyBtn" onclick="buyMarketplaceProduct(${p.id})">${t('mp_buyBtnLabel',{price:fmtAmt(p.price)})}</button>
     </div>
   `;
   document.getElementById('marketplaceDetailOverlay').classList.add('open');
@@ -6129,33 +6129,33 @@ function openMarketplaceCgv(){
 function closeMarketplaceCgv(){
   document.getElementById('marketplaceCgvOverlay').classList.remove('open');
 }
-function marketplaceTrialCardHtml(t, i){
-  const day = trialDaysElapsed(t.startedAt);
+function marketplaceTrialCardHtml(tr, i){
+  const day = trialDaysElapsed(tr.startedAt);
   const pct = Math.round((day/30)*100);
   return `
     <div class="marketplace-order-card">
-      <div class="name">${esc(t.name)}</div>
+      <div class="name">${esc(tr.name)}</div>
       <div class="meta">
-        <span>Jour ${day} / 30 · ${fmtAmt(t.price)} ${t.method==='points'?'pts':'USDT'} en garantie</span>
-        <span class="marketplace-order-status pending">Essai en cours</span>
+        <span>${t('mp_trialDayProgress',{day, price:fmtAmt(tr.price), unit: tr.method==='points'?t('mp_unitPts'):'USDT'})}</span>
+        <span class="marketplace-order-status pending">${t('mp_trialInProgress')}</span>
       </div>
       <div class="marketplace-order-trial-bar"><div class="fill" style="width:${pct}%;"></div></div>
       <div class="marketplace-order-trial-actions">
-        <button class="keep" onclick="keepMarketplaceTrial('${t.localId}')">Garder — achat validé</button>
-        <button class="return" onclick="returnMarketplaceTrial('${t.localId}')">Demander un retour</button>
+        <button class="keep" onclick="keepMarketplaceTrial('${tr.localId}')">${t('mp_keepBtn')}</button>
+        <button class="return" onclick="returnMarketplaceTrial('${tr.localId}')">${t('mp_returnBtn')}</button>
       </div>
     </div>`;
 }
 function keepMarketplaceTrial(localId){
-  const trials = loadMarketplaceTrials().filter(t=>t.localId!==localId);
+  const trials = loadMarketplaceTrials().filter(tr=>tr.localId!==localId);
   saveMarketplaceTrials(trials);
-  showToast("Achat validé, le produit est à vous.", '&#x2705;');
+  showToast(t('mp_toastKept'), '&#x2705;');
   openMarketplaceOrders();
 }
 function returnMarketplaceTrial(localId){
-  const trials = loadMarketplaceTrials().filter(t=>t.localId!==localId);
+  const trials = loadMarketplaceTrials().filter(tr=>tr.localId!==localId);
   saveMarketplaceTrials(trials);
-  showToast("Demande de retour enregistrée. Remboursement sous 5 à 10 jours ouvrés.", '&#x1f4e6;');
+  showToast(t('mp_toastReturned'), '&#x1f4e6;');
   openMarketplaceOrders();
 }
 
@@ -6163,17 +6163,17 @@ async function openMarketplaceOrders(){
   document.getElementById('marketplaceOrdersOverlay').classList.add('open');
   document.getElementById('marketplaceOrdersDot').style.display = 'none';
   const list = document.getElementById('marketplaceOrdersList');
-  list.innerHTML = `<div class="marketplace-empty">Chargement…</div>`;
+  list.innerHTML = `<div class="marketplace-empty">${t('mp_loading')}</div>`;
 
   // Essais 30 jours en cours (suivi local, voir recordMarketplaceTrialOrder)
   const trials = loadMarketplaceTrials();
-  const trialsHtml = trials.map((t,i)=>marketplaceTrialCardHtml(t,i)).join('');
+  const trialsHtml = trials.map((tr,i)=>marketplaceTrialCardHtml(tr,i)).join('');
 
   const { data, error } = await sb.from('marketplace_orders')
     .select('id, product_name, unit_price, status, created_at')
     .order('created_at', { ascending:false });
 
-  const statusLabels = { pending:'En attente', confirmed:'Confirmée', shipped:'Expédiée', delivered:'Livrée', cancelled:'Annulée' };
+  const statusLabels = { pending:t('mp_statusPending'), confirmed:t('mp_statusConfirmed'), shipped:t('mp_statusShipped'), delivered:t('mp_statusDelivered'), cancelled:t('mp_statusCancelled') };
   const ordersHtml = (!error && data && data.length) ? data.map(o=> `
     <div class="marketplace-order-card">
       <div class="name">${o.product_name}</div>
@@ -6185,7 +6185,7 @@ async function openMarketplaceOrders(){
   `).join('') : '';
 
   if(!trialsHtml && !ordersHtml){
-    list.innerHTML = `<div class="marketplace-empty">Aucune commande pour l'instant.<br>Commandez un produit pour le tester 30 jours.</div>`;
+    list.innerHTML = `<div class="marketplace-empty">${t('mp_noOrders')}</div>`;
     return;
   }
   list.innerHTML = trialsHtml + ordersHtml;
@@ -6604,23 +6604,23 @@ const LC_DESTINATIONS = {
    du forfait. Aligné sur le barème Canada d'origine (500 000 / 950 000 /
    1 350 000 points, soit ×1 / ×1.9 / ×2.7). */
 const LC_PASS_TIERS = [
-  {label:"Découverte", duration:"1 mois", mult:1,   badge:null,       regionsTxt:"1 région/ville au choix"},
-  {label:"Immersion",  duration:"2 mois", mult:1.9, badge:"Populaire",regionsTxt:"2 régions/villes au choix"},
-  {label:"Longcours complet", duration:"3 mois", mult:2.7, badge:null,regionsTxt:"Itinéraire sur mesure, régions multiples"}
+  {key:'discovery', months:1, mult:1,   badge:false},
+  {key:'immersion', months:2, mult:1.9, badge:true},
+  {key:'longcours', months:3, mult:2.7, badge:false}
 ];
 function lcPackagesFor(key){
   const d = LC_DESTINATIONS[key];
   if(!d) return [];
-  return LC_PASS_TIERS.map(t=>({
-    name:t.label, duration:t.duration, badge:t.badge,
-    points:Math.round(d.points*t.mult),
+  return LC_PASS_TIERS.map(tier=>({
+    name:t('lcTier_'+tier.key+'_label'), duration:t('lcTier_duration',{n:tier.months}), badge:tier.badge?t('lcTier_badgePopular'):null,
+    points:Math.round(d.points*tier.mult),
     items:[
-      "Billet d'avion inclus",
-      "Visa touristique pris en charge",
-      "Hébergement inclus",
-      t.regionsTxt,
-      "Déplacements intérieurs inclus",
-      "Accompagnement Longcours de bout en bout"
+      t('lcTier_flight'),
+      t('lcTier_visa'),
+      t('lcTier_lodging'),
+      t('lcTier_'+tier.key+'_regions'),
+      t('lcTier_localTransport'),
+      t('lcTier_support')
     ]
   }));
 }
@@ -6632,7 +6632,7 @@ function lcPackagesFor(key){
 function lcShowPackages(key){
   const d=LC_DESTINATIONS[key], packs=lcPackagesFor(key);
   if(!d||!packs.length)return;
-  document.getElementById('lcDestModalTitle').innerHTML=`${d.name}<div style="font-size:11px;font-weight:800;opacity:.75">Choisissez votre forfait</div>`;
+  document.getElementById('lcDestModalTitle').innerHTML=`${d.name}<div style="font-size:11px;font-weight:800;opacity:.75">${t('lcDest_choosePackage')}</div>`;
 
   const heroPhotos = (d.photos||[]).map(p=>`
     <div class="lc-dest-photo" style="background:${p.grad||d.grad};">
@@ -6647,25 +6647,25 @@ function lcShowPackages(key){
     ${heroPhotos}
     <div class="lc-dest-modal-desc">${d.desc}</div>
     <div class="lc-dest-included">
-      <div class="lc-dest-included-title">Ce qui est pris en charge</div>
+      <div class="lc-dest-included-title">${t('lcDest_whatsIncludedTitle')}</div>
       <div class="lc-dest-included-grid">
-        <div>&#x2708;&#xfe0f; Billet d'avion</div>
-        <div>&#x1f6c2; Visa touristique</div>
-        <div>&#x1f3e8; Hébergement</div>
-        <div>&#x1f690; Déplacements intérieurs</div>
-        <div>&#x1f9ed; Itinéraire sur mesure</div>
-        <div>&#x1f91d; Accompagnement Longcours</div>
+        <div>&#x2708;&#xfe0f; ${t('lcDest_gridFlight')}</div>
+        <div>&#x1f6c2; ${t('lcDest_gridVisa')}</div>
+        <div>&#x1f3e8; ${t('lcDest_gridLodging')}</div>
+        <div>&#x1f690; ${t('lcDest_gridTransport')}</div>
+        <div>&#x1f9ed; ${t('lcDest_gridItinerary')}</div>
+        <div>&#x1f91d; ${t('lcDest_gridSupport')}</div>
       </div>
     </div>
-    <div class="lc-dest-photo-points"><span>🪙 Points minimum</span><b>${Math.min(...packs.map(p=>p.points)).toLocaleString('fr-FR')}</b></div>
+    <div class="lc-dest-photo-points"><span>🪙 ${t('lcDest_minPoints')}</span><b>${Math.min(...packs.map(p=>p.points)).toLocaleString(fmtLocale())}</b></div>
     <div class="lc-package-grid">${packs.map((p,i)=>`
       <div class="lc-package-card ${p.badge?'featured':''}">
         ${p.badge?`<div class="lc-package-badge">${p.badge.toUpperCase()}</div>`:''}
         <div class="lc-package-name">${p.name}</div>
         <div class="lc-package-duration">📅 ${p.duration}</div>
-        <div class="lc-package-points">🪙 ${p.points.toLocaleString('fr-FR')} points</div>
+        <div class="lc-package-points">🪙 ${t('lcDest_pointsAmount',{amount:p.points.toLocaleString(fmtLocale())})}</div>
         <div class="lc-package-includes">${p.items.map(x=>`<div>✓ ${x}</div>`).join('')}</div>
-        <button class="lc-package-select" onclick="lcShowRequestForm('${key}',${i})">Choisir ce forfait</button>
+        <button class="lc-package-select" onclick="lcShowRequestForm('${key}',${i})">${t('lcDest_selectPackage')}</button>
       </div>`).join('')}</div>`;
 }
 
@@ -6675,31 +6675,31 @@ function lcShowRequestForm(key,index){
   window.LC_SELECTED_PACKAGE={destination:key,packageIndex:index};
 
   document.getElementById('lcDestModalTitle').innerHTML=
-    `Demande de séjour<div style="font-size:11px;font-weight:800;opacity:.75">${d.name} · ${p.name}</div>`;
+    `${t('lcDest_requestTitle')}<div style="font-size:11px;font-weight:800;opacity:.75">${d.name} · ${p.name}</div>`;
 
   document.getElementById('lcDestModalBody').innerHTML=`
     <div class="lc-request-summary">
       <div class="lc-request-summary-title">${d.name}</div>
-      <div class="lc-request-summary-row"><span>Forfait</span><b>${p.name}</b></div>
-      <div class="lc-request-summary-row"><span>Durée</span><b>${p.duration}</b></div>
-      <div class="lc-request-summary-row"><span>Points requis</span><b>${p.points.toLocaleString('fr-FR')}</b></div>
+      <div class="lc-request-summary-row"><span>${t('lcDest_packageWord')}</span><b>${p.name}</b></div>
+      <div class="lc-request-summary-row"><span>${t('lcDest_durationWord')}</span><b>${p.duration}</b></div>
+      <div class="lc-request-summary-row"><span>${t('lcDest_pointsRequiredWord')}</span><b>${p.points.toLocaleString(fmtLocale())}</b></div>
     </div>
 
     <form class="lc-request-form" onsubmit="return lcSubmitDestinationRequest(event,'${key}',${index})">
-      <div class="lc-form-title">Faire une demande</div>
-      <label><span>👤</span><input required name="fullname" type="text" placeholder="Nom complet"></label>
-      <label><span>📞</span><input required name="phone" type="tel" placeholder="Numéro de téléphone"></label>
-      <label><span>✉️</span><input required name="email" type="email" placeholder="Adresse e-mail"></label>
-      <label><span>🪪</span><input required name="passport" type="text" placeholder="Passeport (Numéro)"></label>
+      <div class="lc-form-title">${t('lcDest_formTitle')}</div>
+      <label><span>👤</span><input required name="fullname" type="text" placeholder="${t('lcDest_fullNamePlaceholder')}"></label>
+      <label><span>📞</span><input required name="phone" type="tel" placeholder="${t('lcDest_phonePlaceholder')}"></label>
+      <label><span>✉️</span><input required name="email" type="email" placeholder="${t('lcDest_emailPlaceholder')}"></label>
+      <label><span>🪪</span><input required name="passport" type="text" placeholder="${t('lcDest_passportPlaceholder')}"></label>
       <label><span>📅</span><input required name="date" type="date"></label>
-      <label class="lc-form-textarea"><span>📝</span><textarea name="message" placeholder="Message (optionnel)"></textarea></label>
-      <div class="lc-form-note">Aucun point n'est débité à cette étape — il s'agit d'une demande de disponibilité.</div>
-      <button class="lc-request-submit" type="submit">Envoyer la demande</button>
+      <label class="lc-form-textarea"><span>📝</span><textarea name="message" placeholder="${t('lcDest_messagePlaceholder')}"></textarea></label>
+      <div class="lc-form-note">${t('lcDest_formNote')}</div>
+      <button class="lc-request-submit" type="submit">${t('lcDest_submitBtn')}</button>
     </form>
 
     <div class="lc-request-security">
       <div class="lc-security-icon">🛡️</div>
-      <div><b>Vos informations sont sécurisées</b><br>et utilisées uniquement pour le traitement de votre demande.</div>
+      <div><b>${t('lcDest_secureInfoTitle')}</b><br>${t('lcDest_secureInfoSub')}</div>
     </div>
   `;
 }
@@ -6831,7 +6831,7 @@ function lcActionsNeededHtml(pointsPerAction, actionLabel){
   const info = lcPointsGapInfo();
   if(!info || info.gap<=0 || !pointsPerAction) return '';
   const n = Math.ceil(info.gap / pointsPerAction);
-  return `<div class="lc-actions-needed">&#x1f9ed; Encore <b>${n}</b> ${actionLabel}${n>1?'s':''} pour atteindre les <b>${info.required.toLocaleString('fr-FR')}</b> points requis par ta demande Longcours</div>`;
+  return `<div class="lc-actions-needed">${t('lcActionsNeeded',{n, label:actionLabel, plural:(n>1?'s':''), required:info.required.toLocaleString(fmtLocale())})}</div>`;
 }
 
 /* ---------- Longcours : synchronisation de la demande en cours ----------
@@ -8233,6 +8233,39 @@ let dmAdminVoiceAudioCtx = null;
 let dmAdminVoiceInputStream = null;
 let dmAdminVoiceOutputStream = null;
 
+// CORRECTIF (2026-09-17 bis) : sur mobile (WebView Android/Huawei notamment),
+// ctx.resume() peut échouer silencieusement s'il est appelé trop loin d'un
+// vrai geste utilisateur (la chaîne d'"activation utilisateur" est parfois
+// déjà expirée après les multiples await de getUserMedia + chargement du
+// AudioWorklet). Un AudioContext resté "suspended" fait que le
+// MediaStreamDestination ne produit AUCUN son : la piste envoyée à l'autre
+// participant est techniquement présente mais totalement muette — d'où le
+// bug "l'admin parle, on n'entend rien" (les comptes non-admin ne passent
+// jamais par ce pipeline et ne sont donc pas concernés).
+// Cette fonction retente le resume(), puis, si le navigateur bloque encore,
+// écoute le prochain vrai tap/clic pour réessayer, avec un timeout de secours
+// pour ne jamais bloquer l'appel indéfiniment.
+async function dmEnsureAdminVoiceRunning(ctx){
+  if(!ctx) return true;
+  if(ctx.state === 'running') return true;
+  try{ await ctx.resume(); }catch(_){}
+  if(ctx.state === 'running') return true;
+  await new Promise(resolve=>{
+    let done = false;
+    const events = ['pointerdown','touchend','click'];
+    const cleanup = ()=> events.forEach(ev=>document.removeEventListener(ev, tryResume));
+    const finish = ()=>{ if(done) return; done = true; cleanup(); resolve(); };
+    const tryResume = async ()=>{
+      if(done) return;
+      try{ await ctx.resume(); }catch(_){}
+      if(ctx.state === 'running') finish();
+    };
+    events.forEach(ev=>document.addEventListener(ev, tryResume));
+    setTimeout(finish, 1500);
+  });
+  return ctx.state === 'running';
+}
+
 async function dmPrepareAdminVoiceStream(rawStream){
   if(!rawStream || !isAdminUser()) return rawStream;
 
@@ -8369,7 +8402,18 @@ async function dmPrepareAdminVoiceStream(rawStream){
     }
 
     compressor.connect(output);
-    await ctx.resume();
+
+    const running = await dmEnsureAdminVoiceRunning(ctx);
+    if(!running){
+      // Le navigateur refuse de démarrer l'AudioContext (pas assez proche
+      // d'un geste utilisateur, ou politique d'autoplay plus stricte sur
+      // cette WebView) : mieux vaut un micro admin non transformé mais
+      // AUDIBLE qu'un appel silencieux. On ne touche pas à audioTracks[0]
+      // (il appartient à rawStream, qu'on va renvoyer tel quel).
+      console.warn('[VOIX ADMIN] AudioContext resté "suspended", micro original conservé pour ne pas couper le son');
+      try{ await ctx.close(); }catch(_){}
+      return rawStream;
+    }
 
     dmAdminVoiceAudioCtx = ctx;
     dmAdminVoiceInputStream = new MediaStream([audioTracks[0]]);
@@ -8800,6 +8844,11 @@ async function dmStartCallInner(type){
     const iceServers = await dmGetIceServers();
     const pc = dmSetupPeerConnection(callRow.id, true, iceServers);
     dmState.pc = pc;
+    // CORRECTIF (2026-09-17 bis) : re-vérifie juste avant l'envoi que le
+    // pipeline voix admin tourne toujours (voir dmEnsureAdminVoiceRunning) —
+    // évite d'envoyer une piste redevenue muette si l'app a été mise en
+    // arrière-plan entre la capture du micro et l'offre WebRTC.
+    if(isAdminUser() && dmAdminVoiceAudioCtx) await dmEnsureAdminVoiceRunning(dmAdminVoiceAudioCtx);
     dmState.localStream.getTracks().forEach(t=>pc.addTrack(t, dmState.localStream));
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -8948,6 +8997,8 @@ async function dmAcceptCall(){
     const iceServers = await dmGetIceServers();
     const pc = dmSetupPeerConnection(callRow.id, false, iceServers);
     dmState.pc = pc;
+    // CORRECTIF (2026-09-17 bis) : même re-vérification côté réponse à un appel.
+    if(isAdminUser() && dmAdminVoiceAudioCtx) await dmEnsureAdminVoiceRunning(dmAdminVoiceAudioCtx);
     dmState.localStream.getTracks().forEach(t=>pc.addTrack(t, dmState.localStream));
     pc._lastOfferSdp = callRow.sdp_offer.sdp;
     await pc.setRemoteDescription(new RTCSessionDescription(callRow.sdp_offer));
@@ -10542,7 +10593,7 @@ function renderHomeJobsCarousel(){
           <div class="home-mini-job-card-actions">
             <button type="button" class="hm-view-btn" onclick="openHomeJob(${o.id})">👁️ Voir</button>
             <button type="button" class="hm-apply-btn" onclick="openHomeJobApply(${o.id})" ${places<=0?'disabled':''}>📩 Postuler</button>
-            <button type="button" class="hm-interview-btn" onclick="openHomeJobInterview(${o.id})">🎤 Passer un interview</button>
+            <button type="button" class="hm-interview-btn" onclick="openHomeJobInterview(${o.id})">📅 Prendre un rendez-vous</button>
           </div>
         </div>
       </div>`;
@@ -10568,10 +10619,10 @@ function openHomeJobApply(id){
   lcSwitchMode('emploi');
   setTimeout(()=>{ if(typeof lcOpenJobReservation === 'function') lcOpenJobReservation(id); }, 60);
 }
-// AJOUT : bouton "Passer un interview" — sur chaque offre d'emploi (accueil
-// et liste complète Pôle Emploi), ouvre directement la conversation avec
-// Sandy (recruteuse Pôle Emploi) au lieu de simplement afficher la liste
-// des messages.
+// MODIF (2026-09-17) : le bouton "Passer un interview" devient "Prendre un
+// rendez-vous" et ouvre directement le chat support (au lieu d'une
+// conversation avec la recruteuse Sandy). LC_INTERVIEW_RECRUITER n'est plus
+// utilisé ici mais reste défini au cas où d'autres écrans s'en servent.
 const LC_INTERVIEW_RECRUITER = {
   id: '73b85ea3-965d-443d-aa17-eef5bb90ec94',
   name: 'Sandy',
@@ -10580,14 +10631,9 @@ const LC_INTERVIEW_RECRUITER = {
 function goToJobInterview(id){
   const o = (typeof lcJobOffers !== 'undefined' && lcJobOffers || []).find(j => j.id === id);
   if(typeof showToast === 'function'){
-    showToast((o ? `Entretien — ${o.title} : ` : '') + 'Sandy va t’aider pour ton entretien.', '🎤');
+    showToast((o ? `Rendez-vous — ${o.title} : ` : '') + 'Le support va t’aider à prendre rendez-vous.', '📅');
   }
-  navTo('screen-messages');
-  if(typeof dmOpenConversationWithUser === 'function'){
-    setTimeout(()=>{
-      dmOpenConversationWithUser(LC_INTERVIEW_RECRUITER.id, LC_INTERVIEW_RECRUITER.name, LC_INTERVIEW_RECRUITER.avatarUrl);
-    }, 60);
-  }
+  if(typeof openSupportChat === 'function') openSupportChat();
 }
 function openHomeJobInterview(id){ goToJobInterview(id); }
 
@@ -14012,6 +14058,81 @@ const translations = {
     lc_n750000Points:"🪙 750 000 points",
     lc_n900000Points:"🪙 900 000 points",
     lc_pointsRequis:"🪙 Points requis",
+
+    // AJOUT : Marketplace (liste, fiche produit, commandes/essai) — texte
+    // auparavant codé en dur, jamais traduit.
+    mp_noResults:"Aucun produit trouvé pour cette recherche.",
+    mp_productAlt:"Produit",
+    mp_specsComingSoon:"Caractéristiques à venir",
+    mp_ptsIfOrdered:(p)=>`&#x1fa99; +${p.pts} pts si commandé`,
+    mp_ratingReviews:(p)=>`(${p.count} avis)`,
+    mp_labelStorage:"Stockage",
+    mp_labelSize:"Taille",
+    mp_labelSpecs:"Caractéristiques",
+    mp_specsNotProvided:"Caractéristiques non renseignées pour ce produit.",
+    mp_trialTitle:"Essai 30 jours inclus",
+    mp_trialDesc:"Le montant est débité en garantie à la commande. Gardez-le après 30 jours et l'achat est validé automatiquement. Retournez-le et vous êtes remboursé intégralement.",
+    mp_trialCgvLink:"Voir les conditions complètes",
+    mp_shipping:"Expédié depuis le Canada · livraison internationale 3 à 5 jours, toutes destinations",
+    mp_orderTrialLine:(p)=>`Commander <b>${p.name}</b> en essai (${p.price} USDT) → <b>+${p.points} points</b> crédités tout de suite.`,
+    mp_actionLabelPurchase:"achat comme celui-ci",
+    mp_buyBtnLabel:(p)=>`&#x1f6d2; Commander en essai — ${p.price} USDT`,
+    mp_trialDayProgress:(p)=>`Jour ${p.day} / 30 · ${p.price} ${p.unit} en garantie`,
+    mp_unitPts:"pts",
+    mp_trialInProgress:"Essai en cours",
+    mp_keepBtn:"Garder — achat validé",
+    mp_returnBtn:"Demander un retour",
+    mp_toastKept:"Achat validé, le produit est à vous.",
+    mp_toastReturned:"Demande de retour enregistrée. Remboursement sous 5 à 10 jours ouvrés.",
+    mp_loading:"Chargement…",
+    mp_statusPending:"En attente",
+    mp_statusConfirmed:"Confirmée",
+    mp_statusShipped:"Expédiée",
+    mp_statusDelivered:"Livrée",
+    mp_statusCancelled:"Annulée",
+    mp_noOrders:"Aucune commande pour l'instant.<br>Commandez un produit pour le tester 30 jours.",
+
+    // AJOUT : Longcours — forfaits par palier + fiche destination + formulaire
+    // de demande — texte auparavant codé en dur, jamais traduit.
+    lcActionsNeeded:(p)=>`&#x1f9ed; Encore <b>${p.n}</b> ${p.label}${p.plural} pour atteindre les <b>${p.required}</b> points requis par ta demande Longcours`,
+    lcTier_discovery_label:"Découverte",
+    lcTier_immersion_label:"Immersion",
+    lcTier_longcours_label:"Longcours complet",
+    lcTier_duration:(p)=>`${p.n} mois`,
+    lcTier_badgePopular:"Populaire",
+    lcTier_discovery_regions:"1 région/ville au choix",
+    lcTier_immersion_regions:"2 régions/villes au choix",
+    lcTier_longcours_regions:"Itinéraire sur mesure, régions multiples",
+    lcTier_flight:"Billet d'avion inclus",
+    lcTier_visa:"Visa touristique pris en charge",
+    lcTier_lodging:"Hébergement inclus",
+    lcTier_localTransport:"Déplacements intérieurs inclus",
+    lcTier_support:"Accompagnement Longcours de bout en bout",
+    lcDest_choosePackage:"Choisissez votre forfait",
+    lcDest_whatsIncludedTitle:"Ce qui est pris en charge",
+    lcDest_gridFlight:"Billet d'avion",
+    lcDest_gridVisa:"Visa touristique",
+    lcDest_gridLodging:"Hébergement",
+    lcDest_gridTransport:"Déplacements intérieurs",
+    lcDest_gridItinerary:"Itinéraire sur mesure",
+    lcDest_gridSupport:"Accompagnement Longcours",
+    lcDest_minPoints:"Points minimum",
+    lcDest_pointsAmount:(p)=>`${p.amount} points`,
+    lcDest_selectPackage:"Choisir ce forfait",
+    lcDest_requestTitle:"Demande de séjour",
+    lcDest_packageWord:"Forfait",
+    lcDest_durationWord:"Durée",
+    lcDest_pointsRequiredWord:"Points requis",
+    lcDest_formTitle:"Faire une demande",
+    lcDest_fullNamePlaceholder:"Nom complet",
+    lcDest_phonePlaceholder:"Numéro de téléphone",
+    lcDest_emailPlaceholder:"Adresse e-mail",
+    lcDest_passportPlaceholder:"Passeport (Numéro)",
+    lcDest_messagePlaceholder:"Message (optionnel)",
+    lcDest_formNote:"Aucun point n'est débité à cette étape — il s'agit d'une demande de disponibilité.",
+    lcDest_submitBtn:"Envoyer la demande",
+    lcDest_secureInfoTitle:"Vos informations sont sécurisées",
+    lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre demande.",
   },
   en: {
     langTitle:"Choose your language", langSub:"Select the language you prefer to use on Longcours.",
@@ -14548,6 +14669,77 @@ const translations = {
     lc_n750000Points:"🪙 750,000 points",
     lc_n900000Points:"🪙 900,000 points",
     lc_pointsRequis:"🪙 Points required",
+
+    mp_noResults:"No products found for this search.",
+    mp_productAlt:"Product",
+    mp_specsComingSoon:"Specs coming soon",
+    mp_ptsIfOrdered:(p)=>`&#x1fa99; +${p.pts} pts if ordered`,
+    mp_ratingReviews:(p)=>`(${p.count} reviews)`,
+    mp_labelStorage:"Storage",
+    mp_labelSize:"Size",
+    mp_labelSpecs:"Specs",
+    mp_specsNotProvided:"Specs not provided for this product.",
+    mp_trialTitle:"30-day trial included",
+    mp_trialDesc:"The amount is charged as a deposit when you order. Keep it after 30 days and the purchase is confirmed automatically. Return it and you're fully refunded.",
+    mp_trialCgvLink:"See full terms",
+    mp_shipping:"Shipped from Canada · international delivery 3 to 5 days, all destinations",
+    mp_orderTrialLine:(p)=>`Order <b>${p.name}</b> on a trial (${p.price} USDT) → <b>+${p.points} points</b> credited right away.`,
+    mp_actionLabelPurchase:"purchase like this one",
+    mp_buyBtnLabel:(p)=>`&#x1f6d2; Order on trial — ${p.price} USDT`,
+    mp_trialDayProgress:(p)=>`Day ${p.day} / 30 · ${p.price} ${p.unit} held as deposit`,
+    mp_unitPts:"pts",
+    mp_trialInProgress:"Trial in progress",
+    mp_keepBtn:"Keep — purchase confirmed",
+    mp_returnBtn:"Request a return",
+    mp_toastKept:"Purchase confirmed, the product is yours.",
+    mp_toastReturned:"Return request recorded. Refund within 5 to 10 business days.",
+    mp_loading:"Loading…",
+    mp_statusPending:"Pending",
+    mp_statusConfirmed:"Confirmed",
+    mp_statusShipped:"Shipped",
+    mp_statusDelivered:"Delivered",
+    mp_statusCancelled:"Cancelled",
+    mp_noOrders:"No orders yet.<br>Order a product to try it for 30 days.",
+
+    lcActionsNeeded:(p)=>`&#x1f9ed; <b>${p.n}</b> more ${p.label} needed to reach the <b>${p.required}</b> points required by your Longcours request`,
+    lcTier_discovery_label:"Discovery",
+    lcTier_immersion_label:"Immersion",
+    lcTier_longcours_label:"Full Longcours",
+    lcTier_duration:(p)=>`${p.n} month${p.n>1?'s':''}`,
+    lcTier_badgePopular:"Popular",
+    lcTier_discovery_regions:"1 region/city of your choice",
+    lcTier_immersion_regions:"2 regions/cities of your choice",
+    lcTier_longcours_regions:"Custom itinerary, multiple regions",
+    lcTier_flight:"Flight ticket included",
+    lcTier_visa:"Tourist visa covered",
+    lcTier_lodging:"Accommodation included",
+    lcTier_localTransport:"Local transport included",
+    lcTier_support:"End-to-end Longcours support",
+    lcDest_choosePackage:"Choose your package",
+    lcDest_whatsIncludedTitle:"What's included",
+    lcDest_gridFlight:"Flight ticket",
+    lcDest_gridVisa:"Tourist visa",
+    lcDest_gridLodging:"Accommodation",
+    lcDest_gridTransport:"Local transport",
+    lcDest_gridItinerary:"Custom itinerary",
+    lcDest_gridSupport:"Longcours support",
+    lcDest_minPoints:"Minimum points",
+    lcDest_pointsAmount:(p)=>`${p.amount} points`,
+    lcDest_selectPackage:"Choose this package",
+    lcDest_requestTitle:"Trip request",
+    lcDest_packageWord:"Package",
+    lcDest_durationWord:"Duration",
+    lcDest_pointsRequiredWord:"Points required",
+    lcDest_formTitle:"Make a request",
+    lcDest_fullNamePlaceholder:"Full name",
+    lcDest_phonePlaceholder:"Phone number",
+    lcDest_emailPlaceholder:"Email address",
+    lcDest_passportPlaceholder:"Passport (Number)",
+    lcDest_messagePlaceholder:"Message (optional)",
+    lcDest_formNote:"No points are deducted at this stage — this is only an availability request.",
+    lcDest_submitBtn:"Send request",
+    lcDest_secureInfoTitle:"Your information is secure",
+    lcDest_secureInfoSub:"and used only to process your request.",
   },
 
   /* =========================================================
@@ -15090,6 +15282,77 @@ const translations = {
     lc_n750000Points:"🪙 750,000 نقطة",
     lc_n900000Points:"🪙 900,000 نقطة",
     lc_pointsRequis:"🪙 النقاط المطلوبة",
+
+    mp_noResults:"لم يتم العثور على أي منتج لهذا البحث.",
+    mp_productAlt:"منتج",
+    mp_specsComingSoon:"المواصفات ستتوفر قريبًا",
+    mp_ptsIfOrdered:(p)=>`&#x1fa99; +${p.pts} نقطة إذا تم الطلب`,
+    mp_ratingReviews:(p)=>`(${p.count} تقييم)`,
+    mp_labelStorage:"سعة التخزين",
+    mp_labelSize:"الحجم",
+    mp_labelSpecs:"المواصفات",
+    mp_specsNotProvided:"لم يتم تحديد مواصفات لهذا المنتج.",
+    mp_trialTitle:"تجربة 30 يومًا مشمولة",
+    mp_trialDesc:"يتم خصم المبلغ كضمان عند الطلب. احتفظ به بعد 30 يومًا ليتم تأكيد الشراء تلقائيًا. أعده وسيتم استرداد المبلغ بالكامل.",
+    mp_trialCgvLink:"عرض الشروط الكاملة",
+    mp_shipping:"يُشحن من كندا · التوصيل الدولي من 3 إلى 5 أيام، إلى جميع الوجهات",
+    mp_orderTrialLine:(p)=>`اطلب <b>${p.name}</b> للتجربة (${p.price} USDT) → <b>+${p.points} نقطة</b> تُضاف فورًا.`,
+    mp_actionLabelPurchase:"عملية شراء كهذه",
+    mp_buyBtnLabel:(p)=>`&#x1f6d2; اطلب للتجربة — ${p.price} USDT`,
+    mp_trialDayProgress:(p)=>`اليوم ${p.day} / 30 · ${p.price} ${p.unit} كضمان`,
+    mp_unitPts:"نقطة",
+    mp_trialInProgress:"التجربة جارية",
+    mp_keepBtn:"احتفظ — تم تأكيد الشراء",
+    mp_returnBtn:"طلب إرجاع",
+    mp_toastKept:"تم تأكيد الشراء، المنتج أصبح لك.",
+    mp_toastReturned:"تم تسجيل طلب الإرجاع. سيتم رد المبلغ خلال 5 إلى 10 أيام عمل.",
+    mp_loading:"جارٍ التحميل…",
+    mp_statusPending:"قيد الانتظار",
+    mp_statusConfirmed:"مؤكدة",
+    mp_statusShipped:"تم الشحن",
+    mp_statusDelivered:"تم التسليم",
+    mp_statusCancelled:"ملغاة",
+    mp_noOrders:"لا توجد طلبات حتى الآن.<br>اطلب منتجًا لتجربته لمدة 30 يومًا.",
+
+    lcActionsNeeded:(p)=>`&#x1f9ed; يلزمك <b>${p.n}</b> ${p.label} إضافية للوصول إلى <b>${p.required}</b> نقطة المطلوبة لطلبك في Longcours`,
+    lcTier_discovery_label:"اكتشاف",
+    lcTier_immersion_label:"انغماس",
+    lcTier_longcours_label:"لونكور الكامل",
+    lcTier_duration:(p)=>`${p.n} أشهر`,
+    lcTier_badgePopular:"الأكثر طلبًا",
+    lcTier_discovery_regions:"منطقة/مدينة واحدة حسب اختيارك",
+    lcTier_immersion_regions:"منطقتان/مدينتان حسب اختيارك",
+    lcTier_longcours_regions:"مسار مخصص، مناطق متعددة",
+    lcTier_flight:"تذكرة الطيران مشمولة",
+    lcTier_visa:"التأشيرة السياحية مشمولة",
+    lcTier_lodging:"الإقامة مشمولة",
+    lcTier_localTransport:"التنقلات الداخلية مشمولة",
+    lcTier_support:"مرافقة Longcours من البداية للنهاية",
+    lcDest_choosePackage:"اختر باقتك",
+    lcDest_whatsIncludedTitle:"ما هو مشمول",
+    lcDest_gridFlight:"تذكرة الطيران",
+    lcDest_gridVisa:"التأشيرة السياحية",
+    lcDest_gridLodging:"الإقامة",
+    lcDest_gridTransport:"التنقلات الداخلية",
+    lcDest_gridItinerary:"مسار مخصص",
+    lcDest_gridSupport:"مرافقة Longcours",
+    lcDest_minPoints:"الحد الأدنى للنقاط",
+    lcDest_pointsAmount:(p)=>`${p.amount} نقطة`,
+    lcDest_selectPackage:"اختر هذه الباقة",
+    lcDest_requestTitle:"طلب رحلة",
+    lcDest_packageWord:"الباقة",
+    lcDest_durationWord:"المدة",
+    lcDest_pointsRequiredWord:"النقاط المطلوبة",
+    lcDest_formTitle:"تقديم طلب",
+    lcDest_fullNamePlaceholder:"الاسم الكامل",
+    lcDest_phonePlaceholder:"رقم الهاتف",
+    lcDest_emailPlaceholder:"البريد الإلكتروني",
+    lcDest_passportPlaceholder:"جواز السفر (الرقم)",
+    lcDest_messagePlaceholder:"رسالة (اختياري)",
+    lcDest_formNote:"لا يتم خصم أي نقاط في هذه المرحلة — هذا مجرد طلب للتحقق من التوفر.",
+    lcDest_submitBtn:"إرسال الطلب",
+    lcDest_secureInfoTitle:"معلوماتك محمية",
+    lcDest_secureInfoSub:"وتُستخدم فقط لمعالجة طلبك.",
   }
 };
 
@@ -16132,7 +16395,7 @@ function lcRenderJobs(){
       <div class="lc-job-body"><div class="lc-job-meta"><div><small>Salaire indicatif</small><strong>${lcMoney(o)}</strong></div><div><small>Participation</small><strong>🪙 ${Number(o.points_required||0).toLocaleString('fr-FR')} pts</strong></div></div>
       <div class="lc-job-selection">👥 ${Number(o.selected_candidates||0)} candidat(s) sélectionné(s) · ${places} place(s) affichée(s)</div>
       <div class="lc-job-desc">${esc(o.description||'')}</div><div class="lc-job-conditions"><b>Conditions :</b><br>${esc(o.conditions||'Voir les conditions du poste.')}</div>
-      <div class="lc-job-actions"><button class="btn btn-secondary" onclick="lcOpenJobDetails(${o.id})">Voir le poste</button><button class="btn btn-primary" onclick="lcOpenJobReservation(${o.id})" ${places<=0?'disabled':''}>Postuler au poste</button></div><button type="button" class="btn lc-job-interview-btn" onclick="goToJobInterview(${o.id})">🎤 Passer un interview</button></div></article>`;
+      <div class="lc-job-actions"><button class="btn btn-secondary" onclick="lcOpenJobDetails(${o.id})">Voir le poste</button><button class="btn btn-primary" onclick="lcOpenJobReservation(${o.id})" ${places<=0?'disabled':''}>Postuler au poste</button></div><button type="button" class="btn lc-job-interview-btn" onclick="goToJobInterview(${o.id})">📅 Prendre un rendez-vous</button></div></article>`;
   }).join('');
 }
 function lcOpenJobDetails(id){
