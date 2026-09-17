@@ -3175,6 +3175,47 @@ button,input,textarea,select{max-width:100%;}
 </style>
 
 
+<style id="longcours-desktop-showcase">
+/* ===== PRÉSENTATION DESKTOP (>1100px) =====
+   Ne touche à AUCUNE règle mobile existante (celles-ci restent pilotées par
+   les media queries max-width:600px / max-height:600px landscape, qui sont
+   ce qui fait passer l'app en plein écran sur téléphone/PWA installée).
+   Ici on agrandit uniquement la maquette "téléphone" affichée au centre de
+   la page sur grand écran, et on soigne un peu son écrin, sans changer la
+   logique d'affichage ni les écrans eux-mêmes. */
+@media (min-width:1101px){
+  body{
+    padding:48px 24px;
+    background:
+      radial-gradient(circle at 12% 8%, #FFE8B8 0%, transparent 40%),
+      radial-gradient(circle at 88% 18%, rgba(139,92,246,0.10) 0%, transparent 45%),
+      radial-gradient(circle at 90% 88%, #FFD9C2 0%, transparent 50%),
+      radial-gradient(circle at 8% 90%, rgba(30,158,74,0.08) 0%, transparent 45%),
+      var(--cream);
+  }
+  .stage{ gap:26px; }
+  .demo-tag{ font-size:14px; padding:8px 22px; }
+  .phone{
+    width:452px;
+    height:min(92vh,960px);
+    max-height:none;
+    border-radius:56px;
+    padding:16px;
+    box-shadow:
+      0 55px 100px rgba(43,24,16,0.38),
+      0 0 0 2px rgba(0,0,0,0.07) inset,
+      0 0 150px rgba(245,185,66,0.20);
+  }
+  .phone-notch{ width:134px; height:24px; top:16px; }
+  .app{ border-radius:40px; }
+}
+@media (min-width:1440px){
+  .phone{ width:486px; height:min(90vh,1020px); }
+  .phone-notch{ width:142px; height:25px; }
+}
+</style>
+
+
 <style id="real-viewport-height-fix">
 /* CORRECTIF (2026-09-10) : voir le commentaire dans <head> à côté du script
    qui calcule --app-vh. On force ici .stage/.phone (et donc .app, qui est
@@ -3229,7 +3270,7 @@ button,input,textarea,select{max-width:100%;}
       </div>
 
       <!-- LANGUE -->
-      <section class="screen active" id="screen-lang">
+      <section class="screen" id="screen-lang">
         <div class="splash-ball-logo"><img class="js-longcours-icon" alt="Longcours"></div>
         <h1 class="splash-title" data-i18n="langTitle">Choisissez votre langue</h1>
         <p class="splash-sub" data-i18n="langSub">Sélectionnez la langue que vous préférez utiliser sur Longcours.</p>
@@ -3374,7 +3415,7 @@ button,input,textarea,select{max-width:100%;}
       </section>
 
       <!-- HOME -->
-      <section class="screen" id="screen-home">
+      <section class="screen active" id="screen-home">
         <div class="topbar">
           <div class="brand">
             <div class="lang-btn-group" style="display:flex;gap:4px;margin-right:10px;">
@@ -3382,7 +3423,7 @@ button,input,textarea,select{max-width:100%;}
               <button class="lang-mini-btn" id="langMiniEn" onclick="selectLanguage('en')" style="background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;color:inherit;cursor:pointer;opacity:.6;">EN</button>
               <button class="lang-mini-btn" id="langMiniAr" onclick="selectLanguage('ar')" style="background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;color:inherit;cursor:pointer;opacity:.6;">AR</button>
             </div>
-            <div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Longcours</div>
+            <div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_longcours">Longcours</div>
           </div>
           <div class="topbar-actions">
             <div class="wallet-chip" id="homeWalletChip" onclick="navTo('screen-profile')">
@@ -3419,8 +3460,8 @@ button,input,textarea,select{max-width:100%;}
         <div class="lc-promo" onclick="navTo('screen-longcours')">
           <div class="lc-promo-emoji">&#x1f9ed;</div>
           <div>
-            <div class="lc-promo-title">Longcours</div>
-            <div class="lc-promo-sub">Échange tes points contre un séjour de plusieurs mois au Canada</div>
+            <div class="lc-promo-title" data-i18n="lc_longcours">Longcours</div>
+            <div class="lc-promo-sub" data-i18n="lc_echangeTesPointsContreUn">Échange tes points contre un séjour de plusieurs mois au Canada</div>
           </div>
           <div class="lc-promo-chev">&rsaquo;</div>
         </div>
@@ -3460,7 +3501,7 @@ button,input,textarea,select{max-width:100%;}
       <!-- PLAY / PRONOSTICS -->
       <section class="screen" id="screen-play">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Divers</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_divers">Divers</div></div>
           <div class="topbar-actions">
             <div class="bell-wrap">
               <button class="bell-btn" onclick="toggleNotifPanel()">&#x1f514;<span class="bell-dot" id="bellDot2"></span></button>
@@ -3469,8 +3510,8 @@ button,input,textarea,select{max-width:100%;}
           </div>
         </div>
         <div class="play-subtabs">
-          <button class="play-subtab active" id="subtab-pools" onclick="switchPlayTab('pools')">&#x1f6ec; <span>Vol Rouge</span></button>
-          <button class="play-subtab" id="subtab-matches" onclick="switchPlayTab('matches')">&#x26bd; <span>Matchs</span><span class="play-subtab-badge" id="matchesBadge">20</span></button>
+          <button class="play-subtab active" id="subtab-pools" onclick="switchPlayTab('pools')">&#x1f6ec; <span data-i18n="lc_volRouge">Vol Rouge</span></button>
+          <button class="play-subtab" id="subtab-matches" onclick="switchPlayTab('matches')">&#x26bd; <span data-i18n="lc_matchs">Matchs</span><span class="play-subtab-badge" id="matchesBadge">20</span></button>
         </div>
         <div id="playContent" class="section-pad"></div>
         <div id="playMatchesContent" class="section-pad" style="display:none;"></div>
@@ -3482,7 +3523,7 @@ button,input,textarea,select{max-width:100%;}
            déplacé dans Profil -> "Mes résultats" (screen-my-results). -->
       <section class="screen" id="screen-results">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Marketplace</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_marketplace">Marketplace</div></div>
           <div class="marketplace-topbar-actions">
             <button class="marketplace-orders-btn" onclick="openMarketplaceOrders()" aria-label="Mes commandes">
               &#x1f4e6;<span class="marketplace-orders-dot" id="marketplaceOrdersDot" style="display:none;"></span>
@@ -3490,13 +3531,13 @@ button,input,textarea,select{max-width:100%;}
           </div>
         </div>
         <div class="marketplace-trial-hero">
-          <div class="mth-title">&#x2705; Essai 30 jours avant achat</div>
-          <div class="mth-sub">Commandez, testez le produit chez vous pendant 30 jours. S'il vous convient, l'achat est validé automatiquement. Sinon, vous le retournez et vous êtes remboursé. <span class="mth-link" onclick="openMarketplaceCgv()">Comment ça marche →</span></div>
+          <div class="mth-title" data-i18n="lc_essai30JoursAvantAchat">&#x2705; Essai 30 jours avant achat</div>
+          <div class="mth-sub"><span data-i18n="lc_commandezTestezSub">Commandez, testez le produit chez vous pendant 30 jours. S'il vous convient, l'achat est validé automatiquement. Sinon, vous le retournez et vous êtes remboursé.</span> <span class="mth-link" onclick="openMarketplaceCgv()" data-i18n="lc_commentCaMarche2">Comment ça marche →</span></div>
         </div>
         <div class="marketplace-timeline">
-          <div class="step"><div class="day">Jour 0</div><div class="lbl">Commande</div><div class="sub">Débit en garantie, expédié depuis le Canada · livraison 3 à 5 jours, partout dans le monde</div></div>
-          <div class="step"><div class="day">Jours 1–29</div><div class="lbl">Test réel</div><div class="sub">Vous l'utilisez normalement</div></div>
-          <div class="step final"><div class="day">Jour 30</div><div class="lbl">Vous décidez</div><div class="sub">Gardez = achat validé. Retournez = remboursé</div></div>
+          <div class="step"><div class="day" data-i18n="lc_jour0">Jour 0</div><div class="lbl" data-i18n="lc_commande">Commande</div><div class="sub" data-i18n="lc_debitEnGarantieExpedieDepuis">Débit en garantie, expédié depuis le Canada · livraison 3 à 5 jours, partout dans le monde</div></div>
+          <div class="step"><div class="day" data-i18n="lc_jours129">Jours 1–29</div><div class="lbl" data-i18n="lc_testReel">Test réel</div><div class="sub" data-i18n="lc_vousLUtilisezNormalement">Vous l'utilisez normalement</div></div>
+          <div class="step final"><div class="day" data-i18n="lc_jour30">Jour 30</div><div class="lbl" data-i18n="lc_vousDecidez">Vous décidez</div><div class="sub" data-i18n="lc_gardezAchatValideRetournezRembourse">Gardez = achat validé. Retournez = remboursé</div></div>
         </div>
         <div class="marketplace-search-row">
           <input type="text" id="marketplaceSearchInput" placeholder="Rechercher un téléphone, un ordinateur…" oninput="renderMarketplaceProducts()">
@@ -3533,7 +3574,7 @@ button,input,textarea,select{max-width:100%;}
              un profil tourisme. renderProfile() protège déjà ces mises à
              jour DOM avec des if(el), donc rien ne casse.) -->
         <div class="profile-hero">
-          <div class="profile-hero-flag">&#x1f341; Voyage Canada</div>
+          <div class="profile-hero-flag" data-i18n="lc_voyageCanada">&#x1f341; Voyage Canada</div>
           <div class="profile-avatar-ring">
             <div class="profile-avatar-inner" id="profileAvatarInner">&#x1f642;</div>
             <div class="profile-avatar-camera-badge" onclick="document.getElementById('avatarFileInput').click()" aria-label="Changer ma photo de profil">&#x1f4f7;</div>
@@ -3548,7 +3589,7 @@ button,input,textarea,select{max-width:100%;}
                en dessous du hero, désormais imbriqué à l'intérieur pour que
                les deux fassent visuellement un seul et même cadre). -->
           <div class="profile-hero-wallet">
-            <div class="profile-hero-wallet-label">Portefeuille</div>
+            <div class="profile-hero-wallet-label" data-i18n="lc_portefeuille">Portefeuille</div>
             <div class="wallet-primary">
               <div class="wallet-primary-top">
                 <div class="wallet-coin">₮</div>
@@ -3565,7 +3606,7 @@ button,input,textarea,select{max-width:100%;}
                   <span class="wab-ic">&#x1f4b8;</span><span class="wab-lbl" data-i18n="withdraw">Retirer</span>
                 </button>
                 <button class="wallet-action-btn save" onclick="navTo('screen-epargne')">
-                  <span class="wab-ic">&#x1f341;</span><span class="wab-lbl">Épargne</span>
+                  <span class="wab-ic">&#x1f341;</span><span class="wab-lbl" data-i18n="lc_epargne">Épargne</span>
                 </button>
               </div>
               <div class="wallet-primary-note" data-i18n="walletMegaNote">Réseau BEP20 · Retraits traités en quelques minutes</div>
@@ -3574,32 +3615,32 @@ button,input,textarea,select{max-width:100%;}
         </div>
 
         <!-- Ton séjour au Canada -->
-        <div class="section-title" style="margin-top:20px;">Ton séjour au Canada</div>
+        <div class="section-title" style="margin-top:20px;" data-i18n="lc_tonSejourAuCanada">Ton séjour au Canada</div>
         <div class="profile-canada-promo" onclick="navTo('screen-longcours')">
-          <div class="cp-eyebrow">Séjour offert en points</div>
-          <div class="cp-title">Ton prochain séjour au Canada t'attend</div>
-          <div class="cp-sub">Rocheuses, Vieux-Québec, Yukon, Niagara… Échange tes points contre un séjour clé en main.</div>
-          <div class="cp-cta">Découvrir les destinations &rsaquo;</div>
+          <div class="cp-eyebrow" data-i18n="lc_sejourOffertEnPoints">Séjour offert en points</div>
+          <div class="cp-title" data-i18n="lc_tonProchainSejourAuCanada">Ton prochain séjour au Canada t'attend</div>
+          <div class="cp-sub" data-i18n="lc_rocheusesVieuxQuebecYukonNiagara">Rocheuses, Vieux-Québec, Yukon, Niagara… Échange tes points contre un séjour clé en main.</div>
+          <div class="cp-cta" data-i18n="lc_decouvrirLesDestinations">Découvrir les destinations &rsaquo;</div>
         </div>
         <div class="profile-dest-strip">
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f3d4;&#xfe0f;</div><div class="n">Rocheuses &amp; Banff</div></div>
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f3f0;</div><div class="n">Vieux-Québec</div></div>
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f303;</div><div class="n">Île-du-Prince-Édouard</div></div>
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f333;</div><div class="n">Île de Vancouver</div></div>
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f30c;</div><div class="n">Yukon &amp; Grand Nord</div></div>
-          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f4a7;</div><div class="n">Chutes du Niagara</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f3d4;&#xfe0f;</div><div class="n" data-i18n="lc_rocheusesBanff">Rocheuses &amp; Banff</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f3f0;</div><div class="n" data-i18n="lc_vieuxQuebec">Vieux-Québec</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f303;</div><div class="n" data-i18n="lc_ileDuPrinceEdouard">Île-du-Prince-Édouard</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f333;</div><div class="n" data-i18n="lc_ileDeVancouver">Île de Vancouver</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f30c;</div><div class="n" data-i18n="lc_yukonGrandNord">Yukon &amp; Grand Nord</div></div>
+          <div class="profile-dest-card" onclick="navTo('screen-longcours')"><div class="e">&#x1f4a7;</div><div class="n" data-i18n="lc_chutesDuNiagara">Chutes du Niagara</div></div>
         </div>
 
         <!-- Mon espace : Mes résultats (AJUSTÉ 2026-09-02 — Épargne
              déplacée dans la barre Dépôt/Retrait ci-dessus, pour éviter le
              doublon). -->
-        <div class="section-title" style="margin-top:20px;">Mon espace</div>
+        <div class="section-title" style="margin-top:20px;" data-i18n="lc_monEspace">Mon espace</div>
         <div class="section-pad" style="display:flex;flex-direction:column;gap:10px;">
           <button class="deposit-support-btn" onclick="navTo('screen-my-results')">
             <span class="icon">&#x1f4dc;</span>
             <span>
-              Mes résultats
-              <div class="sub">Historique de tes pronostics et de tes gains</div>
+              <span data-i18n="lc_mesResultatsNav">Mes résultats</span>
+              <div class="sub" data-i18n="lc_historiqueDeTesPronosticsEt">Historique de tes pronostics et de tes gains</div>
             </span>
           </button>
           <!-- AJOUT (2026-09-08) : accès Espace Admin — caché par défaut,
@@ -3608,8 +3649,8 @@ button,input,textarea,select{max-width:100%;}
           <button class="deposit-support-btn" id="adminSpaceBtn" style="display:none;" onclick="navTo('screen-admin')">
             <span class="icon">&#x1f6e0;&#xfe0f;</span>
             <span>
-              Espace Admin
-              <div class="sub">Comptes • Marketplace • Support • Appels • Réglages</div>
+              <span data-i18n="lc_espaceAdminNav">Espace Admin</span>
+              <div class="sub" data-i18n="lc_comptesMarketplaceSupportAppelsReglages">Comptes • Marketplace • Support • Appels • Réglages</div>
             </span>
           </button>
         </div>
@@ -3627,63 +3668,63 @@ button,input,textarea,select{max-width:100%;}
       <!-- ADMIN CONSOLE — REFONTE COMPLÈTE 2026-09-09 -->
       <section class="screen" id="screen-admin">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Admin Center</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_adminCenter">Admin Center</div></div>
           <button class="topbar-close" onclick="navTo('screen-profile')" aria-label="Fermer">&times;</button>
         </div>
         <div class="admin-console">
           <div class="admin-hero">
-            <div class="admin-hero-top"><div><div class="admin-kicker">LONGCOURS • CONTROL CENTER</div><h2>Bonjour, Admin 👋</h2><p>Gestion centralisée de la plateforme</p></div><div class="admin-status"><i></i> Sécurisé</div></div>
+            <div class="admin-hero-top"><div><div class="admin-kicker" data-i18n="lc_longcoursControlCenter">LONGCOURS • CONTROL CENTER</div><h2 data-i18n="lc_bonjourAdmin">Bonjour, Admin 👋</h2><p data-i18n="lc_gestionCentraliseeDeLaPlateforme">Gestion centralisée de la plateforme</p></div><div class="admin-status"><i></i> <span data-i18n="lc_securiseBadge">Sécurisé</span></div></div>
           </div>
           <div class="admin-stats">
-            <div class="admin-stat"><div class="ico">👥</div><div class="v" id="adminStatUsers">—</div><div class="l">Utilisateurs</div></div>
-            <div class="admin-stat"><div class="ico">💳</div><div class="v" id="adminStatBalance">—</div><div class="l">Solde total</div></div>
-            <div class="admin-stat"><div class="ico">🛍️</div><div class="v" id="adminStatProducts">—</div><div class="l">Produits</div></div>
-            <div class="admin-stat"><div class="ico">💬</div><div class="v" id="adminStatSupport">—</div><div class="l">Tickets</div></div>
+            <div class="admin-stat"><div class="ico">👥</div><div class="v" id="adminStatUsers">—</div><div class="l" data-i18n="lc_utilisateurs">Utilisateurs</div></div>
+            <div class="admin-stat"><div class="ico">💳</div><div class="v" id="adminStatBalance">—</div><div class="l" data-i18n="lc_soldeTotal">Solde total</div></div>
+            <div class="admin-stat"><div class="ico">🛍️</div><div class="v" id="adminStatProducts">—</div><div class="l" data-i18n="lc_produits">Produits</div></div>
+            <div class="admin-stat"><div class="ico">💬</div><div class="v" id="adminStatSupport">—</div><div class="l" data-i18n="lc_tickets">Tickets</div></div>
           </div>
           <div class="admin-tabs" id="adminTabs">
-            <button class="admin-tab active" onclick="adminTab('overview',this)">📊 Vue d'ensemble</button>
-            <button class="admin-tab" onclick="adminTab('users',this)">👥 Utilisateurs</button>
-            <button class="admin-tab" onclick="adminTab('market',this)">🛍️ Marketplace</button>
-            <button class="admin-tab" onclick="adminTab('support',this)">💬 Support</button>
-            <button class="admin-tab" onclick="adminTab('calls',this)">📞 Appels</button>
-            <button class="admin-tab" onclick="adminTab('settings',this)">⚙️ Réglages</button>
-            <button class="admin-tab" onclick="adminTab('videos',this)">🎬 Vidéos</button>
+            <button class="admin-tab active" onclick="adminTab('overview',this)" data-i18n="lc_vueDEnsemble">📊 Vue d'ensemble</button>
+            <button class="admin-tab" onclick="adminTab('users',this)" data-i18n="lc_utilisateurs2">👥 Utilisateurs</button>
+            <button class="admin-tab" onclick="adminTab('market',this)" data-i18n="lc_marketplace2">🛍️ Marketplace</button>
+            <button class="admin-tab" onclick="adminTab('support',this)" data-i18n="lc_support">💬 Support</button>
+            <button class="admin-tab" onclick="adminTab('calls',this)" data-i18n="lc_appels">📞 Appels</button>
+            <button class="admin-tab" onclick="adminTab('settings',this)" data-i18n="lc_reglages">⚙️ Réglages</button>
+            <button class="admin-tab" onclick="adminTab('videos',this)" data-i18n="lc_videos">🎬 Vidéos</button>
           </div>
 
           <div class="admin-panel active" id="adminPanelOverview">
-            <div class="admin-card"><div class="admin-card-head"><h3>⚡ Actions rapides</h3><small>Accès direct</small></div><div class="admin-grid two">
-              <button class="admin-btn primary" onclick="adminTab('users',document.querySelector('.admin-tab:nth-child(2)'))">Gérer les comptes</button>
-              <button class="admin-btn primary" onclick="adminTab('market',document.querySelector('.admin-tab:nth-child(3)'))">Gérer le Marketplace</button>
-              <button class="admin-btn dark" onclick="adminTab('support',document.querySelector('.admin-tab:nth-child(4)'))">Ouvrir le support</button>
-              <button class="admin-btn dark" onclick="adminTab('calls',document.querySelector('.admin-tab:nth-child(5)'))">Appeler un utilisateur</button>
+            <div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_actionsRapides">⚡ Actions rapides</h3><small data-i18n="lc_accesDirect">Accès direct</small></div><div class="admin-grid two">
+              <button class="admin-btn primary" onclick="adminTab('users',document.querySelector('.admin-tab:nth-child(2)'))" data-i18n="lc_gererLesComptes">Gérer les comptes</button>
+              <button class="admin-btn primary" onclick="adminTab('market',document.querySelector('.admin-tab:nth-child(3)'))" data-i18n="lc_gererLeMarketplace">Gérer le Marketplace</button>
+              <button class="admin-btn dark" onclick="adminTab('support',document.querySelector('.admin-tab:nth-child(4)'))" data-i18n="lc_ouvrirLeSupport">Ouvrir le support</button>
+              <button class="admin-btn dark" onclick="adminTab('calls',document.querySelector('.admin-tab:nth-child(5)'))" data-i18n="lc_appelerUnUtilisateur">Appeler un utilisateur</button>
             </div></div>
-            <div class="admin-card"><div class="admin-card-head"><h3>🛡️ Sécurité & traçabilité</h3></div><div class="admin-note">Les opérations sensibles sont exécutées par des fonctions Supabase protégées par le rôle administrateur. Les ajustements de solde et les suppressions doivent être confirmés. Aucun contrôle caché par utilisateur n'est prévu.</div></div>
+            <div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_securiteTracabilite">🛡️ Sécurité & traçabilité</h3></div><div class="admin-note" data-i18n="lc_lesOperationsSensiblesSontExecutees">Les opérations sensibles sont exécutées par des fonctions Supabase protégées par le rôle administrateur. Les ajustements de solde et les suppressions doivent être confirmés. Aucun contrôle caché par utilisateur n'est prévu.</div></div>
           </div>
 
-          <div class="admin-panel" id="adminPanelUsers"><div class="admin-card"><div class="admin-card-head"><h3>👥 Comptes utilisateurs</h3><small id="adminUserCount">—</small></div><input class="admin-input admin-search" id="adminUserSearch" placeholder="Rechercher nom, email, téléphone…" oninput="adminFilterUsers()"><div class="admin-list" id="adminUsersList"><div class="admin-empty">Chargement…</div></div></div></div>
+          <div class="admin-panel" id="adminPanelUsers"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_comptesUtilisateurs">👥 Comptes utilisateurs</h3><small id="adminUserCount">—</small></div><input class="admin-input admin-search" id="adminUserSearch" placeholder="Rechercher nom, email, téléphone…" oninput="adminFilterUsers()"><div class="admin-list" id="adminUsersList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
-          <div class="admin-panel" id="adminPanelMarket"><div class="admin-card"><div class="admin-card-head"><h3>🛍️ Marketplace</h3><button class="admin-btn primary" onclick="adminOpenProductModal()">＋ Produit</button></div><input class="admin-input admin-search" id="adminProductSearch" placeholder="Rechercher un produit…" oninput="adminFilterProducts()"><div class="admin-list" id="adminProductsList"><div class="admin-empty">Chargement…</div></div></div></div>
+          <div class="admin-panel" id="adminPanelMarket"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_marketplace2">🛍️ Marketplace</h3><button class="admin-btn primary" onclick="adminOpenProductModal()" data-i18n="lc_produit">＋ Produit</button></div><input class="admin-input admin-search" id="adminProductSearch" placeholder="Rechercher un produit…" oninput="adminFilterProducts()"><div class="admin-list" id="adminProductsList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
-          <div class="admin-panel" id="adminPanelSupport"><div class="admin-card"><div class="admin-card-head"><h3>💬 Support client</h3><small>Réponses en tant que support</small></div><input class="admin-input admin-search" id="adminSupportSearch" placeholder="Rechercher un ticket…" oninput="adminFilterSupport()"><div class="admin-list" id="adminSupportList"><div class="admin-empty">Chargement…</div></div></div></div>
+          <div class="admin-panel" id="adminPanelSupport"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_supportClient">💬 Support client</h3><small data-i18n="lc_reponsesEnTantQueSupport">Réponses en tant que support</small></div><input class="admin-input admin-search" id="adminSupportSearch" placeholder="Rechercher un ticket…" oninput="adminFilterSupport()"><div class="admin-list" id="adminSupportList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
-          <div class="admin-panel" id="adminPanelCalls"><div class="admin-card"><div class="admin-card-head"><div><h3>📞 Appels audio & vidéo</h3><small>Appel depuis le compte Admin</small></div><button class="admin-btn primary" type="button" onclick="adminOpenVideoManagerFromCalls()">🎬 Ajouter une vidéo</button></div><div class="admin-note" style="margin-bottom:10px">Pour un appel vidéo, sélectionne une vidéo de ta bibliothèque. Si la bibliothèque est vide, le bouton ci-dessus permet d'en ajouter une immédiatement.</div><input class="admin-input admin-search" id="adminCallSearch" placeholder="Trouver un utilisateur…" oninput="adminFilterCallUsers()"><div class="admin-list" id="adminCallUsersList"><div class="admin-empty">Charge les utilisateurs…</div></div><div class="admin-note" style="margin-top:10px">Les appels utilisent la messagerie et WebRTC existants. L'appel part depuis le contexte administrateur, sans modifier l'identité du compte utilisateur.</div></div></div>
+          <div class="admin-panel" id="adminPanelCalls"><div class="admin-card"><div class="admin-card-head"><div><h3 data-i18n="lc_appelsAudioVideo">📞 Appels audio & vidéo</h3><small data-i18n="lc_appelDepuisLeCompteAdmin">Appel depuis le compte Admin</small></div><button class="admin-btn primary" type="button" onclick="adminOpenVideoManagerFromCalls()" data-i18n="lc_ajouterUneVideo">🎬 Ajouter une vidéo</button></div><div class="admin-note" style="margin-bottom:10px" data-i18n="lc_pourUnAppelVideoSelectionne">Pour un appel vidéo, sélectionne une vidéo de ta bibliothèque. Si la bibliothèque est vide, le bouton ci-dessus permet d'en ajouter une immédiatement.</div><input class="admin-input admin-search" id="adminCallSearch" placeholder="Trouver un utilisateur…" oninput="adminFilterCallUsers()"><div class="admin-list" id="adminCallUsersList"><div class="admin-empty" data-i18n="lc_chargeLesUtilisateurs">Charge les utilisateurs…</div></div><div class="admin-note" style="margin-top:10px" data-i18n="lc_lesAppelsUtilisentLaMessagerie">Les appels utilisent la messagerie et WebRTC existants. L'appel part depuis le contexte administrateur, sans modifier l'identité du compte utilisateur.</div></div></div>
 
-          <div class="admin-panel" id="adminPanelSettings"><div class="admin-card"><div class="admin-card-head"><h3>⚙️ Paramètres économiques</h3><small>Globaux & visibles</small></div><div class="admin-grid two">
-            <div class="admin-field"><div class="admin-label">Activation USDT</div><input class="admin-input" id="setActivation" type="number" step="0.01"></div>
-            <div class="admin-field"><div class="admin-label">Frais retrait USDT</div><input class="admin-input" id="setWithdrawal" type="number" step="0.01"></div>
-            <div class="admin-field"><div class="admin-label">Minimum retrait</div><input class="admin-input" id="setMinWithdrawal" type="number" step="0.01"></div>
-            <div class="admin-field"><div class="admin-label">Marge globale des cotes (%)</div><input class="admin-input" id="setOddsMargin" type="number" step="0.01"></div>
-            <div class="admin-field"><div class="admin-label">Bonus streak / jour</div><input class="admin-input" id="setStreak" type="number" step="0.001"></div>
-            <div class="admin-field"><div class="admin-label">Multiplicateur jour or</div><input class="admin-input" id="setGold" type="number" step="0.01"></div>
-          </div><button class="admin-btn primary" style="width:100%;margin-top:5px" onclick="adminSaveSettings()">Enregistrer les paramètres</button><div class="admin-note" style="margin-top:10px">Les paramètres de gains doivent rester globaux, documentés et identiques pour les utilisateurs. Je n'ajoute pas de mécanisme permettant de truquer un résultat ou de cibler secrètement un joueur.</div></div></div>
+          <div class="admin-panel" id="adminPanelSettings"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_parametresEconomiques">⚙️ Paramètres économiques</h3><small data-i18n="lc_globauxVisibles">Globaux & visibles</small></div><div class="admin-grid two">
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_activationUsdt">Activation USDT</div><input class="admin-input" id="setActivation" type="number" step="0.01"></div>
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_fraisRetraitUsdt">Frais retrait USDT</div><input class="admin-input" id="setWithdrawal" type="number" step="0.01"></div>
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_minimumRetrait">Minimum retrait</div><input class="admin-input" id="setMinWithdrawal" type="number" step="0.01"></div>
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_margeGlobaleDesCotes">Marge globale des cotes (%)</div><input class="admin-input" id="setOddsMargin" type="number" step="0.01"></div>
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_bonusStreakJour">Bonus streak / jour</div><input class="admin-input" id="setStreak" type="number" step="0.001"></div>
+            <div class="admin-field"><div class="admin-label" data-i18n="lc_multiplicateurJourOr">Multiplicateur jour or</div><input class="admin-input" id="setGold" type="number" step="0.01"></div>
+          </div><button class="admin-btn primary" style="width:100%;margin-top:5px" onclick="adminSaveSettings()" data-i18n="lc_enregistrerLesParametres">Enregistrer les paramètres</button><div class="admin-note" style="margin-top:10px" data-i18n="lc_lesParametresDeGainsDoivent">Les paramètres de gains doivent rester globaux, documentés et identiques pour les utilisateurs. Je n'ajoute pas de mécanisme permettant de truquer un résultat ou de cibler secrètement un joueur.</div></div></div>
 
-          <div class="admin-panel" id="adminPanelVideos"><div class="admin-card"><div class="admin-card-head"><h3>🎬 Bibliothèque vidéo</h3><small>Utilisée pendant les appels vidéo admin</small></div><label class="admin-btn primary" style="display:block;text-align:center"><input type="file" id="adminVideoFileInput2" accept="video/*" style="display:none" onchange="adminUploadVideo(this.files[0])">＋ Ajouter une vidéo</label><div id="adminVideoUploadStatus" class="admin-note" style="display:none;margin-top:8px"></div><div class="admin-list" id="adminVideoLibraryList" style="margin-top:10px"></div>
-          <div class="admin-recording-card"><div class="admin-card-head"><h3>⏺ Enregistrements d'appels</h3><small>Réservés à l'administrateur</small></div><div id="adminCallRecordingsList" style="margin-top:8px"></div></div>
+          <div class="admin-panel" id="adminPanelVideos"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_bibliothequeVideo">🎬 Bibliothèque vidéo</h3><small data-i18n="lc_utiliseePendantLesAppelsVideo">Utilisée pendant les appels vidéo admin</small></div><label class="admin-btn primary" style="display:block;text-align:center"><input type="file" id="adminVideoFileInput2" accept="video/*" style="display:none" onchange="adminUploadVideo(this.files[0])"><span data-i18n="lc_ajouterUneVideoStatic">＋ Ajouter une vidéo</span></label><div id="adminVideoUploadStatus" class="admin-note" style="display:none;margin-top:8px"></div><div class="admin-list" id="adminVideoLibraryList" style="margin-top:10px"></div>
+          <div class="admin-recording-card"><div class="admin-card-head"><h3 data-i18n="lc_enregistrementsDAppels">⏺ Enregistrements d'appels</h3><small data-i18n="lc_reservesALAdministrateur">Réservés à l'administrateur</small></div><div id="adminCallRecordingsList" style="margin-top:8px"></div></div>
         </div></div>
         </div>
       </section>
 
-      <div class="admin-modal" id="adminProductModal"><div class="admin-sheet"><div class="admin-card-head"><h3 id="adminProductModalTitle">Ajouter un produit</h3><button class="topbar-close" onclick="adminCloseProductModal()">&times;</button></div><input type="hidden" id="adminProductId"><div class="admin-field"><div class="admin-label">Nom</div><input class="admin-input" id="prodName"></div><div class="admin-grid two"><div class="admin-field"><div class="admin-label">Catégorie</div><input class="admin-input" id="prodCat" placeholder="electronics"></div><div class="admin-field"><div class="admin-label">Libellé catégorie</div><input class="admin-input" id="prodCatLabel" placeholder="Électronique"></div></div><div class="admin-grid two"><div class="admin-field"><div class="admin-label">Prix</div><input class="admin-input" id="prodPrice" type="number" step="0.01"></div><div class="admin-field"><div class="admin-label">Ancien prix</div><input class="admin-input" id="prodOldPrice" type="number" step="0.01"></div></div><div class="admin-field"><div class="admin-label">Marque</div><input class="admin-input" id="prodBrand"></div><div class="admin-field"><div class="admin-label">Image URL</div><input class="admin-input" id="prodImage"></div><div class="admin-field"><div class="admin-label">Description</div><textarea class="admin-input" id="prodDescription" rows="4"></textarea></div><label class="admin-row" style="font-size:11px;font-weight:800;margin-bottom:12px"><input id="prodActive" type="checkbox" checked style="flex:0 0 auto"> Produit visible</label><button class="admin-btn primary" style="width:100%" onclick="adminSaveProduct()">Enregistrer</button></div></div>
+      <div class="admin-modal" id="adminProductModal"><div class="admin-sheet"><div class="admin-card-head"><h3 id="adminProductModalTitle">Ajouter un produit</h3><button class="topbar-close" onclick="adminCloseProductModal()">&times;</button></div><input type="hidden" id="adminProductId"><div class="admin-field"><div class="admin-label" data-i18n="lc_nom">Nom</div><input class="admin-input" id="prodName"></div><div class="admin-grid two"><div class="admin-field"><div class="admin-label" data-i18n="lc_categorie">Catégorie</div><input class="admin-input" id="prodCat" placeholder="electronics"></div><div class="admin-field"><div class="admin-label" data-i18n="lc_libelleCategorie">Libellé catégorie</div><input class="admin-input" id="prodCatLabel" placeholder="Électronique"></div></div><div class="admin-grid two"><div class="admin-field"><div class="admin-label" data-i18n="lc_prix">Prix</div><input class="admin-input" id="prodPrice" type="number" step="0.01"></div><div class="admin-field"><div class="admin-label" data-i18n="lc_ancienPrix">Ancien prix</div><input class="admin-input" id="prodOldPrice" type="number" step="0.01"></div></div><div class="admin-field"><div class="admin-label" data-i18n="lc_marque">Marque</div><input class="admin-input" id="prodBrand"></div><div class="admin-field"><div class="admin-label" data-i18n="lc_imageUrl">Image URL</div><input class="admin-input" id="prodImage"></div><div class="admin-field"><div class="admin-label" data-i18n="lc_description">Description</div><textarea class="admin-input" id="prodDescription" rows="4"></textarea></div><label class="admin-row" style="font-size:11px;font-weight:800;margin-bottom:12px"><input id="prodActive" type="checkbox" checked style="flex:0 0 auto"> <span data-i18n="lc_produitVisibleLabel">Produit visible</span></label><button class="admin-btn primary" style="width:100%" onclick="adminSaveProduct()" data-i18n="lc_enregistrer">Enregistrer</button></div></div>
       <!-- AJOUT (demande admin) : fiche détaillée d'un utilisateur — toute son
            activité (dépôts, retraits, achats, pronostics, gains, Havre,
            candidatures Longcours…) et toutes ses discussions, avec les
@@ -3695,11 +3736,11 @@ button,input,textarea,select{max-width:100%;}
           <button class="admin-tab active" id="adminUdTabActivity" onclick="adminUserDetailTab('activity')">🧾 Activité</button>
           <button class="admin-tab" id="adminUdTabConv" onclick="adminUserDetailTab('discussions')">💬 Discussions</button>
         </div>
-        <div id="adminUserDetailBody"><div class="admin-empty">Chargement…</div></div>
+        <div id="adminUserDetailBody"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div>
       </div></div>
 
-      <div class="admin-modal" id="adminBalanceModal"><div class="admin-sheet"><div class="admin-card-head"><h3>💳 Ajuster le compte</h3><button class="topbar-close" onclick="adminCloseBalanceModal()">&times;</button></div><p id="adminBalanceUserLabel"></p><input type="hidden" id="adminBalanceUserId"><div class="admin-grid two"><div class="admin-field"><div class="admin-label">USDT (+ / -)</div><input class="admin-input" id="adminBalanceUsdt" type="number" step="0.0001"></div><div class="admin-field"><div class="admin-label">Points (+ / -)</div><input class="admin-input" id="adminBalancePoints" type="number" step="1"></div></div><div class="admin-field"><div class="admin-label">Motif</div><input class="admin-input" id="adminBalanceReason" value="Ajustement administrateur"></div><button class="admin-btn primary" style="width:100%" onclick="adminSaveBalance()">Confirmer l'ajustement</button></div></div>
-      <div class="admin-modal" id="adminSupportModal"><div class="admin-sheet"><div class="admin-card-head"><h3>💬 Répondre au client</h3><button class="topbar-close" onclick="adminCloseSupportModal()">&times;</button></div><div id="adminSupportThreadBody" class="admin-list" style="margin-bottom:10px"></div><input type="hidden" id="adminSupportUserId"><textarea class="admin-input" id="adminSupportReply" rows="4" placeholder="Écrire une réponse…"></textarea><button class="admin-btn primary" style="width:100%;margin-top:8px" onclick="adminSendSupportReply()">Répondre comme support</button></div></div>
+      <div class="admin-modal" id="adminBalanceModal"><div class="admin-sheet"><div class="admin-card-head"><h3 data-i18n="lc_ajusterLeCompte">💳 Ajuster le compte</h3><button class="topbar-close" onclick="adminCloseBalanceModal()">&times;</button></div><p id="adminBalanceUserLabel"></p><input type="hidden" id="adminBalanceUserId"><div class="admin-grid two"><div class="admin-field"><div class="admin-label" data-i18n="lc_usdt">USDT (+ / -)</div><input class="admin-input" id="adminBalanceUsdt" type="number" step="0.0001"></div><div class="admin-field"><div class="admin-label" data-i18n="lc_points">Points (+ / -)</div><input class="admin-input" id="adminBalancePoints" type="number" step="1"></div></div><div class="admin-field"><div class="admin-label" data-i18n="lc_motif">Motif</div><input class="admin-input" id="adminBalanceReason" value="Ajustement administrateur"></div><button class="admin-btn primary" style="width:100%" onclick="adminSaveBalance()" data-i18n="lc_confirmerLAjustement">Confirmer l'ajustement</button></div></div>
+      <div class="admin-modal" id="adminSupportModal"><div class="admin-sheet"><div class="admin-card-head"><h3 data-i18n="lc_repondreAuClient">💬 Répondre au client</h3><button class="topbar-close" onclick="adminCloseSupportModal()">&times;</button></div><div id="adminSupportThreadBody" class="admin-list" style="margin-bottom:10px"></div><input type="hidden" id="adminSupportUserId"><textarea class="admin-input" id="adminSupportReply" rows="4" placeholder="Écrire une réponse…"></textarea><button class="admin-btn primary" style="width:100%;margin-top:8px" onclick="adminSendSupportReply()" data-i18n="lc_repondreCommeSupport">Répondre comme support</button></div></div>
       <div class="admin-toast" id="adminToast"></div>
       <!-- ÉPARGNE : bloque des USDT du solde Longcours sur une durée choisie
            (1 à 12 mois). Récompense en points selon la durée : 1000 points
@@ -3708,7 +3749,7 @@ button,input,textarea,select{max-width:100%;}
            Contenu construit dynamiquement par renderEpargne(). -->
       <section class="screen" id="screen-epargne">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Épargne</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_epargne">Épargne</div></div>
           <button class="topbar-close" onclick="navTo('screen-profile')" aria-label="Fermer">&times;</button>
         </div>
         <div class="section-pad" id="epargneContent"></div>
@@ -3720,7 +3761,7 @@ button,input,textarea,select{max-width:100%;}
            de l'app plutôt que la charte graphique de la vitrine d'origine. -->
       <section class="screen" id="screen-longcours">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Longcours</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_longcours">Longcours</div></div>
           <button class="topbar-close" onclick="navTo('screen-home')" aria-label="Fermer">&times;</button>
         </div>
 
@@ -3731,80 +3772,80 @@ button,input,textarea,select{max-width:100%;}
 
         <div id="lcVacancesContent">
         <div class="lc-hero">
-          <div class="lc-eyebrow">&#x1f341; Séjours au Canada</div>
-          <h2>Vos points, en séjours de plusieurs mois au Canada</h2>
-          <p>Convertissez votre solde de points Longcours en un long séjour clé en main : billet d'avion, visa touristique, hébergement, déplacements intérieurs et itinéraire sur mesure. Tout est pris en charge et encadré par l'équipe Longcours, du départ au retour.</p>
+          <div class="lc-eyebrow" data-i18n="lc_sejoursAuCanada">&#x1f341; Séjours au Canada</div>
+          <h2 data-i18n="lc_vosPointsEnSejoursDe">Vos points, en séjours de plusieurs mois au Canada</h2>
+          <p data-i18n="lc_convertissezVotreSoldeDePoints">Convertissez votre solde de points Longcours en un long séjour clé en main : billet d'avion, visa touristique, hébergement, déplacements intérieurs et itinéraire sur mesure. Tout est pris en charge et encadré par l'équipe Longcours, du départ au retour.</p>
         </div>
 
-        <div class="section-title">Comment ça marche</div>
+        <div class="section-title" data-i18n="lc_commentCaMarche">Comment ça marche</div>
         <div class="lc-steps">
           <div class="lc-step">
             <div class="lc-step-num">1</div>
             <div>
-              <div class="lc-step-title">Choisissez une durée</div>
-              <div class="lc-step-sub">1, 2 ou 3 mois — le nombre de points requis dépend de la durée choisie.</div>
+              <div class="lc-step-title" data-i18n="lc_choisissezUneDuree">Choisissez une durée</div>
+              <div class="lc-step-sub" data-i18n="lc_n12Ou3Mois">1, 2 ou 3 mois — le nombre de points requis dépend de la durée choisie.</div>
             </div>
           </div>
           <div class="lc-step">
             <div class="lc-step-num">2</div>
             <div>
-              <div class="lc-step-title">Envoyez votre demande</div>
-              <div class="lc-step-sub">L'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.</div>
+              <div class="lc-step-title" data-i18n="lc_envoyezVotreDemande">Envoyez votre demande</div>
+              <div class="lc-step-sub" data-i18n="lc_lEquipeLongcoursConfirmeLa">L'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.</div>
             </div>
           </div>
           <div class="lc-step">
             <div class="lc-step-num">3</div>
             <div>
-              <div class="lc-step-title">Partez l'esprit tranquille</div>
-              <div class="lc-step-sub">Billet d'avion, visa touristique, hébergement et déplacements intérieurs inclus — tout est pris en charge et encadré, itinéraire envoyé après confirmation.</div>
+              <div class="lc-step-title" data-i18n="lc_partezLEspritTranquille">Partez l'esprit tranquille</div>
+              <div class="lc-step-sub" data-i18n="lc_billetDAvionVisaTouristique">Billet d'avion, visa touristique, hébergement et déplacements intérieurs inclus — tout est pris en charge et encadré, itinéraire envoyé après confirmation.</div>
             </div>
           </div>
         </div>
 
-        <div class="section-title">Forfaits</div>
+        <div class="section-title" data-i18n="lc_forfaits">Forfaits</div>
         <div class="lc-passes">
           <div class="lc-pass">
-            <div class="lc-pass-dest">Découverte</div>
-            <div class="lc-pass-title">1 mois</div>
-            <div class="lc-pass-points">500 000 <span>points</span></div>
+            <div class="lc-pass-dest" data-i18n="lc_decouverte">Découverte</div>
+            <div class="lc-pass-title" data-i18n="lc_n1Mois">1 mois</div>
+            <div class="lc-pass-points">500 000 <span data-i18n="lc_points2">points</span></div>
             <ul class="lc-pass-list">
-              <li>Billet d'avion inclus</li>
-              <li>Visa touristique pris en charge</li>
-              <li>Hébergement inclus</li>
-              <li>1 région au choix</li>
-              <li>Déplacements intérieurs inclus</li>
-              <li>Accompagnement Longcours de bout en bout</li>
+              <li data-i18n="lc_billetDAvionInclus">Billet d'avion inclus</li>
+              <li data-i18n="lc_visaTouristiquePrisEnCharge">Visa touristique pris en charge</li>
+              <li data-i18n="lc_hebergementInclus">Hébergement inclus</li>
+              <li data-i18n="lc_n1RegionAuChoix">1 région au choix</li>
+              <li data-i18n="lc_deplacementsInterieursInclus">Déplacements intérieurs inclus</li>
+              <li data-i18n="lc_accompagnementLongcoursDeBoutEn">Accompagnement Longcours de bout en bout</li>
             </ul>
-            <button class="btn btn-secondary" onclick="lcSelectPass('1 mois — 500 000 points')">Choisir ce forfait</button>
+            <button class="btn btn-secondary" onclick="lcSelectPass('1 mois — 500 000 points')" data-i18n="lc_choisirCeForfait">Choisir ce forfait</button>
           </div>
           <div class="lc-pass featured">
-            <div class="lc-pass-badge">Populaire</div>
-            <div class="lc-pass-dest">Immersion</div>
-            <div class="lc-pass-title">2 mois</div>
-            <div class="lc-pass-points">950 000 <span>points</span></div>
+            <div class="lc-pass-badge" data-i18n="lc_populaire">Populaire</div>
+            <div class="lc-pass-dest" data-i18n="lc_immersion">Immersion</div>
+            <div class="lc-pass-title" data-i18n="lc_n2Mois">2 mois</div>
+            <div class="lc-pass-points">950 000 <span data-i18n="lc_points2">points</span></div>
             <ul class="lc-pass-list">
-              <li>Billet d'avion inclus</li>
-              <li>Visa touristique pris en charge</li>
-              <li>Hébergement inclus</li>
-              <li>2 régions au choix</li>
-              <li>Déplacements intérieurs inclus</li>
-              <li>Accompagnement Longcours de bout en bout</li>
+              <li data-i18n="lc_billetDAvionInclus">Billet d'avion inclus</li>
+              <li data-i18n="lc_visaTouristiquePrisEnCharge">Visa touristique pris en charge</li>
+              <li data-i18n="lc_hebergementInclus">Hébergement inclus</li>
+              <li data-i18n="lc_n2RegionsAuChoix">2 régions au choix</li>
+              <li data-i18n="lc_deplacementsInterieursInclus">Déplacements intérieurs inclus</li>
+              <li data-i18n="lc_accompagnementLongcoursDeBoutEn">Accompagnement Longcours de bout en bout</li>
             </ul>
-            <button class="btn btn-primary" onclick="lcSelectPass('2 mois — 950 000 points')">Choisir ce forfait</button>
+            <button class="btn btn-primary" onclick="lcSelectPass('2 mois — 950 000 points')" data-i18n="lc_choisirCeForfait">Choisir ce forfait</button>
           </div>
           <div class="lc-pass">
-            <div class="lc-pass-dest">Longcours complet</div>
-            <div class="lc-pass-title">3 mois</div>
-            <div class="lc-pass-points">1 350 000 <span>points</span></div>
+            <div class="lc-pass-dest" data-i18n="lc_longcoursComplet">Longcours complet</div>
+            <div class="lc-pass-title" data-i18n="lc_n3Mois">3 mois</div>
+            <div class="lc-pass-points">1 350 000 <span data-i18n="lc_points2">points</span></div>
             <ul class="lc-pass-list">
-              <li>Billet d'avion inclus</li>
-              <li>Visa touristique pris en charge</li>
-              <li>Hébergement inclus</li>
-              <li>Itinéraire sur mesure, régions multiples</li>
-              <li>Déplacements intérieurs inclus</li>
-              <li>Accompagnement Longcours de bout en bout</li>
+              <li data-i18n="lc_billetDAvionInclus">Billet d'avion inclus</li>
+              <li data-i18n="lc_visaTouristiquePrisEnCharge">Visa touristique pris en charge</li>
+              <li data-i18n="lc_hebergementInclus">Hébergement inclus</li>
+              <li data-i18n="lc_itineraireSurMesureRegionsMultiples">Itinéraire sur mesure, régions multiples</li>
+              <li data-i18n="lc_deplacementsInterieursInclus">Déplacements intérieurs inclus</li>
+              <li data-i18n="lc_accompagnementLongcoursDeBoutEn">Accompagnement Longcours de bout en bout</li>
             </ul>
-            <button class="btn btn-secondary" onclick="lcSelectPass('3 mois — 1 350 000 points')">Choisir ce forfait</button>
+            <button class="btn btn-secondary" onclick="lcSelectPass('3 mois — 1 350 000 points')" data-i18n="lc_choisirCeForfait">Choisir ce forfait</button>
           </div>
         </div>
 
@@ -3813,132 +3854,132 @@ button,input,textarea,select{max-width:100%;}
              couverture + points affichés), et ouvrent la même fiche
              destination (forfaits + formulaire + prise en charge) — voir
              lcOpenDestModal / lcShowPackages plus bas. -->
-        <div class="section-title">Destinations</div>
+        <div class="section-title" data-i18n="lc_destinations">Destinations</div>
         <div class="lc-international-intro">
-          &#x1f341; Six régions du Canada, chacune avec son propre forfait. <b>À partir de 500 000 points.</b>
+          &#x1f341; <span data-i18n="lc_sixRegionsIntro">Six régions du Canada, chacune avec son propre forfait.</span> <b data-i18n="lc_aPartirDe500000">À partir de 500 000 points.</b>
         </div>
         <div class="lc-dest-grid">
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('rocheuses')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Moraine%20Lake%2017092005.jpg?width=900" alt="Rocheuses &amp; Banff" loading="lazy" onerror="lcDestCoverFallback(this,'rocheuses')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Alberta</div><div class="lc-dest-name">Rocheuses &amp; Banff</div><div class="lc-dest-sub">Lacs glaciaires, sentiers alpins</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaAlberta">Canada · Alberta</div><div class="lc-dest-name" data-i18n="lc_rocheusesBanff">Rocheuses &amp; Banff</div><div class="lc-dest-sub" data-i18n="lc_lacsGlaciairesSentiersAlpins">Lacs glaciaires, sentiers alpins</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('quebec')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Chateau%20Frontenac%20Quebec%20City.jpg?width=900" alt="Vieux-Québec" loading="lazy" onerror="lcDestCoverFallback(this,'quebec')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Québec</div><div class="lc-dest-name">Vieux-Québec</div><div class="lc-dest-sub">Remparts, fleuve, architecture</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaQuebec">Canada · Québec</div><div class="lc-dest-name" data-i18n="lc_vieuxQuebec">Vieux-Québec</div><div class="lc-dest-sub" data-i18n="lc_rempartsFleuveArchitecture">Remparts, fleuve, architecture</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('ipe')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Prince%20edward%20island%20cavendish%20red%20cliffs.JPG?width=900" alt="Île-du-Prince-Édouard" loading="lazy" onerror="lcDestCoverFallback(this,'ipe')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Île-du-Prince-Édouard</div><div class="lc-dest-name">Île-du-Prince-Édouard</div><div class="lc-dest-sub">Falaises rouges, littoral</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaIleDuPrinceEdouard">Canada · Île-du-Prince-Édouard</div><div class="lc-dest-name" data-i18n="lc_ileDuPrinceEdouard">Île-du-Prince-Édouard</div><div class="lc-dest-sub" data-i18n="lc_falaisesRougesLittoral">Falaises rouges, littoral</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('vancouver')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/A%20typical%20forest%20scene%2C%20Vancouver%20Island.jpg?width=900" alt="Île de Vancouver" loading="lazy" onerror="lcDestCoverFallback(this,'vancouver')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Colombie-Britannique</div><div class="lc-dest-name">Île de Vancouver</div><div class="lc-dest-sub">Forêts anciennes, côte pacifique</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaColombieBritannique">Canada · Colombie-Britannique</div><div class="lc-dest-name" data-i18n="lc_ileDeVancouver">Île de Vancouver</div><div class="lc-dest-sub" data-i18n="lc_foretsAnciennesCotePacifique">Forêts anciennes, côte pacifique</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('yukon')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Aurora%20Borealis%20Alaska.jpg?width=900" alt="Yukon &amp; Grand Nord" loading="lazy" onerror="lcDestCoverFallback(this,'yukon')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Yukon</div><div class="lc-dest-name">Yukon &amp; Grand Nord</div><div class="lc-dest-sub">Aurores boréales, nature sauvage</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaYukon">Canada · Yukon</div><div class="lc-dest-name" data-i18n="lc_yukonGrandNord">Yukon &amp; Grand Nord</div><div class="lc-dest-sub" data-i18n="lc_auroresBorealesNatureSauvage">Aurores boréales, nature sauvage</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('niagara')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Niagara-Falls-Horseshoe-Falls-view.jpg?width=900" alt="Chutes du Niagara" loading="lazy" onerror="lcDestCoverFallback(this,'niagara')">
-            <div class="lc-dest-content"><div class="lc-dest-country">Canada · Ontario</div><div class="lc-dest-name">Chutes du Niagara</div><div class="lc-dest-sub">Escapade classique, facile d'accès</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_canadaOntario">Canada · Ontario</div><div class="lc-dest-name" data-i18n="lc_chutesDuNiagara">Chutes du Niagara</div><div class="lc-dest-sub" data-i18n="lc_escapadeClassiqueFacileDAcces">Escapade classique, facile d'accès</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
         </div>
 
-        <div class="section-title" style="margin-top:20px;">Destinations internationales</div>
+        <div class="section-title" style="margin-top:20px;" data-i18n="lc_destinationsInternationales">Destinations internationales</div>
         <div class="lc-dest-grid">
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('paris')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Paris%20Eiffel%20tower.jpg?width=900" alt="Paris - Tour Eiffel" loading="lazy" onerror=\"lcDestCoverFallback(this,'paris')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">France · Paris</div><div class="lc-dest-name">Tour Eiffel</div><div class="lc-dest-sub">Monuments, Seine et capitale française</div><div class="lc-dest-points">&#x1fa99; 500 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_franceParis">France · Paris</div><div class="lc-dest-name" data-i18n="lc_tourEiffel">Tour Eiffel</div><div class="lc-dest-sub" data-i18n="lc_monumentsSeineEtCapitaleFrancaise">Monuments, Seine et capitale française</div><div class="lc-dest-points" data-i18n="lc_n500000Points">&#x1fa99; 500 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('zermatt')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Matterhorn%20Suisse.jpg?width=900" alt="Suisse - Cervin" loading="lazy" onerror=\"lcDestCoverFallback(this,'zermatt')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">Suisse · Zermatt</div><div class="lc-dest-name">Cervin</div><div class="lc-dest-sub">Alpes, montagne et panorama</div><div class="lc-dest-points">&#x1fa99; 650 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_suisseZermatt">Suisse · Zermatt</div><div class="lc-dest-name" data-i18n="lc_cervin">Cervin</div><div class="lc-dest-sub" data-i18n="lc_alpesMontagneEtPanorama">Alpes, montagne et panorama</div><div class="lc-dest-points" data-i18n="lc_n650000Points">&#x1fa99; 650 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('neuschwanstein')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Neuschwanstein%20Castle%2C%20above%20the%20village%20of%20Hohenschwangau%20in%20Bavaria%2C%20Germany.jpg?width=900" alt="Allemagne - Neuschwanstein" loading="lazy" onerror=\"lcDestCoverFallback(this,'neuschwanstein')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">Allemagne · Bavière</div><div class="lc-dest-name">Neuschwanstein</div><div class="lc-dest-sub">Château et paysages alpins</div><div class="lc-dest-points">&#x1fa99; 750 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_allemagneBaviere">Allemagne · Bavière</div><div class="lc-dest-name" data-i18n="lc_neuschwanstein">Neuschwanstein</div><div class="lc-dest-sub" data-i18n="lc_chateauEtPaysagesAlpins">Château et paysages alpins</div><div class="lc-dest-points" data-i18n="lc_n750000Points">&#x1fa99; 750 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('bruxelles')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Grand%20Place%2C%20Brussels.jpg?width=900" alt="Belgique - Grand-Place de Bruxelles" loading="lazy" onerror=\"lcDestCoverFallback(this,'bruxelles')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">Belgique · Bruxelles</div><div class="lc-dest-name">Grand-Place</div><div class="lc-dest-sub">Architecture et centre historique</div><div class="lc-dest-points">&#x1fa99; 550 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_belgiqueBruxelles">Belgique · Bruxelles</div><div class="lc-dest-name" data-i18n="lc_grandPlace">Grand-Place</div><div class="lc-dest-sub" data-i18n="lc_architectureEtCentreHistorique">Architecture et centre historique</div><div class="lc-dest-points" data-i18n="lc_n550000Points">&#x1fa99; 550 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('londres')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Big-Ben-London.jpg?width=900" alt="Royaume-Uni - Big Ben" loading="lazy" onerror=\"lcDestCoverFallback(this,'londres')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">Royaume-Uni · Londres</div><div class="lc-dest-name">Big Ben</div><div class="lc-dest-sub">Westminster, Tamise et Londres</div><div class="lc-dest-points">&#x1fa99; 700 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_royaumeUniLondres">Royaume-Uni · Londres</div><div class="lc-dest-name" data-i18n="lc_bigBen">Big Ben</div><div class="lc-dest-sub" data-i18n="lc_westminsterTamiseEtLondres">Westminster, Tamise et Londres</div><div class="lc-dest-points" data-i18n="lc_n700000Points">&#x1fa99; 700 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('newyork')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Statue%20of%20Liberty%20New%20York.jpg?width=900" alt="États-Unis - Statue de la Liberté" loading="lazy" onerror=\"lcDestCoverFallback(this,'newyork')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">États-Unis · New York</div><div class="lc-dest-name">Statue de la Liberté</div><div class="lc-dest-sub">Manhattan et grands panoramas</div><div class="lc-dest-points">&#x1fa99; 900 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_etatsUnisNewYork">États-Unis · New York</div><div class="lc-dest-name" data-i18n="lc_statueDeLaLiberte">Statue de la Liberté</div><div class="lc-dest-sub" data-i18n="lc_manhattanEtGrandsPanoramas">Manhattan et grands panoramas</div><div class="lc-dest-points" data-i18n="lc_n900000Points">&#x1fa99; 900 000 points</div></div>
           </div>
 
           <div class="lc-dest-card with-cover" onclick="lcOpenDestModal('sydney')">
             <img class="lc-dest-cover" src="https://commons.wikimedia.org/wiki/Special:FilePath/Sydney%20Opera%20House.jpg?width=900" alt="Australie - Sydney Opera House" loading="lazy" onerror=\"lcDestCoverFallback(this,'sydney')\">
-            <div class="lc-dest-content"><div class="lc-dest-country">Australie · Sydney</div><div class="lc-dest-name">Opera House</div><div class="lc-dest-sub">Port, architecture et côte</div><div class="lc-dest-points">&#x1fa99; 1 200 000 points</div></div>
+            <div class="lc-dest-content"><div class="lc-dest-country" data-i18n="lc_australieSydney">Australie · Sydney</div><div class="lc-dest-name" data-i18n="lc_operaHouse">Opera House</div><div class="lc-dest-sub" data-i18n="lc_portArchitectureEtCote">Port, architecture et côte</div><div class="lc-dest-points" data-i18n="lc_n1200000Points">&#x1fa99; 1 200 000 points</div></div>
           </div>
         </div>
 
-        <div style="margin:10px 20px 0;font-size:9.5px;color:var(--ink-soft);font-weight:700;line-height:1.35;">
+        <div style="margin:10px 20px 0;font-size:9.5px;color:var(--ink-soft);font-weight:700;line-height:1.35;" data-i18n="lc_photosWikimediaCommonsLesFichiers">
           Photos : Wikimedia Commons. Les fichiers sont affichés via Special:FilePath et restent soumis aux conditions de licence indiquées sur leur page source.
         </div>
 
-        <div class="section-title">Questions fréquentes</div>
+        <div class="section-title" data-i18n="lc_questionsFrequentes">Questions fréquentes</div>
         <div id="lcFaqList">
           <div class="lc-faq-item">
-            <button class="lc-faq-q" onclick="lcToggleFaq(this)">Comment sont gagnés les points sur Longcours ?<span class="lc-faq-sign">+</span></button>
-            <div class="lc-faq-a"><p>Par des actions réalisées directement sur la plateforme — aucun transfert externe n'est requis. Le détail des actions et de leur valeur en points est disponible dans ton espace Profil.</p></div>
+            <button class="lc-faq-q" onclick="lcToggleFaq(this)"><span data-i18n="lc_faqQ1">Comment sont gagnés les points sur Longcours ?</span><span class="lc-faq-sign">+</span></button>
+            <div class="lc-faq-a"><p data-i18n="lc_parDesActionsRealiseesDirectement">Par des actions réalisées directement sur la plateforme — aucun transfert externe n'est requis. Le détail des actions et de leur valeur en points est disponible dans ton espace Profil.</p></div>
           </div>
           <div class="lc-faq-item">
-            <button class="lc-faq-q" onclick="lcToggleFaq(this)">Que couvre exactement l'hébergement inclus ?<span class="lc-faq-sign">+</span></button>
-            <div class="lc-faq-a"><p>Un mélange d'hôtels, de gîtes et de chalets selon les régions traversées, sélectionnés pour leur emplacement plutôt que leur standing. Le détail figure dans l'itinéraire envoyé après confirmation.</p></div>
+            <button class="lc-faq-q" onclick="lcToggleFaq(this)"><span data-i18n="lc_faqQ2">Que couvre exactement l'hébergement inclus ?</span><span class="lc-faq-sign">+</span></button>
+            <div class="lc-faq-a"><p data-i18n="lc_unMelangeDHotelsDe">Un mélange d'hôtels, de gîtes et de chalets selon les régions traversées, sélectionnés pour leur emplacement plutôt que leur standing. Le détail figure dans l'itinéraire envoyé après confirmation.</p></div>
           </div>
           <div class="lc-faq-item">
-            <button class="lc-faq-q" onclick="lcToggleFaq(this)">Le billet d'avion et le visa sont-ils inclus ?<span class="lc-faq-sign">+</span></button>
-            <div class="lc-faq-a"><p>Oui — le billet d'avion aller-retour et le visa touristique sont pris en charge dans chaque forfait. L'équipe Longcours encadre l'ensemble des démarches, du dépôt de la demande de visa jusqu'au retour.</p></div>
+            <button class="lc-faq-q" onclick="lcToggleFaq(this)"><span data-i18n="lc_faqQ3">Le billet d'avion et le visa sont-ils inclus ?</span><span class="lc-faq-sign">+</span></button>
+            <div class="lc-faq-a"><p data-i18n="lc_ouiLeBilletDAvion">Oui — le billet d'avion aller-retour et le visa touristique sont pris en charge dans chaque forfait. L'équipe Longcours encadre l'ensemble des démarches, du dépôt de la demande de visa jusqu'au retour.</p></div>
           </div>
           <div class="lc-faq-item">
-            <button class="lc-faq-q" onclick="lcToggleFaq(this)">Puis-je modifier les dates après ma demande ?<span class="lc-faq-sign">+</span></button>
-            <div class="lc-faq-a"><p>Une modification est possible jusqu'à 45 jours avant le départ, sous réserve de disponibilité sur les nouvelles dates.</p></div>
+            <button class="lc-faq-q" onclick="lcToggleFaq(this)"><span data-i18n="lc_faqQ4">Puis-je modifier les dates après ma demande ?</span><span class="lc-faq-sign">+</span></button>
+            <div class="lc-faq-a"><p data-i18n="lc_uneModificationEstPossibleJusqu">Une modification est possible jusqu'à 45 jours avant le départ, sous réserve de disponibilité sur les nouvelles dates.</p></div>
           </div>
         </div>
 
-        <div class="section-title">Demande de séjour</div>
+        <div class="section-title" data-i18n="lc_demandeDeSejour">Demande de séjour</div>
         <div class="card" style="margin:0 20px;">
-          <div class="lc-form-note" style="margin-top:0;">Remplis ce formulaire ; l'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.</div>
+          <div class="lc-form-note" style="margin-top:0;" data-i18n="lc_remplisCeFormulaireLEquipe">Remplis ce formulaire ; l'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.</div>
           <form id="lcRequestForm" onsubmit="return lcSubmitRequest(event)">
-            <div class="field-label">Nom complet</div>
+            <div class="field-label" data-i18n="lc_nomComplet">Nom complet</div>
             <input class="input" id="lc-name" type="text" placeholder="Prénom et nom" required>
 
-            <div class="field-label">Durée souhaitée</div>
+            <div class="field-label" data-i18n="lc_dureeSouhaitee">Durée souhaitée</div>
             <select class="input" id="lc-duration" required>
-              <option value="">Sélectionner</option>
-              <option>1 mois — 500 000 points</option>
-              <option>2 mois — 950 000 points</option>
-              <option>3 mois — 1 350 000 points</option>
+              <option value="" data-i18n="lc_selectionner">Sélectionner</option>
+              <option data-i18n="lc_n1Mois500000Points">1 mois — 500 000 points</option>
+              <option data-i18n="lc_n2Mois950000Points">2 mois — 950 000 points</option>
+              <option data-i18n="lc_n3Mois1350000">3 mois — 1 350 000 points</option>
             </select>
 
             <!-- CORRIGÉ (2026-09-03) : Chutes du Niagara manquait dans cette
                  liste alors qu'elle fait partie des 6 destinations Canada
                  affichées plus haut. -->
-            <div class="field-label">Région privilégiée</div>
+            <div class="field-label" data-i18n="lc_regionPrivilegiee">Région privilégiée</div>
             <select class="input" id="lc-region">
-              <option value="">Peu importe</option>
-              <option>Rocheuses &amp; Banff</option>
-              <option>Vieux-Québec</option>
-              <option>Île-du-Prince-Édouard</option>
-              <option>Île de Vancouver</option>
-              <option>Yukon &amp; Grand Nord</option>
-              <option>Chutes du Niagara</option>
+              <option value="" data-i18n="lc_peuImporte">Peu importe</option>
+              <option data-i18n="lc_rocheusesBanff">Rocheuses &amp; Banff</option>
+              <option data-i18n="lc_vieuxQuebec">Vieux-Québec</option>
+              <option data-i18n="lc_ileDuPrinceEdouard">Île-du-Prince-Édouard</option>
+              <option data-i18n="lc_ileDeVancouver">Île de Vancouver</option>
+              <option data-i18n="lc_yukonGrandNord">Yukon &amp; Grand Nord</option>
+              <option data-i18n="lc_chutesDuNiagara">Chutes du Niagara</option>
             </select>
 
-            <div class="field-label">Date de départ souhaitée</div>
+            <div class="field-label" data-i18n="lc_dateDeDepartSouhaitee">Date de départ souhaitée</div>
             <input class="input" id="lc-dates" type="date">
 
-            <div class="lc-form-note">Aucun point n'est débité à cette étape — il s'agit d'une demande de disponibilité.</div>
+            <div class="lc-form-note" data-i18n="lc_aucunPointNEstDebite">Aucun point n'est débité à cette étape — il s'agit d'une demande de disponibilité.</div>
             <button class="btn btn-primary" type="submit" id="lcSubmitBtn" style="margin-top:14px;">Envoyer la demande</button>
             <div class="lc-confirm" id="lcConfirmMsg">Demande envoyée. Tu recevras une confirmation de disponibilité et le détail exact des points requis dans ton espace Profil.</div>
           </form>
@@ -3947,73 +3988,73 @@ button,input,textarea,select{max-width:100%;}
 
         <section id="lcEmploiContent" class="lc-emploi-content" style="display:none;">
           <div class="lc-pro-hero">
-            <div class="lc-pro-hero-badge">💼 LONGCOURS · PÔLE EMPLOI</div>
-            <h2>Une nouvelle opportunité professionnelle, au-delà des frontières.</h2>
-            <p>Explore les postes disponibles dans nos pays partenaires, compare les conditions et réserve une opportunité qui correspond à ton profil.</p>
-            <div class="lc-pro-hero-pills"><span>🌍 International</span><span>🪙 Points requis</span><span>🤝 Accompagnement</span></div>
+            <div class="lc-pro-hero-badge" data-i18n="lc_longcoursPoleEmploi">💼 LONGCOURS · PÔLE EMPLOI</div>
+            <h2 data-i18n="lc_uneNouvelleOpportuniteProfessionnelleAu">Une nouvelle opportunité professionnelle, au-delà des frontières.</h2>
+            <p data-i18n="lc_exploreLesPostesDisponiblesDans">Explore les postes disponibles dans nos pays partenaires, compare les conditions et réserve une opportunité qui correspond à ton profil.</p>
+            <div class="lc-pro-hero-pills"><span data-i18n="lc_international">🌍 International</span><span data-i18n="lc_pointsRequis">🪙 Points requis</span><span data-i18n="lc_accompagnement">🤝 Accompagnement</span></div>
           </div>
 
           <div class="lc-pro-section-head">
-            <div><span class="lc-pro-kicker">LE PARCOURS</span><h3>Comment fonctionne Pôle Emploi ?</h3></div>
+            <div><span class="lc-pro-kicker" data-i18n="lc_leParcours">LE PARCOURS</span><h3 data-i18n="lc_commentFonctionnePoleEmploi">Comment fonctionne Pôle Emploi ?</h3></div>
           </div>
           <div class="lc-pro-steps">
-            <div class="lc-pro-step"><div class="num">01</div><div><b>Choisis un poste</b><span>Consulte le métier, le pays, le salaire indicatif et les conditions.</span></div></div>
-            <div class="lc-pro-step"><div class="num">02</div><div><b>Postule au poste</b><span>Ouvre le formulaire et envoie ta candidature. Les points requis sont débités uniquement si ton solde est suffisant.</span></div></div>
-            <div class="lc-pro-step"><div class="num">03</div><div><b>Prépare ta participation</b><span>Le nombre de points requis est affiché avant toute finalisation.</span></div></div>
-            <div class="lc-pro-step"><div class="num">04</div><div><b>Accompagnement après sélection</b><span>Les modalités d’accompagnement sont précisées selon le poste et le programme.</span></div></div>
+            <div class="lc-pro-step"><div class="num">01</div><div><b data-i18n="lc_choisisUnPoste">Choisis un poste</b><span data-i18n="lc_consulteLeMetierLePays">Consulte le métier, le pays, le salaire indicatif et les conditions.</span></div></div>
+            <div class="lc-pro-step"><div class="num">02</div><div><b data-i18n="lc_postuleAuPoste">Postule au poste</b><span data-i18n="lc_ouvreLeFormulaireEtEnvoie">Ouvre le formulaire et envoie ta candidature. Les points requis sont débités uniquement si ton solde est suffisant.</span></div></div>
+            <div class="lc-pro-step"><div class="num">03</div><div><b data-i18n="lc_prepareTaParticipation">Prépare ta participation</b><span data-i18n="lc_leNombreDePointsRequis2">Le nombre de points requis est affiché avant toute finalisation.</span></div></div>
+            <div class="lc-pro-step"><div class="num">04</div><div><b data-i18n="lc_accompagnementApresSelection">Accompagnement après sélection</b><span data-i18n="lc_lesModalitesDAccompagnementSont">Les modalités d’accompagnement sont précisées selon le poste et le programme.</span></div></div>
           </div>
 
           <div class="lc-pro-support-card">
-            <div class="icon">🧳</div><div><h3>Prise en charge des candidats retenus</h3><p>Selon l’offre et les conditions du programme, l’accompagnement peut comprendre :</p></div>
+            <div class="icon">🧳</div><div><h3 data-i18n="lc_priseEnChargeDesCandidats">Prise en charge des candidats retenus</h3><p data-i18n="lc_selonLOffreEtLes">Selon l’offre et les conditions du programme, l’accompagnement peut comprendre :</p></div>
             <ul>
-              <li>📄 Vérification et préparation du dossier</li>
-              <li>🧭 Orientation dans les démarches administratives</li>
-              <li>✈️ Coordination du déplacement lorsque prévue par le programme</li>
-              <li>🏠 Orientation vers les solutions d’hébergement à l’arrivée</li>
-              <li>🚕 Orientation pour le transport local et l’installation</li>
-              <li>🤝 Suivi d’intégration et accompagnement après l’arrivée</li>
+              <li data-i18n="lc_verificationEtPreparationDuDossier">📄 Vérification et préparation du dossier</li>
+              <li data-i18n="lc_orientationDansLesDemarchesAdministratives">🧭 Orientation dans les démarches administratives</li>
+              <li data-i18n="lc_coordinationDuDeplacementLorsquePrevue">✈️ Coordination du déplacement lorsque prévue par le programme</li>
+              <li data-i18n="lc_orientationVersLesSolutionsD">🏠 Orientation vers les solutions d’hébergement à l’arrivée</li>
+              <li data-i18n="lc_orientationPourLeTransportLocal">🚕 Orientation pour le transport local et l’installation</li>
+              <li data-i18n="lc_suiviDIntegrationEtAccompagnement">🤝 Suivi d’intégration et accompagnement après l’arrivée</li>
             </ul>
-            <small>Les éléments réellement pris en charge sont ceux indiqués dans l’offre et confirmés lors de l’étude du dossier. Une réservation ne garantit ni emploi, ni visa, ni autorisation de travail.</small>
+            <small data-i18n="lc_lesElementsReellementPrisEn">Les éléments réellement pris en charge sont ceux indiqués dans l’offre et confirmés lors de l’étude du dossier. Une réservation ne garantit ni emploi, ni visa, ni autorisation de travail.</small>
           </div>
 
           <div class="lc-pro-section-head lc-pro-offers-head">
-            <div><span class="lc-pro-kicker">OPPORTUNITÉS</span><h3>Postes actuellement disponibles</h3></div>
-            <span class="lc-pro-live"><i></i> Catalogue en direct</span>
+            <div><span class="lc-pro-kicker" data-i18n="lc_opportunites">OPPORTUNITÉS</span><h3 data-i18n="lc_postesActuellementDisponibles">Postes actuellement disponibles</h3></div>
+            <span class="lc-pro-live"><i></i> <span data-i18n="lc_catalogueEnDirect">Catalogue en direct</span></span>
           </div>
           <div class="lc-job-filters lc-pro-filters">
-            <select id="lcJobCountry" class="input" onchange="lcFilterJobs()"><option value="">🌍 Tous les pays</option></select>
-            <select id="lcJobSector" class="input" onchange="lcFilterJobs()"><option value="">🏢 Tous les secteurs</option></select>
+            <select id="lcJobCountry" class="input" onchange="lcFilterJobs()"><option value="" data-i18n="lc_tousLesPays">🌍 Tous les pays</option></select>
+            <select id="lcJobSector" class="input" onchange="lcFilterJobs()"><option value="" data-i18n="lc_tousLesSecteurs">🏢 Tous les secteurs</option></select>
             <input id="lcJobSearch" class="input" type="search" placeholder="🔎 Métier, ville…" oninput="lcFilterJobs()">
           </div>
-          <div id="lcJobsList" class="lc-jobs-list"><div class="lc-job-loading">Chargement des opportunités…</div></div>
+          <div id="lcJobsList" class="lc-jobs-list"><div class="lc-job-loading" data-i18n="lc_chargementDesOpportunites">Chargement des opportunités…</div></div>
 
           <div class="lc-pro-faq-wrap">
-            <div class="lc-pro-section-head"><div><span class="lc-pro-kicker">BESOIN D’INFORMATIONS ?</span><h3>Questions fréquentes</h3></div></div>
+            <div class="lc-pro-section-head"><div><span class="lc-pro-kicker" data-i18n="lc_besoinDInformations">BESOIN D’INFORMATIONS ?</span><h3 data-i18n="lc_questionsFrequentes">Questions fréquentes</h3></div></div>
             <div class="lc-pro-faq" id="lcJobFaq">
-              <details open><summary>Comment postuler à un poste ?</summary><p>Ouvre une offre, consulte sa fiche puis sélectionne « Postuler au poste ». Tu remplis le formulaire et le formulaire de candidature s’ouvre. Les points requis sont débités lors de la validation si ton solde est suffisant.</p></details>
-              <details><summary>Les points sont-ils débités immédiatement ?</summary><p>Non. La candidature débite les points requis au moment de sa validation. Si le solde est insuffisant, aucun point n’est débité et la candidature n’est pas envoyée.</p></details>
-              <details><summary>Que se passe-t-il après ma réservation ?</summary><p>La demande est examinée selon les critères du poste, les disponibilités et les conditions applicables. Une sélection n’est pas automatique.</p></details>
-              <details><summary>Que comprend l’accompagnement ?</summary><p>Il dépend de l’offre. Lorsqu’il est prévu, il peut inclure la préparation du dossier, l’orientation administrative, la coordination du déplacement, l’orientation à l’arrivée et le suivi d’intégration.</p></details>
-              <details><summary>Les salaires sont-ils garantis ?</summary><p>Non. Les montants affichés sont indicatifs et peuvent varier selon l’employeur, l’expérience, la ville, le contrat et la réglementation locale.</p></details>
-              <details><summary>Faut-il un visa ou une autorisation de travail ?</summary><p>Selon le pays et le poste, une autorisation de travail, un visa ou d’autres formalités peuvent être nécessaires. Elles sont soumises aux règles des autorités compétentes.</p></details>
-              <details><summary>Puis-je candidater si je n’ai pas encore les points requis ?</summary><p>Tu peux consulter les offres et préparer ton dossier, mais tu dois disposer du nombre de points affiché sur l’offre pour valider ta candidature.</p></details>
+              <details open><summary data-i18n="lc_commentPostulerAUnPoste">Comment postuler à un poste ?</summary><p data-i18n="lc_ouvreUneOffreConsulteSa">Ouvre une offre, consulte sa fiche puis sélectionne « Postuler au poste ». Tu remplis le formulaire et le formulaire de candidature s’ouvre. Les points requis sont débités lors de la validation si ton solde est suffisant.</p></details>
+              <details><summary data-i18n="lc_lesPointsSontIlsDebites">Les points sont-ils débités immédiatement ?</summary><p data-i18n="lc_nonLaCandidatureDebiteLes">Non. La candidature débite les points requis au moment de sa validation. Si le solde est insuffisant, aucun point n’est débité et la candidature n’est pas envoyée.</p></details>
+              <details><summary data-i18n="lc_queSePasseTIl">Que se passe-t-il après ma réservation ?</summary><p data-i18n="lc_laDemandeEstExamineeSelon">La demande est examinée selon les critères du poste, les disponibilités et les conditions applicables. Une sélection n’est pas automatique.</p></details>
+              <details><summary data-i18n="lc_queComprendLAccompagnement">Que comprend l’accompagnement ?</summary><p data-i18n="lc_ilDependDeLOffre">Il dépend de l’offre. Lorsqu’il est prévu, il peut inclure la préparation du dossier, l’orientation administrative, la coordination du déplacement, l’orientation à l’arrivée et le suivi d’intégration.</p></details>
+              <details><summary data-i18n="lc_lesSalairesSontIlsGarantis">Les salaires sont-ils garantis ?</summary><p data-i18n="lc_nonLesMontantsAffichesSont">Non. Les montants affichés sont indicatifs et peuvent varier selon l’employeur, l’expérience, la ville, le contrat et la réglementation locale.</p></details>
+              <details><summary data-i18n="lc_fautIlUnVisaOu">Faut-il un visa ou une autorisation de travail ?</summary><p data-i18n="lc_selonLePaysEtLe">Selon le pays et le poste, une autorisation de travail, un visa ou d’autres formalités peuvent être nécessaires. Elles sont soumises aux règles des autorités compétentes.</p></details>
+              <details><summary data-i18n="lc_puisJeCandidaterSiJe">Puis-je candidater si je n’ai pas encore les points requis ?</summary><p data-i18n="lc_tuPeuxConsulterLesOffres">Tu peux consulter les offres et préparer ton dossier, mais tu dois disposer du nombre de points affiché sur l’offre pour valider ta candidature.</p></details>
             </div>
           </div>
 
           <div class="lc-pro-terms">
-            <div class="lc-pro-terms-title">📑 Conditions générales — Pôle Emploi</div>
+            <div class="lc-pro-terms-title" data-i18n="lc_conditionsGeneralesPoleEmploi">📑 Conditions générales — Pôle Emploi</div>
             <ol>
-              <li>La réservation d’un poste est une demande de candidature et ne constitue pas une promesse d’embauche.</li>
-              <li>Chaque candidature est soumise à l’étude du profil, aux critères du poste, aux disponibilités et aux règles du pays concerné.</li>
-              <li>Les salaires affichés sont indicatifs et ne constituent pas une garantie de rémunération.</li>
-              <li>Les démarches de visa, permis ou autorisation de travail restent soumises aux autorités compétentes et aux exigences de l’employeur.</li>
-              <li>Les prises en charge sont limitées aux éléments expressément prévus dans l’offre et confirmés au candidat retenu.</li>
-              <li>Le nombre de points requis est affiché avant la finalisation de la participation. Aucun débit ne doit être interprété comme une garantie de sélection.</li>
-              <li>Les informations d’une offre peuvent évoluer lorsque les disponibilités, les besoins de l’employeur ou les conditions du programme changent.</li>
-              <li>Le candidat doit fournir des informations exactes et des documents authentiques et respecter les lois du pays d’accueil.</li>
+              <li data-i18n="lc_laReservationDUnPoste">La réservation d’un poste est une demande de candidature et ne constitue pas une promesse d’embauche.</li>
+              <li data-i18n="lc_chaqueCandidatureEstSoumiseA">Chaque candidature est soumise à l’étude du profil, aux critères du poste, aux disponibilités et aux règles du pays concerné.</li>
+              <li data-i18n="lc_lesSalairesAffichesSontIndicatifs">Les salaires affichés sont indicatifs et ne constituent pas une garantie de rémunération.</li>
+              <li data-i18n="lc_lesDemarchesDeVisaPermis">Les démarches de visa, permis ou autorisation de travail restent soumises aux autorités compétentes et aux exigences de l’employeur.</li>
+              <li data-i18n="lc_lesPrisesEnChargeSont">Les prises en charge sont limitées aux éléments expressément prévus dans l’offre et confirmés au candidat retenu.</li>
+              <li data-i18n="lc_leNombreDePointsRequis">Le nombre de points requis est affiché avant la finalisation de la participation. Aucun débit ne doit être interprété comme une garantie de sélection.</li>
+              <li data-i18n="lc_lesInformationsDUneOffre">Les informations d’une offre peuvent évoluer lorsque les disponibilités, les besoins de l’employeur ou les conditions du programme changent.</li>
+              <li data-i18n="lc_leCandidatDoitFournirDes">Le candidat doit fournir des informations exactes et des documents authentiques et respecter les lois du pays d’accueil.</li>
             </ol>
           </div>
-          <div class="lc-job-note lc-pro-final-note">ℹ️ Les offres, disponibilités, salaires indicatifs et conditions peuvent évoluer. Consulte toujours la fiche du poste au moment de ta candidature.</div>
+          <div class="lc-job-note lc-pro-final-note" data-i18n="lc_lesOffresDisponibilitesSalairesIndicatifs">ℹ️ Les offres, disponibilités, salaires indicatifs et conditions peuvent évoluer. Consulte toujours la fiche du poste au moment de ta candidature.</div>
         </section>
 </section>
 
@@ -4031,7 +4072,7 @@ button,input,textarea,select{max-width:100%;}
       <div class="lc-count-modal" id="lcCountModal">
         <div class="withdraw-sheet-head">
           <button class="btn-ghost" style="padding:0;font-size:22px;" onclick="lcCloseCountModal()" aria-label="Retour">&#8592;</button>
-          <h2>Demande envoyée</h2>
+          <h2 data-i18n="lc_demandeEnvoyee">Demande envoyée</h2>
           <button class="btn-ghost" style="padding:0;font-size:22px;" onclick="lcCloseCountModal()" aria-label="Fermer">&times;</button>
         </div>
         <div class="lc-count-body" id="lcCountBody"></div>
@@ -4076,7 +4117,7 @@ button,input,textarea,select{max-width:100%;}
            l'overlay #dmChatOverlay, hors de ce conteneur de screens. -->
       <section class="screen" id="screen-messages">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Messages</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name" data-i18n="lc_messages">Messages</div></div>
           <div></div>
         </div>
         <div class="dm-screen">
@@ -4092,10 +4133,10 @@ button,input,textarea,select{max-width:100%;}
 
     <nav class="bottom-nav" id="bottomNav">
       <div class="nav-item active" data-screen="screen-home" onclick="navTo('screen-home')"><div class="ic">&#x1f3e0;</div><span data-i18n="nav_home">Accueil</span></div>
-      <div class="nav-item" data-screen="screen-messages" onclick="navTo('screen-messages')"><div class="ic">&#x1f4ac;<span class="messages-nav-dot" id="messagesNavDot"></span></div><span>Messages</span></div>
+      <div class="nav-item" data-screen="screen-messages" onclick="navTo('screen-messages')"><div class="ic">&#x1f4ac;<span class="messages-nav-dot" id="messagesNavDot"></span></div><span data-i18n="lc_messages">Messages</span></div>
       <div class="nav-item" data-screen="screen-play" onclick="navTo('screen-play')"><div class="ic">&#x1f3af;</div><span data-i18n="nav_play">Divers</span></div>
-      <div class="nav-item" data-screen="screen-results" onclick="navTo('screen-results')"><div class="ic">&#x1f6cd;&#xfe0f;</div><span>Marketplace</span></div>
-      <div class="nav-item" data-screen="screen-longcours" onclick="navTo('screen-longcours')"><div class="ic">&#x1f9ed;</div><span>Longcours</span></div>
+      <div class="nav-item" data-screen="screen-results" onclick="navTo('screen-results')"><div class="ic">&#x1f6cd;&#xfe0f;</div><span data-i18n="lc_marketplace">Marketplace</span></div>
+      <div class="nav-item" data-screen="screen-longcours" onclick="navTo('screen-longcours')"><div class="ic">&#x1f9ed;</div><span data-i18n="lc_longcours">Longcours</span></div>
       <div class="nav-item" data-screen="screen-profile" onclick="navTo('screen-profile')"><div class="ic">&#x1f464;</div><span data-i18n="nav_profile">Profil</span></div>
     </nav>
 
@@ -4107,7 +4148,7 @@ button,input,textarea,select{max-width:100%;}
        connecté en direct à l'admin. Rafraîchi par polling ~4s. -->
   <div class="support-chat-overlay" id="supportChatOverlay">
     <div class="support-chat-header">
-      <h3>&#x1f4ac; Support Longcours</h3>
+      <h3 data-i18n="lc_supportLongcours">&#x1f4ac; Support Longcours</h3>
       <button class="support-chat-close" onclick="closeSupportChat()">&times;</button>
     </div>
     <div class="support-chat-messages" id="supportChatMessages"></div>
@@ -4192,27 +4233,27 @@ button,input,textarea,select{max-width:100%;}
       <div class="dm-call-grid">
         <div class="dm-call-item">
           <button class="dm-call-btn speaker" id="dmSpeakerBtn" onclick="dmToggleSpeaker()" aria-label="Haut-parleur">&#x1f50a;</button>
-          <span class="dm-call-item-label">Haut-parleur</span>
+          <span class="dm-call-item-label" data-i18n="lc_hautParleur">Haut-parleur</span>
         </div>
         <div class="dm-call-item" id="dmCamItem">
           <button class="dm-call-btn cam" id="dmCamBtn" onclick="dmToggleCam()" aria-label="Caméra">&#x1f4f9;</button>
-          <span class="dm-call-item-label">Vidéo</span>
+          <span class="dm-call-item-label" data-i18n="lc_video">Vidéo</span>
         </div>
         <div class="dm-call-item">
           <button class="dm-call-btn mute" id="dmMuteBtn" onclick="dmToggleMute()" aria-label="Micro">&#x1f3a4;</button>
-          <span class="dm-call-item-label">Muet</span>
+          <span class="dm-call-item-label" data-i18n="lc_muet">Muet</span>
         </div>
         <div class="dm-call-item">
           <button class="dm-call-btn more" id="dmMoreBtn" onclick="dmOpenCallMoreMenu()" aria-label="Plus">&#x22ef;</button>
-          <span class="dm-call-item-label">Plus</span>
+          <span class="dm-call-item-label" data-i18n="lc_plus">Plus</span>
         </div>
         <div class="dm-call-item">
           <button class="dm-call-btn share" id="dmShareBtn" onclick="dmShareCall()" aria-label="Partager">&#x1f4e4;</button>
-          <span class="dm-call-item-label">Partager</span>
+          <span class="dm-call-item-label" data-i18n="lc_partager">Partager</span>
         </div>
         <div class="dm-call-item">
           <button class="dm-call-btn end" id="dmEndBtn" onclick="dmEndCall()" aria-label="Raccrocher">&#x1f4f4;</button>
-          <span class="dm-call-item-label">Terminer</span>
+          <span class="dm-call-item-label" data-i18n="lc_terminer">Terminer</span>
         </div>
       </div>
     </div>
@@ -4221,7 +4262,7 @@ button,input,textarea,select{max-width:100%;}
   <!-- MARKETPLACE : fiche produit -->
   <div class="marketplace-detail-overlay" id="marketplaceDetailOverlay">
     <div class="marketplace-detail-header">
-      <h3>Fiche produit</h3>
+      <h3 data-i18n="lc_ficheProduit">Fiche produit</h3>
       <button class="marketplace-detail-close" onclick="closeMarketplaceDetail()">&times;</button>
     </div>
     <div class="marketplace-detail-body" id="marketplaceDetailBody"></div>
@@ -4230,7 +4271,7 @@ button,input,textarea,select{max-width:100%;}
   <!-- MARKETPLACE : mes commandes -->
   <div class="marketplace-orders-overlay" id="marketplaceOrdersOverlay">
     <div class="marketplace-detail-header">
-      <h3>&#x1f4e6; Mes commandes</h3>
+      <h3 data-i18n="lc_mesCommandes">&#x1f4e6; Mes commandes</h3>
       <button class="marketplace-detail-close" onclick="closeMarketplaceOrders()">&times;</button>
     </div>
     <div class="marketplace-orders-list" id="marketplaceOrdersList"></div>
@@ -4249,27 +4290,27 @@ button,input,textarea,select{max-width:100%;}
   <!-- MARKETPLACE : conditions du programme d'essai 30 jours -->
   <div class="marketplace-cgv-overlay" id="marketplaceCgvOverlay">
     <div class="marketplace-detail-header">
-      <h3>Le modèle d'essai 30 jours</h3>
+      <h3 data-i18n="lc_leModeleDEssai30">Le modèle d'essai 30 jours</h3>
       <button class="marketplace-detail-close" onclick="closeMarketplaceCgv()">&times;</button>
     </div>
     <div class="marketplace-cgv-body">
-      <p class="lead">Sur le Marketplace Longcours, vous ne payez pas « à l'aveugle » : vous testez le produit chez vous pendant 30 jours avant que l'achat soit définitif.</p>
-      <h4>1. Principe général</h4>
-      <p>Lorsque vous commandez un produit, votre solde (ou vos points) est débité du prix affiché au moment de la commande, à titre de <strong>dépôt de garantie</strong>. Le produit est expédié depuis le Canada et livré sous <strong>3 à 5 jours</strong>, quelle que soit la destination. Vous disposez ensuite de <strong>30 jours calendaires à partir de la date de réception</strong> pour le tester dans des conditions d'usage normal.</p>
-      <h4>2. À la fin des 30 jours</h4>
+      <p class="lead" data-i18n="lc_surLeMarketplaceLongcoursVous">Sur le Marketplace Longcours, vous ne payez pas « à l'aveugle » : vous testez le produit chez vous pendant 30 jours avant que l'achat soit définitif.</p>
+      <h4 data-i18n="lc_n1PrincipeGeneral">1. Principe général</h4>
+      <p><span data-i18n="lc_trialParaPart1">Lorsque vous commandez un produit, votre solde (ou vos points) est débité du prix affiché au moment de la commande, à titre de</span> <strong data-i18n="lc_depotDeGarantie">dépôt de garantie</strong><span data-i18n="lc_trialParaPart2">. Le produit est expédié depuis le Canada et livré sous</span> <strong data-i18n="lc_n3A5Jours">3 à 5 jours</strong><span data-i18n="lc_trialParaPart3">, quelle que soit la destination. Vous disposez ensuite de</span> <strong data-i18n="lc_n30JoursCalendairesAPartir">30 jours calendaires à partir de la date de réception</strong> <span data-i18n="lc_trialParaPart4">pour le tester dans des conditions d'usage normal.</span></p>
+      <h4 data-i18n="lc_n2ALaFinDes">2. À la fin des 30 jours</h4>
       <ul>
-        <li><strong>Vous ne faites rien :</strong> l'achat est automatiquement validé à J+30. Le dépôt devient le paiement définitif, aucune somme supplémentaire n'est prélevée.</li>
-        <li><strong>Vous gardez le produit :</strong> vous pouvez confirmer l'achat à tout moment depuis « Mes commandes » pour clôturer l'essai avant J+30.</li>
-        <li><strong>Vous retournez le produit :</strong> vous lancez une demande de retour depuis « Mes commandes » avant la fin des 30 jours.</li>
+        <li><strong data-i18n="lc_vousNeFaitesRien">Vous ne faites rien :</strong> <span data-i18n="lc_liDoNothingText">l'achat est automatiquement validé à J+30. Le dépôt devient le paiement définitif, aucune somme supplémentaire n'est prélevée.</span></li>
+        <li><strong data-i18n="lc_vousGardezLeProduit">Vous gardez le produit :</strong> <span data-i18n="lc_liKeepText">vous pouvez confirmer l'achat à tout moment depuis « Mes commandes » pour clôturer l'essai avant J+30.</span></li>
+        <li><strong data-i18n="lc_vousRetournezLeProduit">Vous retournez le produit :</strong> <span data-i18n="lc_liReturnText">vous lancez une demande de retour depuis « Mes commandes » avant la fin des 30 jours.</span></li>
       </ul>
-      <h4>3. Remboursement</h4>
-      <p>Après réception et vérification du produit retourné, le remboursement intégral du dépôt est crédité sur votre solde sous 5 à 10 jours ouvrés.</p>
-      <h4>4. État du produit retourné</h4>
-      <p>Le produit doit être retourné complet (accessoires, câbles, notice, emballage d'origine dans la mesure du possible). Les traces d'un usage normal de test sont acceptées.</p>
-      <h4>5. Limites d'usage</h4>
-      <p>Le programme d'essai est réservé à un usage personnel raisonnable. Un même compte ne peut avoir plus de 3 essais actifs simultanément.</p>
-      <h4>6. Contact</h4>
-      <p>Pour toute question sur un essai en cours, le support est joignable depuis le portefeuille (bouton « Support »).</p>
+      <h4 data-i18n="lc_n3Remboursement">3. Remboursement</h4>
+      <p data-i18n="lc_apresReceptionEtVerificationDu">Après réception et vérification du produit retourné, le remboursement intégral du dépôt est crédité sur votre solde sous 5 à 10 jours ouvrés.</p>
+      <h4 data-i18n="lc_n4EtatDuProduitRetourne">4. État du produit retourné</h4>
+      <p data-i18n="lc_leProduitDoitEtreRetourne">Le produit doit être retourné complet (accessoires, câbles, notice, emballage d'origine dans la mesure du possible). Les traces d'un usage normal de test sont acceptées.</p>
+      <h4 data-i18n="lc_n5LimitesDUsage">5. Limites d'usage</h4>
+      <p data-i18n="lc_leProgrammeDEssaiEst">Le programme d'essai est réservé à un usage personnel raisonnable. Un même compte ne peut avoir plus de 3 essais actifs simultanément.</p>
+      <h4 data-i18n="lc_n6Contact">6. Contact</h4>
+      <p data-i18n="lc_pourTouteQuestionSurUn">Pour toute question sur un essai en cours, le support est joignable depuis le portefeuille (bouton « Support »).</p>
     </div>
   </div>
 </div>
@@ -10806,6 +10847,16 @@ function buildCroixDuJourHtml(){
 function renderHomeWalletChip(){
   const el = document.getElementById('homeWalletChipAmt');
   if(!el) return;
+  // AJOUT : le portefeuille est une fonctionnalité liée au compte, au même
+  // titre que Profil et Messagerie (voir navTo('screen-profile') /
+  // navTo('screen-messages')) — un invité (pas de sbUser) ne doit donc pas
+  // voir un solde réel ici, même à 0. On affiche un état "fermé" neutre au
+  // lieu du solde, et on ouvre le flux de connexion au clic (déjà géré par
+  // requireAuth via navTo('screen-profile') sur le conteneur du chip).
+  if(!sbUser){
+    el.textContent = '— USDT';
+    return;
+  }
   el.textContent = `${state.wallet.usdtBalance.toFixed(2)} USDT`;
   syncVolRougeBalance();
 }
@@ -13252,7 +13303,297 @@ const translations = {
     pvpShareBtn:"Partager",
     pvpShareWhatsappBtn:"WhatsApp",
     pvpLinkCopiedToast:"Lien du défi copié !",
-    pvpShareMessage:(p)=>`Rejoins mon défi sur Longcours et tente de remporter la cagnotte 🏆 ${p.url}`
+    pvpShareMessage:(p)=>`Rejoins mon défi sur Longcours et tente de remporter la cagnotte 🏆 ${p.url}`,
+    lc_commandezTestezSub:"Commandez, testez le produit chez vous pendant 30 jours. S'il vous convient, l'achat est validé automatiquement. Sinon, vous le retournez et vous êtes remboursé.",
+    lc_mesResultatsNav:"Mes résultats",
+    lc_espaceAdminNav:"Espace Admin",
+    lc_securiseBadge:"Sécurisé",
+    lc_ajouterUneVideoStatic:"＋ Ajouter une vidéo",
+    lc_produitVisibleLabel:"Produit visible",
+    lc_sixRegionsIntro:"Six régions du Canada, chacune avec son propre forfait.",
+    lc_faqQ1:"Comment sont gagnés les points sur Longcours ?",
+    lc_faqQ2:"Que couvre exactement l'hébergement inclus ?",
+    lc_faqQ3:"Le billet d'avion et le visa sont-ils inclus ?",
+    lc_faqQ4:"Puis-je modifier les dates après ma demande ?",
+    lc_catalogueEnDirect:"Catalogue en direct",
+    lc_trialParaPart1:"Lorsque vous commandez un produit, votre solde (ou vos points) est débité du prix affiché au moment de la commande, à titre de",
+    lc_trialParaPart2:". Le produit est expédié depuis le Canada et livré sous",
+    lc_trialParaPart3:", quelle que soit la destination. Vous disposez ensuite de",
+    lc_trialParaPart4:"pour le tester dans des conditions d'usage normal.",
+    lc_liDoNothingText:"l'achat est automatiquement validé à J+30. Le dépôt devient le paiement définitif, aucune somme supplémentaire n'est prélevée.",
+    lc_liKeepText:"vous pouvez confirmer l'achat à tout moment depuis « Mes commandes » pour clôturer l'essai avant J+30.",
+    lc_liReturnText:"vous lancez une demande de retour depuis « Mes commandes » avant la fin des 30 jours.",
+    lc_n1Mois:"1 mois",
+    lc_n1Mois500000Points:"1 mois — 500 000 points",
+    lc_n1RegionAuChoix:"1 région au choix",
+    lc_n12Ou3Mois:"1, 2 ou 3 mois — le nombre de points requis dépend de la durée choisie.",
+    lc_n1PrincipeGeneral:"1. Principe général",
+    lc_n2Mois:"2 mois",
+    lc_n2Mois950000Points:"2 mois — 950 000 points",
+    lc_n2RegionsAuChoix:"2 régions au choix",
+    lc_n2ALaFinDes:"2. À la fin des 30 jours",
+    lc_n3Mois:"3 mois",
+    lc_n3Mois1350000:"3 mois — 1 350 000 points",
+    lc_n3A5Jours:"3 à 5 jours",
+    lc_n3Remboursement:"3. Remboursement",
+    lc_n30JoursCalendairesAPartir:"30 jours calendaires à partir de la date de réception",
+    lc_n4EtatDuProduitRetourne:"4. État du produit retourné",
+    lc_n5LimitesDUsage:"5. Limites d'usage",
+    lc_n6Contact:"6. Contact",
+    lc_accompagnementLongcoursDeBoutEn:"Accompagnement Longcours de bout en bout",
+    lc_accompagnementApresSelection:"Accompagnement après sélection",
+    lc_accesDirect:"Accès direct",
+    lc_activationUsdt:"Activation USDT",
+    lc_adminCenter:"Admin Center",
+    lc_allemagneBaviere:"Allemagne · Bavière",
+    lc_alpesMontagneEtPanorama:"Alpes, montagne et panorama",
+    lc_ancienPrix:"Ancien prix",
+    lc_appelDepuisLeCompteAdmin:"Appel depuis le compte Admin",
+    lc_appelerUnUtilisateur:"Appeler un utilisateur",
+    lc_apresReceptionEtVerificationDu:"Après réception et vérification du produit retourné, le remboursement intégral du dépôt est crédité sur votre solde sous 5 à 10 jours ouvrés.",
+    lc_architectureEtCentreHistorique:"Architecture et centre historique",
+    lc_aucunPointNEstDebite:"Aucun point n'est débité à cette étape — il s'agit d'une demande de disponibilité.",
+    lc_auroresBorealesNatureSauvage:"Aurores boréales, nature sauvage",
+    lc_australieSydney:"Australie · Sydney",
+    lc_besoinDInformations:"BESOIN D’INFORMATIONS ?",
+    lc_belgiqueBruxelles:"Belgique · Bruxelles",
+    lc_bigBen:"Big Ben",
+    lc_billetDAvionInclus:"Billet d'avion inclus",
+    lc_billetDAvionVisaTouristique:"Billet d'avion, visa touristique, hébergement et déplacements intérieurs inclus — tout est pris en charge et encadré, itinéraire envoyé après confirmation.",
+    lc_bonjourAdmin:"Bonjour, Admin 👋",
+    lc_bonusStreakJour:"Bonus streak / jour",
+    lc_canadaAlberta:"Canada · Alberta",
+    lc_canadaColombieBritannique:"Canada · Colombie-Britannique",
+    lc_canadaOntario:"Canada · Ontario",
+    lc_canadaQuebec:"Canada · Québec",
+    lc_canadaYukon:"Canada · Yukon",
+    lc_canadaIleDuPrinceEdouard:"Canada · Île-du-Prince-Édouard",
+    lc_categorie:"Catégorie",
+    lc_cervin:"Cervin",
+    lc_chaqueCandidatureEstSoumiseA:"Chaque candidature est soumise à l’étude du profil, aux critères du poste, aux disponibilités et aux règles du pays concerné.",
+    lc_chargeLesUtilisateurs:"Charge les utilisateurs…",
+    lc_chargementDesOpportunites:"Chargement des opportunités…",
+    lc_chargement:"Chargement…",
+    lc_choisirCeForfait:"Choisir ce forfait",
+    lc_choisisUnPoste:"Choisis un poste",
+    lc_choisissezUneDuree:"Choisissez une durée",
+    lc_chutesDuNiagara:"Chutes du Niagara",
+    lc_chateauEtPaysagesAlpins:"Château et paysages alpins",
+    lc_commande:"Commande",
+    lc_commentFonctionnePoleEmploi:"Comment fonctionne Pôle Emploi ?",
+    lc_commentPostulerAUnPoste:"Comment postuler à un poste ?",
+    lc_commentCaMarche:"Comment ça marche",
+    lc_commentCaMarche2:"Comment ça marche →",
+    lc_comptesMarketplaceSupportAppelsReglages:"Comptes • Marketplace • Support • Appels • Réglages",
+    lc_confirmerLAjustement:"Confirmer l'ajustement",
+    lc_consulteLeMetierLePays:"Consulte le métier, le pays, le salaire indicatif et les conditions.",
+    lc_convertissezVotreSoldeDePoints:"Convertissez votre solde de points Longcours en un long séjour clé en main : billet d'avion, visa touristique, hébergement, déplacements intérieurs et itinéraire sur mesure. Tout est pris en charge et encadré par l'équipe Longcours, du départ au retour.",
+    lc_dateDeDepartSouhaitee:"Date de départ souhaitée",
+    lc_demandeDeSejour:"Demande de séjour",
+    lc_demandeEnvoyee:"Demande envoyée",
+    lc_description:"Description",
+    lc_destinations:"Destinations",
+    lc_destinationsInternationales:"Destinations internationales",
+    lc_divers:"Divers",
+    lc_dureeSouhaitee:"Durée souhaitée",
+    lc_debitEnGarantieExpedieDepuis:"Débit en garantie, expédié depuis le Canada · livraison 3 à 5 jours, partout dans le monde",
+    lc_decouverte:"Découverte",
+    lc_decouvrirLesDestinations:"Découvrir les destinations ›",
+    lc_deplacementsInterieursInclus:"Déplacements intérieurs inclus",
+    lc_enregistrer:"Enregistrer",
+    lc_enregistrerLesParametres:"Enregistrer les paramètres",
+    lc_envoyezVotreDemande:"Envoyez votre demande",
+    lc_escapadeClassiqueFacileDAcces:"Escapade classique, facile d'accès",
+    lc_exploreLesPostesDisponiblesDans:"Explore les postes disponibles dans nos pays partenaires, compare les conditions et réserve une opportunité qui correspond à ton profil.",
+    lc_falaisesRougesLittoral:"Falaises rouges, littoral",
+    lc_fautIlUnVisaOu:"Faut-il un visa ou une autorisation de travail ?",
+    lc_ficheProduit:"Fiche produit",
+    lc_forfaits:"Forfaits",
+    lc_foretsAnciennesCotePacifique:"Forêts anciennes, côte pacifique",
+    lc_fraisRetraitUsdt:"Frais retrait USDT",
+    lc_franceParis:"France · Paris",
+    lc_gardezAchatValideRetournezRembourse:"Gardez = achat validé. Retournez = remboursé",
+    lc_gestionCentraliseeDeLaPlateforme:"Gestion centralisée de la plateforme",
+    lc_globauxVisibles:"Globaux & visibles",
+    lc_grandPlace:"Grand-Place",
+    lc_gererLeMarketplace:"Gérer le Marketplace",
+    lc_gererLesComptes:"Gérer les comptes",
+    lc_hautParleur:"Haut-parleur",
+    lc_historiqueDeTesPronosticsEt:"Historique de tes pronostics et de tes gains",
+    lc_hebergementInclus:"Hébergement inclus",
+    lc_ilDependDeLOffre:"Il dépend de l’offre. Lorsqu’il est prévu, il peut inclure la préparation du dossier, l’orientation administrative, la coordination du déplacement, l’orientation à l’arrivée et le suivi d’intégration.",
+    lc_imageUrl:"Image URL",
+    lc_immersion:"Immersion",
+    lc_itineraireSurMesureRegionsMultiples:"Itinéraire sur mesure, régions multiples",
+    lc_jour0:"Jour 0",
+    lc_jour30:"Jour 30",
+    lc_jours129:"Jours 1–29",
+    lc_lEquipeLongcoursConfirmeLa:"L'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.",
+    lc_leParcours:"LE PARCOURS",
+    lc_longcoursControlCenter:"LONGCOURS • CONTROL CENTER",
+    lc_laDemandeEstExamineeSelon:"La demande est examinée selon les critères du poste, les disponibilités et les conditions applicables. Une sélection n’est pas automatique.",
+    lc_laReservationDUnPoste:"La réservation d’un poste est une demande de candidature et ne constitue pas une promesse d’embauche.",
+    lc_lacsGlaciairesSentiersAlpins:"Lacs glaciaires, sentiers alpins",
+    lc_leCandidatDoitFournirDes:"Le candidat doit fournir des informations exactes et des documents authentiques et respecter les lois du pays d’accueil.",
+    lc_leModeleDEssai30:"Le modèle d'essai 30 jours",
+    lc_leNombreDePointsRequis:"Le nombre de points requis est affiché avant la finalisation de la participation. Aucun débit ne doit être interprété comme une garantie de sélection.",
+    lc_leNombreDePointsRequis2:"Le nombre de points requis est affiché avant toute finalisation.",
+    lc_leProduitDoitEtreRetourne:"Le produit doit être retourné complet (accessoires, câbles, notice, emballage d'origine dans la mesure du possible). Les traces d'un usage normal de test sont acceptées.",
+    lc_leProgrammeDEssaiEst:"Le programme d'essai est réservé à un usage personnel raisonnable. Un même compte ne peut avoir plus de 3 essais actifs simultanément.",
+    lc_lesAppelsUtilisentLaMessagerie:"Les appels utilisent la messagerie et WebRTC existants. L'appel part depuis le contexte administrateur, sans modifier l'identité du compte utilisateur.",
+    lc_lesDemarchesDeVisaPermis:"Les démarches de visa, permis ou autorisation de travail restent soumises aux autorités compétentes et aux exigences de l’employeur.",
+    lc_lesInformationsDUneOffre:"Les informations d’une offre peuvent évoluer lorsque les disponibilités, les besoins de l’employeur ou les conditions du programme changent.",
+    lc_lesModalitesDAccompagnementSont:"Les modalités d’accompagnement sont précisées selon le poste et le programme.",
+    lc_lesOperationsSensiblesSontExecutees:"Les opérations sensibles sont exécutées par des fonctions Supabase protégées par le rôle administrateur. Les ajustements de solde et les suppressions doivent être confirmés. Aucun contrôle caché par utilisateur n'est prévu.",
+    lc_lesParametresDeGainsDoivent:"Les paramètres de gains doivent rester globaux, documentés et identiques pour les utilisateurs. Je n'ajoute pas de mécanisme permettant de truquer un résultat ou de cibler secrètement un joueur.",
+    lc_lesPointsSontIlsDebites:"Les points sont-ils débités immédiatement ?",
+    lc_lesPrisesEnChargeSont:"Les prises en charge sont limitées aux éléments expressément prévus dans l’offre et confirmés au candidat retenu.",
+    lc_lesSalairesAffichesSontIndicatifs:"Les salaires affichés sont indicatifs et ne constituent pas une garantie de rémunération.",
+    lc_lesSalairesSontIlsGarantis:"Les salaires sont-ils garantis ?",
+    lc_lesElementsReellementPrisEn:"Les éléments réellement pris en charge sont ceux indiqués dans l’offre et confirmés lors de l’étude du dossier. Une réservation ne garantit ni emploi, ni visa, ni autorisation de travail.",
+    lc_libelleCategorie:"Libellé catégorie",
+    lc_longcours:"Longcours",
+    lc_longcoursComplet:"Longcours complet",
+    lc_manhattanEtGrandsPanoramas:"Manhattan et grands panoramas",
+    lc_margeGlobaleDesCotes:"Marge globale des cotes (%)",
+    lc_marketplace:"Marketplace",
+    lc_marque:"Marque",
+    lc_matchs:"Matchs",
+    lc_messages:"Messages",
+    lc_minimumRetrait:"Minimum retrait",
+    lc_monEspace:"Mon espace",
+    lc_monumentsSeineEtCapitaleFrancaise:"Monuments, Seine et capitale française",
+    lc_motif:"Motif",
+    lc_muet:"Muet",
+    lc_multiplicateurJourOr:"Multiplicateur jour or",
+    lc_neuschwanstein:"Neuschwanstein",
+    lc_nom:"Nom",
+    lc_nomComplet:"Nom complet",
+    lc_nonLaCandidatureDebiteLes:"Non. La candidature débite les points requis au moment de sa validation. Si le solde est insuffisant, aucun point n’est débité et la candidature n’est pas envoyée.",
+    lc_nonLesMontantsAffichesSont:"Non. Les montants affichés sont indicatifs et peuvent varier selon l’employeur, l’expérience, la ville, le contrat et la réglementation locale.",
+    lc_opportunites:"OPPORTUNITÉS",
+    lc_operaHouse:"Opera House",
+    lc_ouiLeBilletDAvion:"Oui — le billet d'avion aller-retour et le visa touristique sont pris en charge dans chaque forfait. L'équipe Longcours encadre l'ensemble des démarches, du dépôt de la demande de visa jusqu'au retour.",
+    lc_ouvreLeFormulaireEtEnvoie:"Ouvre le formulaire et envoie ta candidature. Les points requis sont débités uniquement si ton solde est suffisant.",
+    lc_ouvreUneOffreConsulteSa:"Ouvre une offre, consulte sa fiche puis sélectionne « Postuler au poste ». Tu remplis le formulaire et le formulaire de candidature s’ouvre. Les points requis sont débités lors de la validation si ton solde est suffisant.",
+    lc_ouvrirLeSupport:"Ouvrir le support",
+    lc_parDesActionsRealiseesDirectement:"Par des actions réalisées directement sur la plateforme — aucun transfert externe n'est requis. Le détail des actions et de leur valeur en points est disponible dans ton espace Profil.",
+    lc_partager:"Partager",
+    lc_partezLEspritTranquille:"Partez l'esprit tranquille",
+    lc_peuImporte:"Peu importe",
+    lc_photosWikimediaCommonsLesFichiers:"Photos : Wikimedia Commons. Les fichiers sont affichés via Special:FilePath et restent soumis aux conditions de licence indiquées sur leur page source.",
+    lc_plus:"Plus",
+    lc_points:"Points (+ / -)",
+    lc_populaire:"Populaire",
+    lc_portefeuille:"Portefeuille",
+    lc_portArchitectureEtCote:"Port, architecture et côte",
+    lc_postesActuellementDisponibles:"Postes actuellement disponibles",
+    lc_postuleAuPoste:"Postule au poste",
+    lc_pourTouteQuestionSurUn:"Pour toute question sur un essai en cours, le support est joignable depuis le portefeuille (bouton « Support »).",
+    lc_pourUnAppelVideoSelectionne:"Pour un appel vidéo, sélectionne une vidéo de ta bibliothèque. Si la bibliothèque est vide, le bouton ci-dessus permet d'en ajouter une immédiatement.",
+    lc_priseEnChargeDesCandidats:"Prise en charge des candidats retenus",
+    lc_prix:"Prix",
+    lc_produits:"Produits",
+    lc_prepareTaParticipation:"Prépare ta participation",
+    lc_puisJeCandidaterSiJe:"Puis-je candidater si je n’ai pas encore les points requis ?",
+    lc_queComprendLAccompagnement:"Que comprend l’accompagnement ?",
+    lc_queSePasseTIl:"Que se passe-t-il après ma réservation ?",
+    lc_questionsFrequentes:"Questions fréquentes",
+    lc_rempartsFleuveArchitecture:"Remparts, fleuve, architecture",
+    lc_remplisCeFormulaireLEquipe:"Remplis ce formulaire ; l'équipe Longcours confirme la disponibilité et le nombre exact de points requis sous 2 jours ouvrables.",
+    lc_rocheusesBanff:"Rocheuses & Banff",
+    lc_rocheusesVieuxQuebecYukonNiagara:"Rocheuses, Vieux-Québec, Yukon, Niagara… Échange tes points contre un séjour clé en main.",
+    lc_royaumeUniLondres:"Royaume-Uni · Londres",
+    lc_regionPrivilegiee:"Région privilégiée",
+    lc_repondreCommeSupport:"Répondre comme support",
+    lc_reponsesEnTantQueSupport:"Réponses en tant que support",
+    lc_reservesALAdministrateur:"Réservés à l'administrateur",
+    lc_selonLePaysEtLe:"Selon le pays et le poste, une autorisation de travail, un visa ou d’autres formalités peuvent être nécessaires. Elles sont soumises aux règles des autorités compétentes.",
+    lc_selonLOffreEtLes:"Selon l’offre et les conditions du programme, l’accompagnement peut comprendre :",
+    lc_soldeTotal:"Solde total",
+    lc_statueDeLaLiberte:"Statue de la Liberté",
+    lc_suisseZermatt:"Suisse · Zermatt",
+    lc_surLeMarketplaceLongcoursVous:"Sur le Marketplace Longcours, vous ne payez pas « à l'aveugle » : vous testez le produit chez vous pendant 30 jours avant que l'achat soit définitif.",
+    lc_sejourOffertEnPoints:"Séjour offert en points",
+    lc_selectionner:"Sélectionner",
+    lc_terminer:"Terminer",
+    lc_testReel:"Test réel",
+    lc_tickets:"Tickets",
+    lc_tonProchainSejourAuCanada:"Ton prochain séjour au Canada t'attend",
+    lc_tonSejourAuCanada:"Ton séjour au Canada",
+    lc_tourEiffel:"Tour Eiffel",
+    lc_tuPeuxConsulterLesOffres:"Tu peux consulter les offres et préparer ton dossier, mais tu dois disposer du nombre de points affiché sur l’offre pour valider ta candidature.",
+    lc_usdt:"USDT (+ / -)",
+    lc_unMelangeDHotelsDe:"Un mélange d'hôtels, de gîtes et de chalets selon les régions traversées, sélectionnés pour leur emplacement plutôt que leur standing. Le détail figure dans l'itinéraire envoyé après confirmation.",
+    lc_uneModificationEstPossibleJusqu:"Une modification est possible jusqu'à 45 jours avant le départ, sous réserve de disponibilité sur les nouvelles dates.",
+    lc_uneNouvelleOpportuniteProfessionnelleAu:"Une nouvelle opportunité professionnelle, au-delà des frontières.",
+    lc_utilisateurs:"Utilisateurs",
+    lc_utiliseePendantLesAppelsVideo:"Utilisée pendant les appels vidéo admin",
+    lc_video:"Vidéo",
+    lc_vieuxQuebec:"Vieux-Québec",
+    lc_visaTouristiquePrisEnCharge:"Visa touristique pris en charge",
+    lc_volRouge:"Vol Rouge",
+    lc_vosPointsEnSejoursDe:"Vos points, en séjours de plusieurs mois au Canada",
+    lc_vousDecidez:"Vous décidez",
+    lc_vousGardezLeProduit:"Vous gardez le produit :",
+    lc_vousLUtilisezNormalement:"Vous l'utilisez normalement",
+    lc_vousNeFaitesRien:"Vous ne faites rien :",
+    lc_vousRetournezLeProduit:"Vous retournez le produit :",
+    lc_westminsterTamiseEtLondres:"Westminster, Tamise et Londres",
+    lc_yukonGrandNord:"Yukon & Grand Nord",
+    lc_depotDeGarantie:"dépôt de garantie",
+    lc_points2:"points",
+    lc_aPartirDe500000:"À partir de 500 000 points.",
+    lc_echangeTesPointsContreUn:"Échange tes points contre un séjour de plusieurs mois au Canada",
+    lc_epargne:"Épargne",
+    lc_etatsUnisNewYork:"États-Unis · New York",
+    lc_ileDeVancouver:"Île de Vancouver",
+    lc_ileDuPrinceEdouard:"Île-du-Prince-Édouard",
+    lc_lesOffresDisponibilitesSalairesIndicatifs:"ℹ️ Les offres, disponibilités, salaires indicatifs et conditions peuvent évoluer. Consulte toujours la fiche du poste au moment de ta candidature.",
+    lc_enregistrementsDAppels:"⏺ Enregistrements d'appels",
+    lc_parametresEconomiques:"⚙️ Paramètres économiques",
+    lc_reglages:"⚙️ Réglages",
+    lc_actionsRapides:"⚡ Actions rapides",
+    lc_essai30JoursAvantAchat:"✅ Essai 30 jours avant achat",
+    lc_coordinationDuDeplacementLorsquePrevue:"✈️ Coordination du déplacement lorsque prévue par le programme",
+    lc_produit:"＋ Produit",
+    lc_international:"🌍 International",
+    lc_tousLesPays:"🌍 Tous les pays",
+    lc_sejoursAuCanada:"🍁 Séjours au Canada",
+    lc_voyageCanada:"🍁 Voyage Canada",
+    lc_ajouterUneVideo:"🎬 Ajouter une vidéo",
+    lc_bibliothequeVideo:"🎬 Bibliothèque vidéo",
+    lc_videos:"🎬 Vidéos",
+    lc_orientationVersLesSolutionsD:"🏠 Orientation vers les solutions d’hébergement à l’arrivée",
+    lc_tousLesSecteurs:"🏢 Tous les secteurs",
+    lc_comptesUtilisateurs:"👥 Comptes utilisateurs",
+    lc_utilisateurs2:"👥 Utilisateurs",
+    lc_repondreAuClient:"💬 Répondre au client",
+    lc_support:"💬 Support",
+    lc_supportLongcours:"💬 Support Longcours",
+    lc_supportClient:"💬 Support client",
+    lc_ajusterLeCompte:"💳 Ajuster le compte",
+    lc_longcoursPoleEmploi:"💼 LONGCOURS · PÔLE EMPLOI",
+    lc_verificationEtPreparationDuDossier:"📄 Vérification et préparation du dossier",
+    lc_vueDEnsemble:"📊 Vue d'ensemble",
+    lc_conditionsGeneralesPoleEmploi:"📑 Conditions générales — Pôle Emploi",
+    lc_appels:"📞 Appels",
+    lc_appelsAudioVideo:"📞 Appels audio & vidéo",
+    lc_mesCommandes:"📦 Mes commandes",
+    lc_orientationPourLeTransportLocal:"🚕 Orientation pour le transport local et l’installation",
+    lc_marketplace2:"🛍️ Marketplace",
+    lc_securiteTracabilite:"🛡️ Sécurité & traçabilité",
+    lc_accompagnement:"🤝 Accompagnement",
+    lc_suiviDIntegrationEtAccompagnement:"🤝 Suivi d’intégration et accompagnement après l’arrivée",
+    lc_orientationDansLesDemarchesAdministratives:"🧭 Orientation dans les démarches administratives",
+    lc_n1200000Points:"🪙 1 200 000 points",
+    lc_n500000Points:"🪙 500 000 points",
+    lc_n550000Points:"🪙 550 000 points",
+    lc_n650000Points:"🪙 650 000 points",
+    lc_n700000Points:"🪙 700 000 points",
+    lc_n750000Points:"🪙 750 000 points",
+    lc_n900000Points:"🪙 900 000 points",
+    lc_pointsRequis:"🪙 Points requis",
   },
   en: {
     langTitle:"Choose your language", langSub:"Select the language you prefer to use on Longcours.",
@@ -13498,7 +13839,297 @@ const translations = {
     pvpShareBtn:"Share",
     pvpShareWhatsappBtn:"WhatsApp",
     pvpLinkCopiedToast:"Challenge link copied!",
-    pvpShareMessage:(p)=>`Join my challenge on Longcours and try to win the pot 🏆 ${p.url}`
+    pvpShareMessage:(p)=>`Join my challenge on Longcours and try to win the pot 🏆 ${p.url}`,
+    lc_commandezTestezSub:"Order, try the product at home for 30 days. If you're happy with it, the purchase is validated automatically. Otherwise, return it and get a refund.",
+    lc_mesResultatsNav:"My results",
+    lc_espaceAdminNav:"Admin space",
+    lc_securiseBadge:"Secure",
+    lc_ajouterUneVideoStatic:"＋ Add a video",
+    lc_produitVisibleLabel:"Product visible",
+    lc_sixRegionsIntro:"Six regions of Canada, each with its own package.",
+    lc_faqQ1:"How are points earned on Longcours?",
+    lc_faqQ2:"What exactly does the included accommodation cover?",
+    lc_faqQ3:"Are the flight ticket and visa included?",
+    lc_faqQ4:"Can I change the dates after my request?",
+    lc_catalogueEnDirect:"Live catalog",
+    lc_trialParaPart1:"When you order a product, your balance (or your points) is charged the price shown at the time of the order, as a",
+    lc_trialParaPart2:". The product is shipped from Canada and delivered within",
+    lc_trialParaPart3:", regardless of destination. You then have",
+    lc_trialParaPart4:"to try it under normal conditions of use.",
+    lc_liDoNothingText:"the purchase is automatically validated on day 30. The deposit becomes the final payment; no additional amount is charged.",
+    lc_liKeepText:"you can confirm the purchase at any time from \"My orders\" to end the trial before day 30.",
+    lc_liReturnText:"you start a return request from \"My orders\" before the end of the 30 days.",
+    lc_n1Mois:"1 month",
+    lc_n1Mois500000Points:"1 month — 500,000 points",
+    lc_n1RegionAuChoix:"1 region of your choice",
+    lc_n12Ou3Mois:"1, 2 or 3 months — the number of points required depends on the duration chosen.",
+    lc_n1PrincipeGeneral:"1. General principle",
+    lc_n2Mois:"2 months",
+    lc_n2Mois950000Points:"2 months — 950,000 points",
+    lc_n2RegionsAuChoix:"2 regions of your choice",
+    lc_n2ALaFinDes:"2. At the end of the 30 days",
+    lc_n3Mois:"3 months",
+    lc_n3Mois1350000:"3 months — 1,350,000 points",
+    lc_n3A5Jours:"3 to 5 days",
+    lc_n3Remboursement:"3. Refund",
+    lc_n30JoursCalendairesAPartir:"30 calendar days from the date of receipt",
+    lc_n4EtatDuProduitRetourne:"4. Condition of the returned product",
+    lc_n5LimitesDUsage:"5. Usage limits",
+    lc_n6Contact:"6. Contact",
+    lc_accompagnementLongcoursDeBoutEn:"End-to-end Longcours support",
+    lc_accompagnementApresSelection:"Support after selection",
+    lc_accesDirect:"Direct access",
+    lc_activationUsdt:"USDT activation",
+    lc_adminCenter:"Admin Center",
+    lc_allemagneBaviere:"Germany · Bavaria",
+    lc_alpesMontagneEtPanorama:"Alps, mountains and panorama",
+    lc_ancienPrix:"Old price",
+    lc_appelDepuisLeCompteAdmin:"Call from the Admin account",
+    lc_appelerUnUtilisateur:"Call a user",
+    lc_apresReceptionEtVerificationDu:"After the returned product is received and checked, the full deposit is refunded to your balance within 5 to 10 business days.",
+    lc_architectureEtCentreHistorique:"Architecture and historic center",
+    lc_aucunPointNEstDebite:"No points are deducted at this stage — this is only an availability request.",
+    lc_auroresBorealesNatureSauvage:"Northern lights, wild nature",
+    lc_australieSydney:"Australia · Sydney",
+    lc_besoinDInformations:"NEED INFORMATION?",
+    lc_belgiqueBruxelles:"Belgium · Brussels",
+    lc_bigBen:"Big Ben",
+    lc_billetDAvionInclus:"Flight ticket included",
+    lc_billetDAvionVisaTouristique:"Flight ticket, tourist visa, accommodation and local transport included — everything is covered and supervised, itinerary sent after confirmation.",
+    lc_bonjourAdmin:"Hello, Admin 👋",
+    lc_bonusStreakJour:"Streak bonus / day",
+    lc_canadaAlberta:"Canada · Alberta",
+    lc_canadaColombieBritannique:"Canada · British Columbia",
+    lc_canadaOntario:"Canada · Ontario",
+    lc_canadaQuebec:"Canada · Quebec",
+    lc_canadaYukon:"Canada · Yukon",
+    lc_canadaIleDuPrinceEdouard:"Canada · Prince Edward Island",
+    lc_categorie:"Category",
+    lc_cervin:"Matterhorn",
+    lc_chaqueCandidatureEstSoumiseA:"Each application is subject to a review of the profile, the job criteria, availability, and the rules of the country concerned.",
+    lc_chargeLesUtilisateurs:"Loading users…",
+    lc_chargementDesOpportunites:"Loading opportunities…",
+    lc_chargement:"Loading…",
+    lc_choisirCeForfait:"Choose this package",
+    lc_choisisUnPoste:"Choose a position",
+    lc_choisissezUneDuree:"Choose a duration",
+    lc_chutesDuNiagara:"Niagara Falls",
+    lc_chateauEtPaysagesAlpins:"Castle and alpine landscapes",
+    lc_commande:"Order",
+    lc_commentFonctionnePoleEmploi:"How does Job Center work?",
+    lc_commentPostulerAUnPoste:"How do I apply for a position?",
+    lc_commentCaMarche:"How it works",
+    lc_commentCaMarche2:"How it works →",
+    lc_comptesMarketplaceSupportAppelsReglages:"Accounts • Marketplace • Support • Calls • Settings",
+    lc_confirmerLAjustement:"Confirm adjustment",
+    lc_consulteLeMetierLePays:"Check the role, country, indicative salary and conditions.",
+    lc_convertissezVotreSoldeDePoints:"Convert your Longcours points balance into a full turnkey long stay: flight ticket, tourist visa, accommodation, local transport and a tailor-made itinerary. Everything is covered and supervised by the Longcours team, from departure to return.",
+    lc_dateDeDepartSouhaitee:"Preferred departure date",
+    lc_demandeDeSejour:"Stay request",
+    lc_demandeEnvoyee:"Request sent",
+    lc_description:"Description",
+    lc_destinations:"Destinations",
+    lc_destinationsInternationales:"International destinations",
+    lc_divers:"More",
+    lc_dureeSouhaitee:"Preferred duration",
+    lc_debitEnGarantieExpedieDepuis:"Charged as a deposit, shipped from Canada · delivery in 3 to 5 days, worldwide",
+    lc_decouverte:"Discovery",
+    lc_decouvrirLesDestinations:"Discover the destinations ›",
+    lc_deplacementsInterieursInclus:"Local transport included",
+    lc_enregistrer:"Save",
+    lc_enregistrerLesParametres:"Save settings",
+    lc_envoyezVotreDemande:"Send your request",
+    lc_escapadeClassiqueFacileDAcces:"Classic getaway, easy to reach",
+    lc_exploreLesPostesDisponiblesDans:"Browse the positions available in our partner countries, compare the terms, and reserve an opportunity that matches your profile.",
+    lc_falaisesRougesLittoral:"Red cliffs, coastline",
+    lc_fautIlUnVisaOu:"Is a visa or work permit required?",
+    lc_ficheProduit:"Product sheet",
+    lc_forfaits:"Packages",
+    lc_foretsAnciennesCotePacifique:"Old-growth forests, Pacific coast",
+    lc_fraisRetraitUsdt:"USDT withdrawal fee",
+    lc_franceParis:"France · Paris",
+    lc_gardezAchatValideRetournezRembourse:"Keep it = purchase confirmed. Return it = refunded",
+    lc_gestionCentraliseeDeLaPlateforme:"Centralized platform management",
+    lc_globauxVisibles:"Global & visible",
+    lc_grandPlace:"Grand-Place",
+    lc_gererLeMarketplace:"Manage the Marketplace",
+    lc_gererLesComptes:"Manage accounts",
+    lc_hautParleur:"Speaker",
+    lc_historiqueDeTesPronosticsEt:"History of your predictions and winnings",
+    lc_hebergementInclus:"Accommodation included",
+    lc_ilDependDeLOffre:"It depends on the offer. When included, it may cover file preparation, administrative guidance, travel coordination, arrival guidance and integration follow-up.",
+    lc_imageUrl:"Image URL",
+    lc_immersion:"Immersion",
+    lc_itineraireSurMesureRegionsMultiples:"Tailor-made itinerary, multiple regions",
+    lc_jour0:"Day 0",
+    lc_jour30:"Day 30",
+    lc_jours129:"Days 1–29",
+    lc_lEquipeLongcoursConfirmeLa:"The Longcours team confirms availability and the exact number of points required within 2 business days.",
+    lc_leParcours:"THE JOURNEY",
+    lc_longcoursControlCenter:"LONGCOURS • CONTROL CENTER",
+    lc_laDemandeEstExamineeSelon:"The request is reviewed according to the job criteria, availability and applicable conditions. Selection is not automatic.",
+    lc_laReservationDUnPoste:"Reserving a position is an application request and does not constitute a promise of employment.",
+    lc_lacsGlaciairesSentiersAlpins:"Glacial lakes, alpine trails",
+    lc_leCandidatDoitFournirDes:"The candidate must provide accurate information and authentic documents and comply with the laws of the host country.",
+    lc_leModeleDEssai30:"The 30-day trial model",
+    lc_leNombreDePointsRequis:"The number of points required is shown before you finalize your entry. No deduction should be interpreted as a guarantee of selection.",
+    lc_leNombreDePointsRequis2:"The number of points required is shown before any finalization.",
+    lc_leProduitDoitEtreRetourne:"The product must be returned complete (accessories, cables, manual, original packaging where possible). Signs of normal trial use are accepted.",
+    lc_leProgrammeDEssaiEst:"The trial program is reserved for reasonable personal use. A single account cannot have more than 3 active trials at the same time.",
+    lc_lesAppelsUtilisentLaMessagerie:"Calls use the existing messaging and WebRTC systems. The call is placed from the admin context, without changing the user account's identity.",
+    lc_lesDemarchesDeVisaPermis:"Visa, permit or work authorization procedures remain subject to the relevant authorities and the employer's requirements.",
+    lc_lesInformationsDUneOffre:"Information about an offer may change when availability, the employer's needs or the program's conditions change.",
+    lc_lesModalitesDAccompagnementSont:"Support arrangements are specified according to the position and the program.",
+    lc_lesOperationsSensiblesSontExecutees:"Sensitive operations are performed by Supabase functions protected by the administrator role. Balance adjustments and deletions must be confirmed. No hidden per-user control is provided.",
+    lc_lesParametresDeGainsDoivent:"Winnings settings must remain global, documented and identical for all users. No mechanism is added to rig a result or secretly target a player.",
+    lc_lesPointsSontIlsDebites:"Are points deducted immediately?",
+    lc_lesPrisesEnChargeSont:"Coverage is limited to items expressly provided for in the offer and confirmed to the selected candidate.",
+    lc_lesSalairesAffichesSontIndicatifs:"Displayed salaries are indicative and do not constitute a guarantee of pay.",
+    lc_lesSalairesSontIlsGarantis:"Are salaries guaranteed?",
+    lc_lesElementsReellementPrisEn:"The items actually covered are those indicated in the offer and confirmed during the file review. A reservation guarantees neither a job, a visa, nor a work permit.",
+    lc_libelleCategorie:"Category label",
+    lc_longcours:"Longcours",
+    lc_longcoursComplet:"Full Longcours",
+    lc_manhattanEtGrandsPanoramas:"Manhattan and grand panoramas",
+    lc_margeGlobaleDesCotes:"Global odds margin (%)",
+    lc_marketplace:"Marketplace",
+    lc_marque:"Brand",
+    lc_matchs:"Matches",
+    lc_messages:"Messages",
+    lc_minimumRetrait:"Minimum withdrawal",
+    lc_monEspace:"My space",
+    lc_monumentsSeineEtCapitaleFrancaise:"Monuments, the Seine and the French capital",
+    lc_motif:"Reason",
+    lc_muet:"Mute",
+    lc_multiplicateurJourOr:"Gold day multiplier",
+    lc_neuschwanstein:"Neuschwanstein",
+    lc_nom:"Name",
+    lc_nomComplet:"Full name",
+    lc_nonLaCandidatureDebiteLes:"No. The application deducts the required points when it is validated. If the balance is insufficient, no points are deducted and the application is not sent.",
+    lc_nonLesMontantsAffichesSont:"No. The amounts shown are indicative and may vary depending on the employer, experience, city, contract and local regulations.",
+    lc_opportunites:"OPPORTUNITIES",
+    lc_operaHouse:"Opera House",
+    lc_ouiLeBilletDAvion:"Yes — the round-trip flight and the tourist visa are covered in every package. The Longcours team oversees the whole process, from filing the visa application to your return.",
+    lc_ouvreLeFormulaireEtEnvoie:"Open the form and submit your application. The required points are only deducted if your balance is sufficient.",
+    lc_ouvreUneOffreConsulteSa:"Open an offer, view its details, then select \"Apply for the position\". Fill in the form; the required points are deducted upon validation if your balance is sufficient.",
+    lc_ouvrirLeSupport:"Open support",
+    lc_parDesActionsRealiseesDirectement:"Through actions performed directly on the platform — no external transfer is required. The details of these actions and their point value are available in your Profile space.",
+    lc_partager:"Share",
+    lc_partezLEspritTranquille:"Travel with peace of mind",
+    lc_peuImporte:"Any",
+    lc_photosWikimediaCommonsLesFichiers:"Photos: Wikimedia Commons. Files are displayed via Special:FilePath and remain subject to the license terms stated on their source page.",
+    lc_plus:"More",
+    lc_points:"Points (+ / -)",
+    lc_populaire:"Popular",
+    lc_portefeuille:"Wallet",
+    lc_portArchitectureEtCote:"Harbor, architecture and coastline",
+    lc_postesActuellementDisponibles:"Positions currently available",
+    lc_postuleAuPoste:"Apply for the position",
+    lc_pourTouteQuestionSurUn:"For any question about an ongoing trial, support can be reached from the wallet (\"Support\" button).",
+    lc_pourUnAppelVideoSelectionne:"For a video call, select a video from your library. If the library is empty, the button above lets you add one right away.",
+    lc_priseEnChargeDesCandidats:"Support for selected candidates",
+    lc_prix:"Price",
+    lc_produits:"Products",
+    lc_prepareTaParticipation:"Prepare your entry",
+    lc_puisJeCandidaterSiJe:"Can I apply if I don't have the required points yet?",
+    lc_queComprendLAccompagnement:"What does the support include?",
+    lc_queSePasseTIl:"What happens after my reservation?",
+    lc_questionsFrequentes:"Frequently asked questions",
+    lc_rempartsFleuveArchitecture:"Ramparts, river, architecture",
+    lc_remplisCeFormulaireLEquipe:"Fill in this form; the Longcours team confirms availability and the exact number of points required within 2 business days.",
+    lc_rocheusesBanff:"Rockies & Banff",
+    lc_rocheusesVieuxQuebecYukonNiagara:"Rockies, Old Quebec, Yukon, Niagara… Exchange your points for a turnkey stay.",
+    lc_royaumeUniLondres:"United Kingdom · London",
+    lc_regionPrivilegiee:"Preferred region",
+    lc_repondreCommeSupport:"Reply as support",
+    lc_reponsesEnTantQueSupport:"Replies as support",
+    lc_reservesALAdministrateur:"Reserved for the administrator",
+    lc_selonLePaysEtLe:"Depending on the country and the position, a work permit, a visa or other formalities may be required. They are subject to the rules of the relevant authorities.",
+    lc_selonLOffreEtLes:"Depending on the offer and the program's conditions, the support may include:",
+    lc_soldeTotal:"Total balance",
+    lc_statueDeLaLiberte:"Statue of Liberty",
+    lc_suisseZermatt:"Switzerland · Zermatt",
+    lc_surLeMarketplaceLongcoursVous:"On the Longcours Marketplace, you don't pay \"blindly\": you try the product at home for 30 days before the purchase becomes final.",
+    lc_sejourOffertEnPoints:"Stay offered for points",
+    lc_selectionner:"Select",
+    lc_terminer:"End",
+    lc_testReel:"Real test",
+    lc_tickets:"Tickets",
+    lc_tonProchainSejourAuCanada:"Your next stay in Canada awaits",
+    lc_tonSejourAuCanada:"Your stay in Canada",
+    lc_tourEiffel:"Eiffel Tower",
+    lc_tuPeuxConsulterLesOffres:"You can browse the offers and prepare your file, but you need the number of points shown on the offer to validate your application.",
+    lc_usdt:"USDT (+ / -)",
+    lc_unMelangeDHotelsDe:"A mix of hotels, guesthouses and chalets depending on the regions visited, chosen for their location rather than their category. Details are in the itinerary sent after confirmation.",
+    lc_uneModificationEstPossibleJusqu:"A change is possible up to 45 days before departure, subject to availability on the new dates.",
+    lc_uneNouvelleOpportuniteProfessionnelleAu:"A new professional opportunity, beyond borders.",
+    lc_utilisateurs:"Users",
+    lc_utiliseePendantLesAppelsVideo:"Used during admin video calls",
+    lc_video:"Video",
+    lc_vieuxQuebec:"Old Quebec",
+    lc_visaTouristiquePrisEnCharge:"Tourist visa covered",
+    lc_volRouge:"Vol Rouge",
+    lc_vosPointsEnSejoursDe:"Your points, turned into multi-month stays in Canada",
+    lc_vousDecidez:"You decide",
+    lc_vousGardezLeProduit:"You keep the product:",
+    lc_vousLUtilisezNormalement:"You use it normally",
+    lc_vousNeFaitesRien:"You do nothing:",
+    lc_vousRetournezLeProduit:"You return the product:",
+    lc_westminsterTamiseEtLondres:"Westminster, the Thames and London",
+    lc_yukonGrandNord:"Yukon & the Far North",
+    lc_depotDeGarantie:"security deposit",
+    lc_points2:"points",
+    lc_aPartirDe500000:"From 500,000 points.",
+    lc_echangeTesPointsContreUn:"Exchange your points for a multi-month stay in Canada",
+    lc_epargne:"Savings",
+    lc_etatsUnisNewYork:"United States · New York",
+    lc_ileDeVancouver:"Vancouver Island",
+    lc_ileDuPrinceEdouard:"Prince Edward Island",
+    lc_lesOffresDisponibilitesSalairesIndicatifs:"ℹ️ Offers, availability, indicative salaries and conditions may change. Always check the job sheet at the time of your application.",
+    lc_enregistrementsDAppels:"⏺ Call recordings",
+    lc_parametresEconomiques:"⚙️ Economic settings",
+    lc_reglages:"⚙️ Settings",
+    lc_actionsRapides:"⚡ Quick actions",
+    lc_essai30JoursAvantAchat:"✅ 30-day trial before purchase",
+    lc_coordinationDuDeplacementLorsquePrevue:"✈️ Travel coordination when included in the program",
+    lc_produit:"＋ Product",
+    lc_international:"🌍 International",
+    lc_tousLesPays:"🌍 All countries",
+    lc_sejoursAuCanada:"🍁 Stays in Canada",
+    lc_voyageCanada:"🍁 Canada trip",
+    lc_ajouterUneVideo:"🎬 Add a video",
+    lc_bibliothequeVideo:"🎬 Video library",
+    lc_videos:"🎬 Videos",
+    lc_orientationVersLesSolutionsD:"🏠 Guidance toward accommodation options on arrival",
+    lc_tousLesSecteurs:"🏢 All sectors",
+    lc_comptesUtilisateurs:"👥 User accounts",
+    lc_utilisateurs2:"👥 Users",
+    lc_repondreAuClient:"💬 Reply to the customer",
+    lc_support:"💬 Support",
+    lc_supportLongcours:"💬 Longcours Support",
+    lc_supportClient:"💬 Customer support",
+    lc_ajusterLeCompte:"💳 Adjust the account",
+    lc_longcoursPoleEmploi:"💼 LONGCOURS · JOB CENTER",
+    lc_verificationEtPreparationDuDossier:"📄 File verification and preparation",
+    lc_vueDEnsemble:"📊 Overview",
+    lc_conditionsGeneralesPoleEmploi:"📑 Terms and Conditions — Job Center",
+    lc_appels:"📞 Calls",
+    lc_appelsAudioVideo:"📞 Audio & video calls",
+    lc_mesCommandes:"📦 My orders",
+    lc_orientationPourLeTransportLocal:"🚕 Guidance for local transport and settling in",
+    lc_marketplace2:"🛍️ Marketplace",
+    lc_securiteTracabilite:"🛡️ Security & traceability",
+    lc_accompagnement:"🤝 Support",
+    lc_suiviDIntegrationEtAccompagnement:"🤝 Integration follow-up and support after arrival",
+    lc_orientationDansLesDemarchesAdministratives:"🧭 Guidance through administrative procedures",
+    lc_n1200000Points:"🪙 1,200,000 points",
+    lc_n500000Points:"🪙 500,000 points",
+    lc_n550000Points:"🪙 550,000 points",
+    lc_n650000Points:"🪙 650,000 points",
+    lc_n700000Points:"🪙 700,000 points",
+    lc_n750000Points:"🪙 750,000 points",
+    lc_n900000Points:"🪙 900,000 points",
+    lc_pointsRequis:"🪙 Points required",
   },
 
   /* =========================================================
@@ -13750,7 +14381,297 @@ const translations = {
     pvpShareBtn:"مشاركة",
     pvpShareWhatsappBtn:"واتساب",
     pvpLinkCopiedToast:"تم نسخ رابط التحدي!",
-    pvpShareMessage:(p)=>`انضم إلى تحديّ في Longcours وحاول الفوز بالصندوق 🏆 ${p.url}`
+    pvpShareMessage:(p)=>`انضم إلى تحديّ في Longcours وحاول الفوز بالصندوق 🏆 ${p.url}`,
+    lc_commandezTestezSub:"اطلب المنتج وجرّبه في منزلك لمدة 30 يوماً. إذا أعجبك، يُعتمد الشراء تلقائياً. وإلا، أعده واسترد أموالك.",
+    lc_mesResultatsNav:"نتائجي",
+    lc_espaceAdminNav:"مساحة المسؤول",
+    lc_securiseBadge:"آمن",
+    lc_ajouterUneVideoStatic:"＋ إضافة فيديو",
+    lc_produitVisibleLabel:"المنتج مرئي",
+    lc_sixRegionsIntro:"ست مناطق في كندا، لكل منها باقتها الخاصة.",
+    lc_faqQ1:"كيف تُكتسب النقاط في لونغكور؟",
+    lc_faqQ2:"ماذا تشمل الإقامة المدرجة بالضبط؟",
+    lc_faqQ3:"هل تذكرة الطيران والتأشيرة مشمولتان؟",
+    lc_faqQ4:"هل يمكنني تعديل التواريخ بعد تقديم طلبي؟",
+    lc_catalogueEnDirect:"الكتالوج المباشر",
+    lc_trialParaPart1:"عند طلب منتج، يُخصم من رصيدك (أو نقاطك) السعر المعروض وقت الطلب، وذلك على سبيل",
+    lc_trialParaPart2:". يُشحن المنتج من كندا ويُسلَّم خلال",
+    lc_trialParaPart3:"، بغض النظر عن الوجهة. بعد ذلك يكون لديك",
+    lc_trialParaPart4:"لتجربته في ظروف استخدام عادية.",
+    lc_liDoNothingText:"يُعتمد الشراء تلقائياً في اليوم الثلاثين. يصبح مبلغ الضمان هو الدفعة النهائية، ولا يُخصم أي مبلغ إضافي.",
+    lc_liKeepText:"يمكنك تأكيد الشراء في أي وقت من «طلباتي» لإنهاء التجربة قبل اليوم الثلاثين.",
+    lc_liReturnText:"تبدأ طلب إرجاع من «طلباتي» قبل نهاية الثلاثين يوماً.",
+    lc_n1Mois:"شهر واحد",
+    lc_n1Mois500000Points:"شهر واحد — 500,000 نقطة",
+    lc_n1RegionAuChoix:"منطقة واحدة تختارها",
+    lc_n12Ou3Mois:"شهر أو شهران أو 3 أشهر — يعتمد عدد النقاط المطلوبة على المدة المختارة.",
+    lc_n1PrincipeGeneral:"1. المبدأ العام",
+    lc_n2Mois:"شهران",
+    lc_n2Mois950000Points:"شهران — 950,000 نقطة",
+    lc_n2RegionsAuChoix:"منطقتان تختارهما",
+    lc_n2ALaFinDes:"2. في نهاية الثلاثين يوماً",
+    lc_n3Mois:"3 أشهر",
+    lc_n3Mois1350000:"3 أشهر — 1,350,000 نقطة",
+    lc_n3A5Jours:"3 إلى 5 أيام",
+    lc_n3Remboursement:"3. الاسترداد",
+    lc_n30JoursCalendairesAPartir:"30 يوماً تقويمياً من تاريخ الاستلام",
+    lc_n4EtatDuProduitRetourne:"4. حالة المنتج المُعاد",
+    lc_n5LimitesDUsage:"5. حدود الاستخدام",
+    lc_n6Contact:"6. التواصل",
+    lc_accompagnementLongcoursDeBoutEn:"مرافقة لونغكور من البداية إلى النهاية",
+    lc_accompagnementApresSelection:"المرافقة بعد الاختيار",
+    lc_accesDirect:"وصول مباشر",
+    lc_activationUsdt:"تفعيل USDT",
+    lc_adminCenter:"مركز الإدارة",
+    lc_allemagneBaviere:"ألمانيا · بافاريا",
+    lc_alpesMontagneEtPanorama:"جبال الألب، جبل وبانوراما",
+    lc_ancienPrix:"السعر القديم",
+    lc_appelDepuisLeCompteAdmin:"اتصال من حساب المسؤول",
+    lc_appelerUnUtilisateur:"الاتصال بمستخدم",
+    lc_apresReceptionEtVerificationDu:"بعد استلام المنتج المُعاد والتحقق منه، يُرد كامل مبلغ التأمين إلى رصيدك خلال 5 إلى 10 أيام عمل.",
+    lc_architectureEtCentreHistorique:"العمارة والمركز التاريخي",
+    lc_aucunPointNEstDebite:"لا تُخصم أي نقاط في هذه المرحلة — يتعلق الأمر بطلب توفر فقط.",
+    lc_auroresBorealesNatureSauvage:"الأضواء الشمالية، طبيعة برية",
+    lc_australieSydney:"أستراليا · سيدني",
+    lc_besoinDInformations:"هل تحتاج إلى معلومات؟",
+    lc_belgiqueBruxelles:"بلجيكا · بروكسل",
+    lc_bigBen:"بيغ بن",
+    lc_billetDAvionInclus:"تذكرة الطيران مشمولة",
+    lc_billetDAvionVisaTouristique:"تذكرة الطيران، التأشيرة السياحية، الإقامة والتنقلات الداخلية مشمولة — كل شيء مكفول ومُرافَق، ويُرسل البرنامج بعد التأكيد.",
+    lc_bonjourAdmin:"مرحباً أيها المسؤول 👋",
+    lc_bonusStreakJour:"مكافأة التتابع / اليوم",
+    lc_canadaAlberta:"كندا · ألبرتا",
+    lc_canadaColombieBritannique:"كندا · كولومبيا البريطانية",
+    lc_canadaOntario:"كندا · أونتاريو",
+    lc_canadaQuebec:"كندا · كيبك",
+    lc_canadaYukon:"كندا · يوكون",
+    lc_canadaIleDuPrinceEdouard:"كندا · جزيرة الأمير إدوارد",
+    lc_categorie:"الفئة",
+    lc_cervin:"ماترهورن",
+    lc_chaqueCandidatureEstSoumiseA:"يخضع كل طلب لدراسة الملف الشخصي، ومعايير الوظيفة، والتوفر، وقواعد البلد المعني.",
+    lc_chargeLesUtilisateurs:"جارٍ تحميل المستخدمين…",
+    lc_chargementDesOpportunites:"جارٍ تحميل الفرص…",
+    lc_chargement:"جارٍ التحميل…",
+    lc_choisirCeForfait:"اختر هذه الباقة",
+    lc_choisisUnPoste:"اختر وظيفة",
+    lc_choisissezUneDuree:"اختر مدة",
+    lc_chutesDuNiagara:"شلالات نياغارا",
+    lc_chateauEtPaysagesAlpins:"قلعة ومناظر جبال الألب",
+    lc_commande:"الطلب",
+    lc_commentFonctionnePoleEmploi:"كيف يعمل مركز التوظيف؟",
+    lc_commentPostulerAUnPoste:"كيف أتقدم لوظيفة؟",
+    lc_commentCaMarche:"كيف يعمل الأمر",
+    lc_commentCaMarche2:"كيف يعمل الأمر ←",
+    lc_comptesMarketplaceSupportAppelsReglages:"الحسابات • المتجر • الدعم • المكالمات • الإعدادات",
+    lc_confirmerLAjustement:"تأكيد التعديل",
+    lc_consulteLeMetierLePays:"اطّلع على المهنة والبلد والراتب التقريبي والشروط.",
+    lc_convertissezVotreSoldeDePoints:"حوّل رصيد نقاطك في لونغكور إلى إقامة طويلة جاهزة بالكامل: تذكرة طيران، تأشيرة سياحية، إقامة، تنقلات داخلية وبرنامج مخصص. كل شيء مكفول ومُرافَق من فريق لونغكور، من المغادرة حتى العودة.",
+    lc_dateDeDepartSouhaitee:"تاريخ المغادرة المرغوب",
+    lc_demandeDeSejour:"طلب إقامة",
+    lc_demandeEnvoyee:"تم إرسال الطلب",
+    lc_description:"الوصف",
+    lc_destinations:"الوجهات",
+    lc_destinationsInternationales:"وجهات دولية",
+    lc_divers:"المزيد",
+    lc_dureeSouhaitee:"المدة المرغوبة",
+    lc_debitEnGarantieExpedieDepuis:"خصم كضمان، يُشحن من كندا · التسليم خلال 3 إلى 5 أيام، في جميع أنحاء العالم",
+    lc_decouverte:"استكشاف",
+    lc_decouvrirLesDestinations:"اكتشف الوجهات ›",
+    lc_deplacementsInterieursInclus:"التنقلات الداخلية مشمولة",
+    lc_enregistrer:"حفظ",
+    lc_enregistrerLesParametres:"حفظ الإعدادات",
+    lc_envoyezVotreDemande:"أرسل طلبك",
+    lc_escapadeClassiqueFacileDAcces:"رحلة كلاسيكية، سهلة الوصول",
+    lc_exploreLesPostesDisponiblesDans:"استعرض الوظائف المتاحة في بلداننا الشريكة، وقارن الشروط، واحجز فرصة تناسب ملفك الشخصي.",
+    lc_falaisesRougesLittoral:"منحدرات حمراء، ساحل",
+    lc_fautIlUnVisaOu:"هل تلزم تأشيرة أو تصريح عمل؟",
+    lc_ficheProduit:"بطاقة المنتج",
+    lc_forfaits:"الباقات",
+    lc_foretsAnciennesCotePacifique:"غابات قديمة، ساحل المحيط الهادئ",
+    lc_fraisRetraitUsdt:"رسوم سحب USDT",
+    lc_franceParis:"فرنسا · باريس",
+    lc_gardezAchatValideRetournezRembourse:"احتفظ به = الشراء مؤكد. أعده = يُرد المبلغ",
+    lc_gestionCentraliseeDeLaPlateforme:"إدارة مركزية للمنصة",
+    lc_globauxVisibles:"عامة ومرئية",
+    lc_grandPlace:"غراند بلاس",
+    lc_gererLeMarketplace:"إدارة المتجر",
+    lc_gererLesComptes:"إدارة الحسابات",
+    lc_hautParleur:"مكبر الصوت",
+    lc_historiqueDeTesPronosticsEt:"سجل توقعاتك ومكاسبك",
+    lc_hebergementInclus:"الإقامة مشمولة",
+    lc_ilDependDeLOffre:"يعتمد ذلك على العرض. وعند وجوده، قد يشمل إعداد الملف، التوجيه الإداري، تنسيق التنقل، التوجيه عند الوصول ومتابعة الاندماج.",
+    lc_imageUrl:"رابط الصورة",
+    lc_immersion:"انغماس",
+    lc_itineraireSurMesureRegionsMultiples:"برنامج مخصص، مناطق متعددة",
+    lc_jour0:"اليوم 0",
+    lc_jour30:"اليوم 30",
+    lc_jours129:"الأيام 1–29",
+    lc_lEquipeLongcoursConfirmeLa:"يؤكد فريق لونغكور التوفر والعدد الدقيق للنقاط المطلوبة خلال يومي عمل.",
+    lc_leParcours:"المسار",
+    lc_longcoursControlCenter:"لونغكور • مركز التحكم",
+    lc_laDemandeEstExamineeSelon:"يُدرس الطلب وفق معايير الوظيفة والتوفر والشروط المطبقة. الاختيار ليس تلقائياً.",
+    lc_laReservationDUnPoste:"حجز وظيفة هو طلب ترشح ولا يشكل وعداً بالتوظيف.",
+    lc_lacsGlaciairesSentiersAlpins:"بحيرات جليدية، مسارات جبال الألب",
+    lc_leCandidatDoitFournirDes:"يجب على المرشح تقديم معلومات دقيقة ووثائق أصلية واحترام قوانين البلد المضيف.",
+    lc_leModeleDEssai30:"نموذج التجربة لمدة 30 يوماً",
+    lc_leNombreDePointsRequis:"يُعرض عدد النقاط المطلوبة قبل إتمام المشاركة. لا ينبغي تفسير أي خصم كضمان للاختيار.",
+    lc_leNombreDePointsRequis2:"يُعرض عدد النقاط المطلوبة قبل أي إتمام.",
+    lc_leProduitDoitEtreRetourne:"يجب إعادة المنتج كاملاً (الملحقات، الكابلات، الدليل، التغليف الأصلي قدر الإمكان). تُقبل آثار الاستخدام التجريبي العادي.",
+    lc_leProgrammeDEssaiEst:"برنامج التجربة مخصص للاستخدام الشخصي المعقول. لا يمكن لحساب واحد أن يحتوي على أكثر من 3 تجارب نشطة في آن واحد.",
+    lc_lesAppelsUtilisentLaMessagerie:"تستخدم المكالمات نظام المراسلة و WebRTC الحاليين. يتم الاتصال من سياق المسؤول، دون تغيير هوية حساب المستخدم.",
+    lc_lesDemarchesDeVisaPermis:"تبقى إجراءات التأشيرة أو التصريح أو إذن العمل خاضعة للسلطات المختصة ومتطلبات صاحب العمل.",
+    lc_lesInformationsDUneOffre:"قد تتغير معلومات العرض عند تغيّر التوفر أو احتياجات صاحب العمل أو شروط البرنامج.",
+    lc_lesModalitesDAccompagnementSont:"تُحدَّد طرائق المرافقة وفقاً للوظيفة والبرنامج.",
+    lc_lesOperationsSensiblesSontExecutees:"تُنفَّذ العمليات الحساسة عبر وظائف Supabase المحمية بصلاحية المسؤول. يجب تأكيد تعديلات الرصيد وعمليات الحذف. لا يوجد أي تحكم خفي لكل مستخدم.",
+    lc_lesParametresDeGainsDoivent:"يجب أن تظل إعدادات المكاسب عامة وموثقة ومتطابقة لجميع المستخدمين. لا تُضاف أي آلية للتلاعب بنتيجة أو استهداف لاعب سراً.",
+    lc_lesPointsSontIlsDebites:"هل تُخصم النقاط فوراً؟",
+    lc_lesPrisesEnChargeSont:"يقتصر التكفل على العناصر المنصوص عليها صراحة في العرض والمؤكدة للمرشح المقبول.",
+    lc_lesSalairesAffichesSontIndicatifs:"الرواتب المعروضة إرشادية ولا تشكل ضماناً للأجر.",
+    lc_lesSalairesSontIlsGarantis:"هل الرواتب مضمونة؟",
+    lc_lesElementsReellementPrisEn:"العناصر المكفولة فعلياً هي تلك المذكورة في العرض والمؤكدة أثناء دراسة الملف. الحجز لا يضمن وظيفة ولا تأشيرة ولا تصريح عمل.",
+    lc_libelleCategorie:"تسمية الفئة",
+    lc_longcours:"لونغكور",
+    lc_longcoursComplet:"لونغكور الكامل",
+    lc_manhattanEtGrandsPanoramas:"مانهاتن وإطلالات بانورامية",
+    lc_margeGlobaleDesCotes:"هامش الاحتمالات العام (%)",
+    lc_marketplace:"المتجر",
+    lc_marque:"العلامة التجارية",
+    lc_matchs:"المباريات",
+    lc_messages:"الرسائل",
+    lc_minimumRetrait:"الحد الأدنى للسحب",
+    lc_monEspace:"مساحتي",
+    lc_monumentsSeineEtCapitaleFrancaise:"معالم، نهر السين والعاصمة الفرنسية",
+    lc_motif:"السبب",
+    lc_muet:"كتم الصوت",
+    lc_multiplicateurJourOr:"مضاعف اليوم الذهبي",
+    lc_neuschwanstein:"نويشفانشتاين",
+    lc_nom:"الاسم",
+    lc_nomComplet:"الاسم الكامل",
+    lc_nonLaCandidatureDebiteLes:"لا. يخصم طلب الترشح النقاط المطلوبة عند التحقق منه. إذا كان الرصيد غير كافٍ، لا تُخصم أي نقاط ولا يُرسل الطلب.",
+    lc_nonLesMontantsAffichesSont:"لا. المبالغ المعروضة إرشادية وقد تختلف حسب صاحب العمل والخبرة والمدينة والعقد والتنظيم المحلي.",
+    lc_opportunites:"الفرص",
+    lc_operaHouse:"دار الأوبرا",
+    lc_ouiLeBilletDAvion:"نعم — تذكرة الطيران ذهاباً وإياباً والتأشيرة السياحية مشمولتان في كل باقة. يُشرف فريق لونغكور على جميع الإجراءات، من تقديم طلب التأشيرة حتى العودة.",
+    lc_ouvreLeFormulaireEtEnvoie:"افتح النموذج وأرسل طلب ترشحك. لا تُخصم النقاط المطلوبة إلا إذا كان رصيدك كافياً.",
+    lc_ouvreUneOffreConsulteSa:"افتح عرضاً، اطّلع على تفاصيله، ثم اختر «التقدم للوظيفة». املأ النموذج؛ تُخصم النقاط المطلوبة عند التحقق إذا كان رصيدك كافياً.",
+    lc_ouvrirLeSupport:"فتح الدعم",
+    lc_parDesActionsRealiseesDirectement:"من خلال إجراءات تتم مباشرة على المنصة — لا حاجة لأي تحويل خارجي. تفاصيل هذه الإجراءات وقيمتها بالنقاط متاحة في مساحة ملفك الشخصي.",
+    lc_partager:"مشاركة",
+    lc_partezLEspritTranquille:"سافر براحة بال",
+    lc_peuImporte:"غير مهم",
+    lc_photosWikimediaCommonsLesFichiers:"الصور: ويكيميديا كومنز. تُعرض الملفات عبر Special:FilePath وتبقى خاضعة لشروط الترخيص المذكورة في صفحتها المصدر.",
+    lc_plus:"المزيد",
+    lc_points:"النقاط (+ / -)",
+    lc_populaire:"شائع",
+    lc_portefeuille:"المحفظة",
+    lc_portArchitectureEtCote:"ميناء، عمارة وساحل",
+    lc_postesActuellementDisponibles:"الوظائف المتاحة حالياً",
+    lc_postuleAuPoste:"التقدم للوظيفة",
+    lc_pourTouteQuestionSurUn:"لأي سؤال بخصوص تجربة جارية، يمكن التواصل مع الدعم من المحفظة (زر «الدعم»).",
+    lc_pourUnAppelVideoSelectionne:"لمكالمة فيديو، اختر فيديو من مكتبتك. إذا كانت المكتبة فارغة، يتيح لك الزر أعلاه إضافة واحد فوراً.",
+    lc_priseEnChargeDesCandidats:"التكفل بالمرشحين المقبولين",
+    lc_prix:"السعر",
+    lc_produits:"المنتجات",
+    lc_prepareTaParticipation:"جهّز مشاركتك",
+    lc_puisJeCandidaterSiJe:"هل يمكنني الترشح إذا لم أملك بعد النقاط المطلوبة؟",
+    lc_queComprendLAccompagnement:"ماذا تشمل المرافقة؟",
+    lc_queSePasseTIl:"ماذا يحدث بعد حجزي؟",
+    lc_questionsFrequentes:"الأسئلة الشائعة",
+    lc_rempartsFleuveArchitecture:"أسوار، نهر، عمارة",
+    lc_remplisCeFormulaireLEquipe:"املأ هذا النموذج؛ يؤكد فريق لونغكور التوفر والعدد الدقيق للنقاط المطلوبة خلال يومي عمل.",
+    lc_rocheusesBanff:"روكيز وبانف",
+    lc_rocheusesVieuxQuebecYukonNiagara:"روكيز، كيبك القديمة، يوكون، نياغارا… بادل نقاطك بإقامة جاهزة بالكامل.",
+    lc_royaumeUniLondres:"المملكة المتحدة · لندن",
+    lc_regionPrivilegiee:"منطقة مفضلة",
+    lc_repondreCommeSupport:"الرد كدعم",
+    lc_reponsesEnTantQueSupport:"الردود كدعم",
+    lc_reservesALAdministrateur:"مخصص للمسؤول فقط",
+    lc_selonLePaysEtLe:"حسب البلد والوظيفة، قد يلزم تصريح عمل أو تأشيرة أو إجراءات أخرى. وهي خاضعة لقواعد السلطات المختصة.",
+    lc_selonLOffreEtLes:"حسب العرض وشروط البرنامج، قد تشمل المرافقة:",
+    lc_soldeTotal:"الرصيد الإجمالي",
+    lc_statueDeLaLiberte:"تمثال الحرية",
+    lc_suisseZermatt:"سويسرا · زيرمات",
+    lc_surLeMarketplaceLongcoursVous:"في متجر لونغكور، أنت لا تدفع «عن عمى»: تُجرّب المنتج في منزلك لمدة 30 يوماً قبل أن يصبح الشراء نهائياً.",
+    lc_sejourOffertEnPoints:"إقامة مقابل نقاط",
+    lc_selectionner:"اختيار",
+    lc_terminer:"إنهاء",
+    lc_testReel:"تجربة حقيقية",
+    lc_tickets:"التذاكر",
+    lc_tonProchainSejourAuCanada:"إقامتك القادمة في كندا بانتظارك",
+    lc_tonSejourAuCanada:"إقامتك في كندا",
+    lc_tourEiffel:"برج إيفل",
+    lc_tuPeuxConsulterLesOffres:"يمكنك تصفح العروض وإعداد ملفك، لكن يجب أن يتوفر لديك عدد النقاط الموضح في العرض لتأكيد طلب ترشحك.",
+    lc_usdt:"USDT (+ / -)",
+    lc_unMelangeDHotelsDe:"مزيج من الفنادق والنُزل والشاليهات حسب المناطق المزارة، اختيرت لموقعها أكثر من فئتها. التفاصيل في البرنامج المُرسل بعد التأكيد.",
+    lc_uneModificationEstPossibleJusqu:"يمكن إجراء تعديل حتى 45 يوماً قبل المغادرة، رهناً بتوفر التواريخ الجديدة.",
+    lc_uneNouvelleOpportuniteProfessionnelleAu:"فرصة مهنية جديدة، تتجاوز الحدود.",
+    lc_utilisateurs:"المستخدمون",
+    lc_utiliseePendantLesAppelsVideo:"تُستخدم أثناء مكالمات الفيديو الإدارية",
+    lc_video:"فيديو",
+    lc_vieuxQuebec:"كيبك القديمة",
+    lc_visaTouristiquePrisEnCharge:"التأشيرة السياحية مشمولة",
+    lc_volRouge:"فول روج",
+    lc_vosPointsEnSejoursDe:"نقاطك، إقامات تمتد لعدة أشهر في كندا",
+    lc_vousDecidez:"أنت تقرر",
+    lc_vousGardezLeProduit:"تحتفظ بالمنتج:",
+    lc_vousLUtilisezNormalement:"تستخدمه بشكل طبيعي",
+    lc_vousNeFaitesRien:"لا تفعل شيئاً:",
+    lc_vousRetournezLeProduit:"تعيد المنتج:",
+    lc_westminsterTamiseEtLondres:"وستمنستر، نهر التايمز ولندن",
+    lc_yukonGrandNord:"يوكون والشمال البعيد",
+    lc_depotDeGarantie:"وديعة ضمان",
+    lc_points2:"نقطة",
+    lc_aPartirDe500000:"ابتداءً من 500,000 نقطة.",
+    lc_echangeTesPointsContreUn:"بادل نقاطك بإقامة لعدة أشهر في كندا",
+    lc_epargne:"ادخار",
+    lc_etatsUnisNewYork:"الولايات المتحدة · نيويورك",
+    lc_ileDeVancouver:"جزيرة فانكوفر",
+    lc_ileDuPrinceEdouard:"جزيرة الأمير إدوارد",
+    lc_lesOffresDisponibilitesSalairesIndicatifs:"ℹ️ قد تتغير العروض والتوفر والرواتب الإرشادية والشروط. راجع دائماً بطاقة الوظيفة وقت تقديم طلبك.",
+    lc_enregistrementsDAppels:"⏺ تسجيلات المكالمات",
+    lc_parametresEconomiques:"⚙️ الإعدادات الاقتصادية",
+    lc_reglages:"⚙️ الإعدادات",
+    lc_actionsRapides:"⚡ إجراءات سريعة",
+    lc_essai30JoursAvantAchat:"✅ تجربة 30 يوماً قبل الشراء",
+    lc_coordinationDuDeplacementLorsquePrevue:"✈️ تنسيق التنقل عند وجوده ضمن البرنامج",
+    lc_produit:"＋ منتج",
+    lc_international:"🌍 دولي",
+    lc_tousLesPays:"🌍 جميع البلدان",
+    lc_sejoursAuCanada:"🍁 إقامات في كندا",
+    lc_voyageCanada:"🍁 رحلة كندا",
+    lc_ajouterUneVideo:"🎬 إضافة فيديو",
+    lc_bibliothequeVideo:"🎬 مكتبة الفيديو",
+    lc_videos:"🎬 الفيديوهات",
+    lc_orientationVersLesSolutionsD:"🏠 التوجيه نحو حلول الإقامة عند الوصول",
+    lc_tousLesSecteurs:"🏢 جميع القطاعات",
+    lc_comptesUtilisateurs:"👥 حسابات المستخدمين",
+    lc_utilisateurs2:"👥 المستخدمون",
+    lc_repondreAuClient:"💬 الرد على العميل",
+    lc_support:"💬 الدعم",
+    lc_supportLongcours:"💬 دعم لونغكور",
+    lc_supportClient:"💬 دعم العملاء",
+    lc_ajusterLeCompte:"💳 تعديل الحساب",
+    lc_longcoursPoleEmploi:"💼 لونغكور · مركز التوظيف",
+    lc_verificationEtPreparationDuDossier:"📄 التحقق من الملف وإعداده",
+    lc_vueDEnsemble:"📊 نظرة عامة",
+    lc_conditionsGeneralesPoleEmploi:"📑 الشروط العامة — مركز التوظيف",
+    lc_appels:"📞 المكالمات",
+    lc_appelsAudioVideo:"📞 مكالمات صوتية وفيديو",
+    lc_mesCommandes:"📦 طلباتي",
+    lc_orientationPourLeTransportLocal:"🚕 التوجيه للنقل المحلي والاستقرار",
+    lc_marketplace2:"🛍️ المتجر",
+    lc_securiteTracabilite:"🛡️ الأمان وإمكانية التتبع",
+    lc_accompagnement:"🤝 المرافقة",
+    lc_suiviDIntegrationEtAccompagnement:"🤝 متابعة الاندماج والمرافقة بعد الوصول",
+    lc_orientationDansLesDemarchesAdministratives:"🧭 التوجيه في الإجراءات الإدارية",
+    lc_n1200000Points:"🪙 1,200,000 نقطة",
+    lc_n500000Points:"🪙 500,000 نقطة",
+    lc_n550000Points:"🪙 550,000 نقطة",
+    lc_n650000Points:"🪙 650,000 نقطة",
+    lc_n700000Points:"🪙 700,000 نقطة",
+    lc_n750000Points:"🪙 750,000 نقطة",
+    lc_n900000Points:"🪙 900,000 نقطة",
+    lc_pointsRequis:"🪙 النقاط المطلوبة",
   }
 };
 
