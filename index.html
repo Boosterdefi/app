@@ -3147,7 +3147,7 @@ main,
 #screen-profile::after{
   content:"";
   display:block;
-  flex:0 0 24px;
+  flex:0 0 90px;
   width:1px;
 }
 
@@ -6369,7 +6369,26 @@ function goTo(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
+/* CORRECTIF (2026-09-17) : quand on appuie sur un onglet de la barre du bas
+   (ex: Profil) pendant qu'un panneau plein écran est ouvert (Demande
+   envoyée, retrait, fiche marketplace, chat...), navTo() ne changeait que
+   le `.screen` actif en arrière-plan : le panneau ouvert restait affiché
+   PAR-DESSUS, cachant entièrement le nouvel écran (et son propre contenu
+   en bas se retrouvait coupé par la barre de navigation, qui passe
+   au-dessus de ces panneaux). On ferme donc maintenant systématiquement
+   tous les panneaux/overlays connus à chaque changement d'onglet. */
+function closeAllOverlays(){
+  ['lcCountModal','lcDestModal','withdrawSheet','pvpCreateSheet','pvpDetailSheet',
+   'marketplaceDetailOverlay','marketplaceCgvOverlay','marketplaceOrdersOverlay',
+   'matchMarketsOverlay','supportChatOverlay','dmChatOverlay','countrySheet',
+   'notifPanel','adminUserDetailModal','adminBalanceModal','adminProductModal',
+   'adminSupportModal'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('open');
+  });
+}
 function navTo(id){
+  closeAllOverlays();
   goTo(id);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.screen===id));
   if(id!=='screen-play' && sessionCountdownTimer){ clearInterval(sessionCountdownTimer); sessionCountdownTimer = null; }
