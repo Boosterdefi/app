@@ -10550,14 +10550,25 @@ function openHomeJobApply(id){
   setTimeout(()=>{ if(typeof lcOpenJobReservation === 'function') lcOpenJobReservation(id); }, 60);
 }
 // AJOUT : bouton "Passer un interview" — sur chaque offre d'emploi (accueil
-// et liste complète Pôle Emploi), amène directement vers la messagerie pour
-// que le candidat puisse échanger avec le recruteur.
+// et liste complète Pôle Emploi), ouvre directement la conversation avec
+// Sandy (recruteuse Pôle Emploi) au lieu de simplement afficher la liste
+// des messages.
+const LC_INTERVIEW_RECRUITER = {
+  id: '73b85ea3-965d-443d-aa17-eef5bb90ec94',
+  name: 'Sandy',
+  avatarUrl: 'https://auupearmsktllnufhqha.supabase.co/storage/v1/object/public/avatars/73b85ea3-965d-443d-aa17-eef5bb90ec94/avatar.jpg?v=1788875738254'
+};
 function goToJobInterview(id){
   const o = (typeof lcJobOffers !== 'undefined' && lcJobOffers || []).find(j => j.id === id);
   if(typeof showToast === 'function'){
-    showToast((o ? `Entretien — ${o.title} : ` : '') + 'un recruteur va te contacter en messagerie.', '🎤');
+    showToast((o ? `Entretien — ${o.title} : ` : '') + 'Sandy va t’aider pour ton entretien.', '🎤');
   }
   navTo('screen-messages');
+  if(typeof dmOpenConversationWithUser === 'function'){
+    setTimeout(()=>{
+      dmOpenConversationWithUser(LC_INTERVIEW_RECRUITER.id, LC_INTERVIEW_RECRUITER.name, LC_INTERVIEW_RECRUITER.avatarUrl);
+    }, 60);
+  }
 }
 function openHomeJobInterview(id){ goToJobInterview(id); }
 
@@ -16286,6 +16297,42 @@ function lcShowJobSuccess(o,debited,remaining){
 .dm-bubble.dm-voice-bubble .dm-voice-progress{ height:3px; }
 .dm-bubble.dm-voice-bubble .dm-voice-times{ margin:3px 0 0 33px; font-size:8.5px; line-height:1; }
 .dm-bubble-wrap.voice{ max-width:min(78%, 190px); }
+</style>
+
+<style id="longcours-force-mobile-when-installed">
+/* DEMANDE (2026-09-17) : une fois l'application INSTALLÉE (ajoutée à
+   l'écran d'accueil / installée comme app PWA — mode "standalone" ou
+   "fullscreen"), elle doit TOUJOURS s'afficher comme la version mobile
+   (cadre téléphone centré, listes en 1 colonne), même si l'utilisateur
+   avait ouvert le site depuis un navigateur PC en fenêtre large avant de
+   l'installer, et même si la fenêtre de l'app installée reste large sur
+   PC/Mac/Chromebook. Ce bloc est placé volontairement en tout dernier
+   dans le document pour l'emporter dans la cascade CSS sur les règles
+   "plein écran / grille large" définies plus haut à partir de 601px et
+   700px (voir #longcours-desktop-showcase et la section ".lc-pro-*").
+   Il ne s'applique QUE si display-mode est standalone/fullscreen : la
+   navigation normale dans un onglet de navigateur PC n'est pas touchée. */
+@media (display-mode: standalone), (display-mode: fullscreen){
+  @media (min-width:601px){
+    body{padding:28px 12px;align-items:center;justify-content:center;}
+    .stage{width:auto;height:auto;min-height:0;gap:14px;}
+    .phone{
+      width:390px;max-width:94vw;height:820px;max-height:88vh;
+      background:linear-gradient(160deg,#241209,#3a2013);
+      border-radius:46px;padding:14px;
+      box-shadow:0 30px 60px rgba(43,24,16,0.35), 0 0 0 2px rgba(0,0,0,0.06) inset;
+    }
+    .phone-notch{display:block;}
+    .app{width:100%;height:100%;border-radius:32px;}
+  }
+  @media (min-width:700px){
+    .lc-pro-steps{grid-template-columns:1fr!important}
+    #lcJobsList.lc-jobs-list{display:flex!important;flex-direction:column!important}
+    .lc-pro-filters{grid-template-columns:1fr 1fr!important}
+    .lc-pro-filters input{grid-column:1/-1!important}
+    .lc-pro-support-card ul{grid-template-columns:1fr!important}
+  }
+}
 </style>
 </body>
 </html>
