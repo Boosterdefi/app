@@ -3376,9 +3376,15 @@ button,input,textarea,select{max-width:100%;}
       <!-- HOME -->
       <section class="screen" id="screen-home">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Longcours</div></div>
+          <div class="brand">
+            <div class="lang-btn-group" style="display:flex;gap:4px;margin-right:10px;">
+              <button class="lang-mini-btn" id="langMiniFr" onclick="selectLanguage('fr')" style="background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;color:inherit;cursor:pointer;opacity:.6;">FR</button>
+              <button class="lang-mini-btn" id="langMiniEn" onclick="selectLanguage('en')" style="background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;color:inherit;cursor:pointer;opacity:.6;">EN</button>
+              <button class="lang-mini-btn" id="langMiniAr" onclick="selectLanguage('ar')" style="background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;color:inherit;cursor:pointer;opacity:.6;">AR</button>
+            </div>
+            <div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Longcours</div>
+          </div>
           <div class="topbar-actions">
-            <button class="lang-switch-btn" id="topLangBtn" onclick="cycleLanguage()" style="background:none;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;color:inherit;cursor:pointer;">EN</button>
             <div class="wallet-chip" id="homeWalletChip" onclick="navTo('screen-profile')">
               <span class="wallet-chip-coin">₮</span>
               <span class="wallet-chip-text">
@@ -6286,7 +6292,13 @@ function navTo(id){
   // CORRECTION (2026-08-20) : le widget "Défi 30 jours" (challengeButsCount,
   // etc.) vit maintenant dans l'onglet Profil — renderReferral() (qui le
   // met à jour) doit donc aussi tourner à l'entrée sur Profil.
-  if(id==='screen-profile'){ renderProfile(); renderReferral(); }
+  // AJOUT (mode invité) : Profil est aussi une fonctionnalité 100% liée au
+  // compte (nom, portefeuille, PIN, parrainage...) — fermé aux invités comme
+  // Messages, plutôt que d'afficher un profil vide/à moitié fonctionnel.
+  if(id==='screen-profile'){
+    if(!sbUser){ requireAuth(()=>navTo('screen-profile')); return; }
+    renderProfile(); renderReferral();
+  }
 }
 
 /* ---------- Longcours (conversion de points -> séjours au Canada) ---------- */
@@ -13778,17 +13790,15 @@ function applyLanguage(lang){
     const key = el.getAttribute('data-i18n-placeholder');
     el.setAttribute('placeholder', t(key));
   });
-  // AJOUT : bouton de langue dans la barre du haut (écran d'accueil), tient
-  // à jour l'étiquette (EN/FR/AR) quel que soit le point d'entrée qui a
-  // changé la langue (bouton du haut, ou anciens écrans de langue).
-  const topLangBtn = document.getElementById('topLangBtn');
-  if(topLangBtn) topLangBtn.textContent = lang.toUpperCase();
-}
-function cycleLanguage(){
-  const order = ['en','fr','ar'];
-  const current = order.includes(state.settings.lang) ? state.settings.lang : 'en';
-  const next = order[(order.indexOf(current)+1) % order.length];
-  selectLanguage(next);
+  // AJOUT : les 3 boutons de langue sur l'accueil (devant "Longcours") —
+  // on met en évidence celui qui correspond à la langue active.
+  const miniIds = {fr:'langMiniFr', en:'langMiniEn', ar:'langMiniAr'};
+  Object.keys(miniIds).forEach(code=>{
+    const el = document.getElementById(miniIds[code]);
+    if(!el) return;
+    el.style.opacity = (code===lang) ? '1' : '.6';
+    el.style.background = (code===lang) ? 'rgba(255,255,255,.25)' : 'none';
+  });
 }
 function selectLanguage(lang){
   document.getElementById('langCardFr').classList.toggle('selected', lang==='fr');
