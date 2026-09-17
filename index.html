@@ -3250,6 +3250,7 @@ button,input,textarea,select{max-width:100%;}
         <div class="splash-actions">
           <button class="btn btn-primary" onclick="goTo('screen-register')" data-i18n="createAccount">Créer mon compte</button>
           <button class="btn btn-secondary" onclick="goTo('screen-login')" data-i18n="haveAccount">J'ai déjà un compte</button>
+          <button class="btn btn-ghost" style="width:100%;margin-top:6px" onclick="enterGuestMode()" data-i18n="exploreGuest">Explorer sans compte</button>
         </div>
       </section>
 
@@ -3324,7 +3325,7 @@ button,input,textarea,select{max-width:100%;}
               <div style="font-size:11px;color:var(--ink-soft);font-weight:700;margin-top:8px;" data-i18n="welcomeChallengeNote">Ta destination t'attend directement sur la plateforme, dans la section Longcours.</div>
             </div>
 
-            <button class="btn btn-primary" style="margin-top:16px;width:100%;" onclick="enterApp()" data-i18n="enterApp">Commencer l'aventure</button>
+            <button class="btn btn-primary" style="margin-top:16px;width:100%;" onclick="finishAuthAndResume()" data-i18n="enterApp">Commencer l'aventure</button>
           </div>
         </div>
       </section>
@@ -3377,6 +3378,7 @@ button,input,textarea,select{max-width:100%;}
         <div class="topbar">
           <div class="brand"><div class="logo-ball"><img class="js-longcours-icon" alt="Longcours"></div><div class="brand-name">Longcours</div></div>
           <div class="topbar-actions">
+            <button class="lang-switch-btn" id="topLangBtn" onclick="cycleLanguage()" style="background:none;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;color:inherit;cursor:pointer;">EN</button>
             <div class="wallet-chip" id="homeWalletChip" onclick="navTo('screen-profile')">
               <span class="wallet-chip-coin">₮</span>
               <span class="wallet-chip-text">
@@ -4603,7 +4605,11 @@ async function uploadAvatar(file){
 // Cette fonction permet à n'importe qui de (re)définir son prénom en un tap
 // depuis son profil ; comme les droits sont corrigés depuis le 07/09,
 // l'écriture aboutit désormais et répare le compte une fois pour toutes.
-async function editFirstName(){
+function editFirstName(){
+  const args = arguments;
+  requireAuth(()=>editFirstNameImpl(...args));
+}
+async function editFirstNameImpl(){
   const current = (state.player.firstName && state.player.firstName!=='Joueur') ? state.player.firstName : '';
   const next = (window.prompt('Ton prénom (visible par les autres joueurs) :', current) || '').trim();
   if(!next || next===current) return;
@@ -5910,7 +5916,11 @@ function openMarketplaceDetail(id){
 function closeMarketplaceDetail(){
   document.getElementById('marketplaceDetailOverlay').classList.remove('open');
 }
-async function buyMarketplaceProduct(id){
+function buyMarketplaceProduct(){
+  const args = arguments;
+  requireAuth(()=>buyMarketplaceProductImpl(...args));
+}
+async function buyMarketplaceProductImpl(id){
   const p = marketplaceProductsCache.find(x=> x.id === id);
   if(!p || !sbUser) return;
   // BUGFIX (2026-09-02) : l'erreur de solde insuffisant s'affichait via le
@@ -6193,6 +6203,10 @@ function recordBut(n){
 }
 
 function claimChallengePrize(){
+  const args = arguments;
+  requireAuth(()=>claimChallengePrizeImpl(...args));
+}
+function claimChallengePrizeImpl(){
   const c = state.challenge;
   if(!c.prizeAvailable || c.claimedThisCycle) return;
   state.prizeHistory.unshift({title: t('challengePrizePendingLabel'), date: new Date().toLocaleDateString(fmtLocale())});
@@ -6251,7 +6265,15 @@ function navTo(id){
   if(id==='screen-my-results') renderResults();
   if(id==='screen-epargne') renderEpargne();
   if(id==='screen-longcours') renderLongcoursScreen();
-  if(id==='screen-messages') dmRenderConvList();
+  // AJOUT (mode invité) : Messages est une fonctionnalité 100% liée au compte
+  // (chercher un contact, discuter, appeler) — sans session, l'appel RPC
+  // échouerait silencieusement. On redirige vers connexion/inscription et on
+  // rouvre Messages automatiquement une fois connecté, au lieu d'afficher une
+  // erreur de chargement à un invité.
+  if(id==='screen-messages'){
+    if(!sbUser){ requireAuth(()=>navTo('screen-messages')); return; }
+    dmRenderConvList();
+  }
   // AJOUT (2026-09-08) : accès protégé — un non-admin qui arriverait ici
   // (lien direct, retour arrière...) est renvoyé au profil sans rien charger.
   if(id==='screen-admin'){ if(!isAdminUser()){ navTo('screen-profile'); return; } adminRefresh(); adminLoadUsers(); adminLoadProducts(); adminLoadSupport(); adminLoadSettings(); renderAdminVideoLibrary(); }
@@ -6531,7 +6553,15 @@ function lcShowRequestForm(key,index){
    (lcPersistActiveRequest / lcRenderCountModal) que le formulaire général
    du bas de page, au lieu d'un simple écran "Demande enregistrée" statique
    qui ne vérifiait ni le délai minimum ni ne sauvegardait la demande. */
-function lcSubmitDestinationRequest(event,key,index){
+function lcSubmitDestinationRequest(){
+  // AJOUT (mode invité) : la prévention du submit doit rester immédiate ;
+  // la connexion (si nécessaire) est demandée avant d'exécuter l'action réelle.
+  if(arguments[0] && typeof arguments[0].preventDefault==='function') arguments[0].preventDefault();
+  const args = arguments;
+  requireAuth(()=>lcSubmitDestinationRequestImpl(...args));
+  return false;
+}
+function lcSubmitDestinationRequestImpl(event,key,index){
   event.preventDefault();
   const form=event.target;
   const d=LC_DESTINATIONS[key], packs=lcPackagesFor(key), p=packs[index];
@@ -6875,7 +6905,15 @@ async function renderLongcoursScreen(){
   }
 }
 
-function lcSubmitRequest(e){
+function lcSubmitRequest(){
+  // AJOUT (mode invité) : la prévention du submit doit rester immédiate ;
+  // la connexion (si nécessaire) est demandée avant d'exécuter l'action réelle.
+  if(arguments[0] && typeof arguments[0].preventDefault==='function') arguments[0].preventDefault();
+  const args = arguments;
+  requireAuth(()=>lcSubmitRequestImpl(...args));
+  return false;
+}
+function lcSubmitRequestImpl(e){
   e.preventDefault();
   // GARDE (demande utilisateur) : une seule demande Longcours "en cours"
   // (pending) à la fois. Si une demande est déjà active, on ne recrée pas
@@ -7203,7 +7241,11 @@ async function loadSupportMessages(){
   }
   sb.rpc('mark_support_messages_read_by_user').then(undefined, ()=>{});
 }
-async function sendSupportMessage(){
+function sendSupportMessage(){
+  const args = arguments;
+  requireAuth(()=>sendSupportMessageImpl(...args));
+}
+async function sendSupportMessageImpl(){
   const input = document.getElementById('supportChatInput');
   const body = input.value.trim();
   if(!body || !sbUser) return;
@@ -9696,6 +9738,7 @@ async function doLoginAsync(){
   // d'accueil dès qu'elles arrivent (voir aussi checkColdStartPin, même
   // logique pour le déverrouillage par PIN).
   enterApp();
+  if(pendingAuthAction) resumePendingAuthAction();
   // CORRECTIF (voix admin envoyée en clair) : promesse exposée globalement
   // pour que dmEnsureAdminStatusKnown() (appels DM) puisse attendre la fin de
   // ce chargement avant de faire confiance à isAdminUser() — voir ce
@@ -9735,8 +9778,62 @@ function updatePinDots(containerId, count){
 
 /* ---------- Enter app ---------- */
 let appEntered = false;
+
+// AJOUT (mode invité) : accès libre au tableau de bord sans compte. Seules
+// les actions qui touchent réellement au compte (paris, retraits, points,
+// messages, candidatures...) déclenchent la connexion, via requireAuth().
+let isGuest = false;
+// Action mise en attente pendant qu'on redirige un invité vers
+// connexion/inscription ; ré-exécutée automatiquement une fois connecté.
+let pendingAuthAction = null;
+
+function enterGuestMode(){
+  appEntered = true;
+  isGuest = true;
+  isLocked = false;
+  showNav();
+  navTo('screen-home');
+  sbPreloadMatches(); // données publiques (cotes/matchs), pas besoin de compte
+  const guestMsgs = {
+    fr: 'Explore librement — connecte-toi au moment de valider une action',
+    en: 'Explore freely — sign in only when you\'re ready to confirm an action',
+    ar: 'استكشف بحرية — سجّل الدخول فقط عند تأكيد إجراء'
+  };
+  showToast(guestMsgs[state.settings.lang] || guestMsgs.en, '&#x1f440;');
+}
+
+// Point d'entrée unique pour toute action nécessitant un compte. Si un
+// utilisateur est déjà connecté (sbUser existe), l'action s'exécute tout de
+// suite comme avant. Sinon, on mémorise l'action et on envoie la personne
+// s'inscrire/se connecter ; l'action reprend automatiquement juste après
+// (voir finishAuthAndResume() et la fin de doLoginAsync()).
+function requireAuth(action){
+  if(sbUser){ action(); return; }
+  pendingAuthAction = action;
+  const loginMsgs = {
+    fr: 'Connecte-toi pour finaliser cette action',
+    en: 'Sign in to complete this action',
+    ar: 'سجّل الدخول لإتمام هذا الإجراء'
+  };
+  showToast(loginMsgs[state.settings.lang] || loginMsgs.en, '&#x1f512;');
+  goTo('screen-splash');
+}
+function resumePendingAuthAction(){
+  if(!pendingAuthAction) return;
+  const action = pendingAuthAction;
+  pendingAuthAction = null;
+  try{ action(); }catch(e){ console.error('[requireAuth] échec de la reprise d\'action:', e); }
+}
+// Appelé par le bouton de fin d'inscription (reg-step-done), à la place de
+// enterApp() en dur, pour pouvoir reprendre une action laissée en attente.
+function finishAuthAndResume(){
+  enterApp();
+  if(pendingAuthAction) resumePendingAuthAction();
+}
+
 function enterApp(){
   appEntered = true;
+  isGuest = false;
   isLocked = false;
   markActivity();
   sbHeartbeat();
@@ -10162,6 +10259,10 @@ function renderSurpriseCard(){
 }
 
 function claimGrandPrize(){
+  const args = arguments;
+  requireAuth(()=>claimGrandPrizeImpl(...args));
+}
+function claimGrandPrizeImpl(){
   if(!state.freeTrialAvailable) return;
   if(state.session.active && !state.session.trial){
     showToast(t('finishSessionFirst'), '&#x26a0;&#xfe0f;');
@@ -10348,7 +10449,11 @@ function registerLuckyClaim(){
 // vérification + l'écriture côté serveur : plus aucune fenêtre de
 // contournement possible, peu importe le timing d'un rafraîchissement.
 let luckyClaimInProgress = false;
-async function claimLuckyBonus(){
+function claimLuckyBonus(){
+  const args = arguments;
+  requireAuth(()=>claimLuckyBonusImpl(...args));
+}
+async function claimLuckyBonusImpl(){
   if(state.dailyLucky.won || luckyClaimInProgress) return;
   if(!sbUser){ showToast(t('loginFailedError'), '⚠️'); return; }
   luckyClaimInProgress = true;
@@ -10413,7 +10518,11 @@ async function claimLuckyBonus(){
 // voir migration SQL fournie séparément) ; ce commentaire décrit juste le
 // comportement attendu pour rester synchronisé avec la base de données.
 let surpriseClaimInProgress = false;
-async function claimDailySurprisePoints(){
+function claimDailySurprisePoints(){
+  const args = arguments;
+  requireAuth(()=>claimDailySurprisePointsImpl(...args));
+}
+async function claimDailySurprisePointsImpl(){
   if(surpriseClaimInProgress || !sbUser) return;
   surpriseClaimInProgress = true;
   const btn = document.getElementById('surprisePointsBtn');
@@ -11182,6 +11291,10 @@ function renderCurrentPlayTab(){
   if(state.playTab === 'matches') renderMatchesTab(); else renderPlay();
 }
 function sendTeamInvite(){
+  const args = arguments;
+  requireAuth(()=>sendTeamInviteImpl(...args));
+}
+function sendTeamInviteImpl(){
   const input = document.getElementById('teamInviteInput');
   const name = (input && input.value.trim()) || '';
   if(!name){ showToast(t('inviteNameRequired'), '&#x26a0;&#xfe0f;'); return; }
@@ -12322,6 +12435,10 @@ function pvpUpdatePreview(){
 }
 
 function confirmCreateChallenge(){
+  const args = arguments;
+  requireAuth(()=>confirmCreateChallengeImpl(...args));
+}
+function confirmCreateChallengeImpl(){
   const d = state.pvpDraft;
   const errEl = document.getElementById('pvpCreateError');
   const stake = Number(d.stake)||0;
@@ -12373,7 +12490,11 @@ function confirmCreateChallenge(){
   openChallengeDetailSheet(challenge.id);
 }
 
-function joinPublicChallenge(id){
+function joinPublicChallenge(){
+  const args = arguments;
+  requireAuth(()=>joinPublicChallengeImpl(...args));
+}
+function joinPublicChallengeImpl(id){
   const c = pvpFindChallenge(id);
   if(!c || c.status!=='open') return;
   if(pvpMyParticipant(c)) { openChallengeDetailSheet(id); return; }
@@ -12814,6 +12935,10 @@ function updateWithdrawSummary(){
   withdrawSelectedAmount = amount;
 }
 function submitWithdrawal(){
+  const args = arguments;
+  requireAuth(()=>submitWithdrawalImpl(...args));
+}
+function submitWithdrawalImpl(){
   const amount = Number(document.getElementById('withdrawAmountInput').value) || 0;
   const address = document.getElementById('withdrawAddressInput').value.trim();
   const errBox = document.getElementById('withdrawErrorBox');
@@ -12869,7 +12994,7 @@ const translations = {
     langTitle:"Choisissez votre langue", langSub:"Sélectionnez la langue que vous préférez utiliser sur Longcours.",
     continue:"Continuer", back:"← Retour", backHome:"← Accueil",
     splashTitle:"Longcours", splashSub:"Ton chemin vers le Canada, un point à la fois.<br>Joue, abonne-toi, avance ensemble — chaque jour.",
-    createAccount:"Créer mon compte", haveAccount:"J'ai déjà un compte",
+    createAccount:"Créer mon compte", haveAccount:"J'ai déjà un compte", exploreGuest:"Explorer sans compte",
     reg2Title:"Votre numéro", reg2Sub:"Choisissez votre pays, l'indicatif est ajouté automatiquement.", phoneLabel:"Entrer votre numéro de téléphone valide",
     passwordLabel:"Mot de passe", passwordConfirmLabel:"Confirmer le mot de passe",
     passwordHint:"Au moins 8 caractères.", passwordMismatchHint:"Les mots de passe ne correspondent pas.", emailInvalidHint:"Entrez une adresse email valide.",
@@ -13115,7 +13240,7 @@ const translations = {
     langTitle:"Choose your language", langSub:"Select the language you prefer to use on Longcours.",
     continue:"Continue", back:"← Back", backHome:"← Home",
     splashTitle:"Longcours", splashSub:"Your path to Canada, one point at a time.<br>Play, subscribe, move forward together — every day.",
-    createAccount:"Create my account", haveAccount:"I already have an account",
+    createAccount:"Create my account", haveAccount:"I already have an account", exploreGuest:"Explore without an account",
     reg2Title:"Your phone number", reg2Sub:"Choose your country, the dial code is added automatically.", phoneLabel:"Enter a valid phone number",
     passwordLabel:"Password", passwordConfirmLabel:"Confirm password",
     passwordHint:"At least 8 characters.", passwordMismatchHint:"Passwords don't match.", emailInvalidHint:"Enter a valid email address.",
@@ -13367,7 +13492,7 @@ const translations = {
     langTitle:"اختر لغتك", langSub:"اختر اللغة التي تفضل استخدامها في Longcours.",
     continue:"متابعة", back:"→ رجوع", backHome:"→ الرئيسية",
     splashTitle:"Longcours", splashSub:"طريقك نحو كندا، خطوة بخطوة.<br>العب، اشترك، تقدّم معًا — كل يوم.",
-    createAccount:"إنشاء حسابي", haveAccount:"لدي حساب بالفعل",
+    createAccount:"إنشاء حسابي", haveAccount:"لدي حساب بالفعل", exploreGuest:"استكشاف بدون حساب",
     reg2Title:"رقم هاتفك", reg2Sub:"اختر بلدك، وسيُضاف رمز الاتصال تلقائيًا.", phoneLabel:"أدخل رقم هاتف صالح",
     passwordLabel:"كلمة المرور", passwordConfirmLabel:"تأكيد كلمة المرور",
     passwordHint:"8 أحرف على الأقل.", passwordMismatchHint:"كلمتا المرور غير متطابقتين.", emailInvalidHint:"أدخل بريدًا إلكترونيًا صالحًا.",
@@ -13647,6 +13772,17 @@ function applyLanguage(lang){
     const key = el.getAttribute('data-i18n-placeholder');
     el.setAttribute('placeholder', t(key));
   });
+  // AJOUT : bouton de langue dans la barre du haut (écran d'accueil), tient
+  // à jour l'étiquette (EN/FR/AR) quel que soit le point d'entrée qui a
+  // changé la langue (bouton du haut, ou anciens écrans de langue).
+  const topLangBtn = document.getElementById('topLangBtn');
+  if(topLangBtn) topLangBtn.textContent = lang.toUpperCase();
+}
+function cycleLanguage(){
+  const order = ['en','fr','ar'];
+  const current = order.includes(state.settings.lang) ? state.settings.lang : 'en';
+  const next = order[(order.indexOf(current)+1) % order.length];
+  selectLanguage(next);
 }
 function selectLanguage(lang){
   document.getElementById('langCardFr').classList.toggle('selected', lang==='fr');
@@ -14107,7 +14243,11 @@ function setPoolScore(pid,mid,side,value){
   ps.picks[mid] ||= {};
   ps.picks[mid][side]=Math.max(0,Math.min(20,parseInt(value||0,10)));
 }
-function joinOrSubmitPool(id){
+function joinOrSubmitPool(){
+  const args = arguments;
+  requireAuth(()=>joinOrSubmitPoolImpl(...args));
+}
+function joinOrSubmitPoolImpl(id){
   const p=getLongcoursPools().find(x=>x.id===id);
   if(!p) return;
   const ps=poolState(id);
@@ -14142,7 +14282,11 @@ function joinOrSubmitPool(id){
 // (100 pts = 1 USDT, même barème que la marketplace). Déduction locale au
 // même titre que l'entrée en USDT ci-dessus (aucune des deux n'est
 // actuellement persistée côté serveur au moment de l'entrée).
-function joinPoolWithPoints(id){
+function joinPoolWithPoints(){
+  const args = arguments;
+  requireAuth(()=>joinPoolWithPointsImpl(...args));
+}
+function joinPoolWithPointsImpl(id){
   const p=getLongcoursPools().find(x=>x.id===id);
   if(!p) return;
   const ps=poolState(id);
@@ -14338,7 +14482,11 @@ function updateCouponStake(value){
   renderMatchSpace();
 }
 
-async function submitCouponSlip(){
+function submitCouponSlip(){
+  const args = arguments;
+  requireAuth(()=>submitCouponSlipImpl(...args));
+}
+async function submitCouponSlipImpl(){
   if(!sbUser){ showToast('Connecte-toi pour parier', '&#x26a0;&#xfe0f;'); return; }
   if(couponSlip.selections.length === 0) return;
   try{
@@ -14512,7 +14660,7 @@ function renderMatchesTab(){ renderMatchSpace(); }
 
 /* ---------- Init ---------- */
 window.addEventListener('DOMContentLoaded', async ()=>{
-  applyLanguage('fr');
+  applyLanguage('en');
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then((reg) => {
       // Mise à jour forcée et SILENCIEUSE : sans ceci, un utilisateur avec
@@ -14550,7 +14698,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
   // Reste connecté : si une session existe déjà sur cet appareil, on ne
   // redemande que le PIN au lieu de repartir de l'écran de langue/connexion.
-  await tryColdStartLock();
+  const wasLocked = await tryColdStartLock();
+  // AJOUT (mode invité par défaut) : premier lancement (aucune session locale
+  // enregistrée) -> on saute directement le choix de langue et l'écran
+  // d'accueil marketing (splash), et on ouvre le tableau de bord en mode
+  // invité. Les écrans langue/splash/connexion/inscription restent
+  // utilisables plus tard via requireAuth() dès qu'une vraie action de compte
+  // est tentée (voir enterGuestMode/requireAuth).
+  if(!wasLocked) enterGuestMode();
 });
 </script>
 
@@ -14637,7 +14792,15 @@ function lcOpenJobReservation(id){
   const d=document.createElement('div');d.id='lcJobReservationModal';d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet"><button class="btn-ghost" onclick="document.getElementById('lcJobReservationModal').remove()">←</button><h3>Postuler à un poste</h3><div class="sub">${esc(o.title)} · ${esc(o.city)}, ${esc(o.country)}</div><div class="job-points-box">Participation requise : <b>🪙 ${Number(o.points_required||0).toLocaleString('fr-FR')} points</b><br><small>Les points requis sont débités à la validation de la candidature. Si ton solde est insuffisant, la candidature ne peut pas être envoyée.</small></div><form onsubmit="return lcSubmitJobReservation(event)"><input class="input" id="lcJobName" required placeholder="Nom complet"><input class="input" id="lcJobEmail" type="email" placeholder="Email"><input class="input" id="lcJobPhone" placeholder="Téléphone"><input class="input" id="lcJobResidence" placeholder="Pays de résidence"><textarea class="input" id="lcJobMessage" rows="4" placeholder="Message ou expérience professionnelle"></textarea><button class="btn btn-primary" type="submit" style="width:100%">Envoyer ma candidature</button></form></div>`;document.body.appendChild(d);
   if(typeof sbUser!=='undefined'&&sbUser){const email=document.getElementById('lcJobEmail');if(email&&!email.value)email.value=sbUser.email||'';}
 }
-async function lcSubmitJobReservation(ev){ev.preventDefault();
+function lcSubmitJobReservation(){
+  // AJOUT (mode invité) : la prévention du submit doit rester immédiate ;
+  // la connexion (si nécessaire) est demandée avant d'exécuter l'action réelle.
+  if(arguments[0] && typeof arguments[0].preventDefault==='function') arguments[0].preventDefault();
+  const args = arguments;
+  requireAuth(()=>lcSubmitJobReservationImpl(...args));
+  return false;
+}
+async function lcSubmitJobReservationImpl(ev){ev.preventDefault();
   if(typeof sbUser==='undefined'||!sbUser){alert('Connecte-toi pour postuler à un poste.');return false;}
   const o=lcJobSelected;if(!o)return false;
   const required=Number(o.points_required||0);
