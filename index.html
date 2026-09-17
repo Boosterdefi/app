@@ -4462,7 +4462,13 @@ function makeOfflineSupabaseStub(){
     apply(){
       if(!warned){
         warned = true;
-        alert("Cette application doit être ouverte depuis le site Longcours en ligne (et non depuis un fichier ouvert localement). Vérifie ta connexion internet et ouvre l'app via son lien officiel.");
+        // CORRECTIF (2026-09-17) : un `alert()` est une boîte de dialogue
+        // BLOQUANTE — sur certains navigateurs mobiles, elle peut geler
+        // l'affichage avant même que le passage à l'écran d'accueil (mode
+        // invité) ne soit visible, donnant l'impression que l'app reste
+        // coincée sur l'écran de langue. On utilise maintenant le toast non
+        // bloquant déjà utilisé partout ailleurs dans l'app.
+        showToast("Connexion au serveur indisponible — vérifie ta connexion internet.", '&#x26a0;&#xfe0f;');
       }
       return Promise.resolve({ data: null, error: { message: 'Supabase indisponible (fichier local ou hors-ligne)' } });
     }
