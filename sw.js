@@ -1,5 +1,5 @@
-/* Longcours PWA service worker — cache shell uniquement, données/API réseau. */
-const CACHE = 'longcours-shell-v11';
+/* TheterBank LOAN PWA service worker — cache shell uniquement, données/API réseau. */
+const CACHE = 'theterbank-shell-v12';
 const SHELL = [
   '/',
   '/index.html',
@@ -73,11 +73,11 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) {}
 
-  const title = data.title || 'Longcours';
+  const title = data.title || 'TheterBank';
   const options = {
     body: data.body || 'Nouvel appel',
-    icon: 'icon-192.png?v=3',
-    badge: 'icon-192.png?v=3',
+    icon: 'icon-192.png?v=4',
+    badge: 'icon-192.png?v=4',
     tag: data.type === 'incoming_call' ? ('call-' + (data.call_id || 'x')) : undefined,
     renotify: true,
     requireInteraction: data.type === 'incoming_call', // reste affichée tant que l'utilisateur n'interagit pas
@@ -100,4 +100,5 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.openWindow) return clients.openWindow('./');
     })
   );
+});
 });
