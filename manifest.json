@@ -1,20 +1,25 @@
 {
-  "id": "/",
-  "name": "Longcours",
-  "short_name": "Longcours",
-  "description": "Longcours — tourisme gratuit au Canada.",
-  "lang": "fr",
-  "dir": "ltr",
-  "start_url": "/",
-  "scope": "/",
+  "name": "TheterBank LOAN",
+  "short_name": "TheterBank",
+  "description": "TheterBank LOAN",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "orientation": "portrait-primary",
-  "background_color": "#FFF7E9",
-  "theme_color": "#D97706",
-  "categories": ["travel", "lifestyle"],
+  "orientation": "any",
+  "background_color": "#061A46",
+  "theme_color": "#061A46",
   "icons": [
-    {"src":"/icon-192.png?v=3","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"/icon-512.png?v=3","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
