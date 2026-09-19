@@ -22,10 +22,66 @@
     document.documentElement.style.setProperty('--app-vh', h + 'px');
   }
   /* CORRECTIF (2026-09-19) : petit écran TACTILE dont le navigateur calcule la page sur
-     ~980 px (mode "Site pour ordinateur", WebView...). Dans ce cas la balise viewport est
-     ignorée. On tente d'abord de la forcer ; si la largeur reste > 700 px, on compense
-     avec un zoom CSS (largeur écran / largeur calculée) pour retrouver une mise en page
-     de ~400 px. Ne fait STRICTEMENT rien sur un vrai PC (souris) ni sur un mobile normal. */
+     ~980 px (mode "Site pour ordinateur", WebView...). La balise viewport est alors ignorée.
+     On compense avec un zoom CSS (largeur écran / largeur calculée) pour retrouver une mise en
+     page de ~400 px, ET on réécrit les media queries (min/max-width/height) et les unités
+     vh/vw des feuilles de style à l'échelle du zoom, pour que les règles "mobile" (max-width:
+     600px, 480px...) s'appliquent comme sur un vrai téléphone. Ne fait STRICTEMENT rien sur un
+     vrai PC (souris) ni sur un mobile normal. */
+  var TB={z:0,rules:[],sheets:0};
+  var RE_MQ=/((?:min|max)-(?:width|height))\s*:\s*(-?[\d.]+)px/gi;
+  var RE_MQ_T=/(?:min|max)-(?:width|height)\s*:\s*-?[\d.]+px/i;
+  var RE_VU=/(-?[\d.]+)(dvh|svh|lvh|vh|dvw|svw|lvw|vw|vmin|vmax)(?![a-z])/gi;
+  var RE_VU_T=/-?[\d.]+(?:dvh|svh|lvh|vh|dvw|svw|lvw|vw|vmin|vmax)(?![a-z])/i;
+  function tbWalk(rules,fn){
+    for(var i=0;i<rules.length;i++){
+      var r=rules[i]; fn(r);
+      try{ if(r.cssRules && r.cssRules.length) tbWalk(r.cssRules,fn); }catch(e){}
+    }
+  }
+  function tbPrep(rule){
+    if(rule.__tbP) return; rule.__tbP=1;
+    try{
+      if(typeof CSSMediaRule!=='undefined' && rule instanceof CSSMediaRule){
+        if(RE_MQ_T.test(rule.media.mediaText)){ rule.__tbMQ=rule.media.mediaText; TB.rules.push(rule); }
+      }else if(rule.style && rule.style.length){
+        var list=null;
+        for(var j=0;j<rule.style.length;j++){
+          var pn=rule.style[j], pv=rule.style.getPropertyValue(pn);
+          if(pv && RE_VU_T.test(pv)){ (list=list||[]).push([pn,pv,rule.style.getPropertyPriority(pn)]); }
+        }
+        if(list){ rule.__tbVU=list; TB.rules.push(rule); }
+      }
+    }catch(e){}
+  }
+  function tbApply(z,from){
+    for(var i=from||0;i<TB.rules.length;i++){
+      var r=TB.rules[i];
+      try{
+        if(r.__tbMQ!==undefined){
+          var t=z?r.__tbMQ.replace(RE_MQ,function(m,f,v){return f+': '+(parseFloat(v)*z).toFixed(2)+'px';}):r.__tbMQ;
+          if(r.media.mediaText!==t) r.media.mediaText=t;
+        }
+        if(r.__tbVU){
+          for(var k=0;k<r.__tbVU.length;k++){
+            var d=r.__tbVU[k];
+            var nv=z?d[1].replace(RE_VU,function(m,n,u){return 'calc('+n+u+' / '+z.toFixed(4)+')';}):d[1];
+            r.style.setProperty(d[0],nv,d[2]);
+          }
+        }
+      }catch(e){}
+    }
+  }
+  function tbScan(){
+    var n=document.styleSheets.length;
+    var before=TB.rules.length;
+    for(var i=0;i<n;i++){
+      var rs=null; try{ rs=document.styleSheets[i].cssRules; }catch(e){ continue; }
+      if(rs) tbWalk(rs,tbPrep);
+    }
+    TB.sheets=n;
+    if(TB.z) tbApply(TB.z,before);
+  }
   function fitWide(){
     try{
       var root=document.documentElement;
@@ -42,18 +98,31 @@
         root.style.setProperty('--tb-z',String(z));
         root.style.zoom=String(z);
         root.classList.add('tb-fix-wide');
+        if(Math.abs(z-TB.z)>0.01){ TB.z=z; tbScan(); tbApply(z,0); }
       }else if(root.classList.contains('tb-fix-wide')){
         root.style.zoom='';
         root.style.removeProperty('--tb-z');
         root.classList.remove('tb-fix-wide');
+        TB.z=0; tbApply(0,0);
       }
     }catch(e){}
   }
   fitWide();
   window.addEventListener('resize', fitWide);
   window.addEventListener('orientationchange', fitWide);
-  setTimeout(fitWide,400);
-  setTimeout(fitWide,1500);
+  document.addEventListener('DOMContentLoaded', function(){ fitWide(); if(TB.z) tbScan(); });
+  window.addEventListener('load', function(){ fitWide(); if(TB.z) tbScan(); });
+  setTimeout(function(){ fitWide(); if(TB.z) tbScan(); },400);
+  setTimeout(function(){ fitWide(); if(TB.z) tbScan(); },1500);
+  try{
+    /* Applique la mise à l'échelle dès que le navigateur a chargé de nouvelles feuilles de
+       style (évite un flash de mise en page desktop). Arrêté après le chargement complet. */
+    var tbMo=new MutationObserver(function(){
+      if(TB.z && document.styleSheets.length!==TB.sheets) tbScan();
+    });
+    tbMo.observe(document.documentElement,{childList:true,subtree:true});
+    window.addEventListener('load',function(){ tbMo.disconnect(); });
+  }catch(e){}
   setAppVh();
   window.addEventListener('resize', setAppVh);
   window.addEventListener('orientationchange', setAppVh);
@@ -18428,11 +18497,31 @@ function lcShowJobSuccess(o,debited,remaining){
 <style id="theterbank-fix-wide-touch">
 /* CORRECTIF (2026-09-19) : voir fitWide() dans le <head>. Actif uniquement quand le script a
    détecté un petit écran tactile calculé sur ~980 px (classe html.tb-fix-wide). */
+html.tb-fix-wide{height:calc(var(--app-vh) / var(--tb-z)) !important;min-height:0 !important;}
 html.tb-fix-wide body{padding:0 !important;min-height:0 !important;height:calc(var(--app-vh) / var(--tb-z)) !important;display:block !important;}
 html.tb-fix-wide .stage,
 html.tb-fix-wide .phone{width:100% !important;max-width:none !important;height:calc(var(--app-vh) / var(--tb-z)) !important;min-height:0 !important;max-height:none !important;border-radius:0 !important;padding:0 !important;box-shadow:none !important;}
 html.tb-fix-wide .phone-notch{display:none !important;}
 html.tb-fix-wide .app{width:100% !important;height:100% !important;border-radius:0 !important;}
+</style>
+<style id="theterbank-topbar-fit-mobile">
+/* CORRECTIF (2026-09-19) : sur téléphone (<= 480 px) l'en-tête de l'accueil (sélecteur de langue +
+   logo + portefeuille + cloche) était plus large que l'écran : le portefeuille et la cloche étaient
+   coupés à droite. On resserre légèrement les éléments pour que tout tienne. */
+@media (max-width:480px){
+  .topbar{padding-left:14px;padding-right:14px;gap:6px;}
+  .topbar .brand{gap:6px;min-width:0;}
+  .lang-switch{margin-right:2px;padding:2px;}
+  .lang-switch-btn{padding:4px 5px;font-size:10px;gap:2px;}
+  .lang-switch-btn .lsw-flag{font-size:10px;}
+  .logo-ball{width:28px;height:28px;flex-shrink:0;}
+  .brand-name{font-size:14px;white-space:nowrap;}
+  .topbar-actions{gap:6px;flex-shrink:0;}
+  .wallet-chip{padding:4px 9px 4px 4px;gap:5px;}
+  .wallet-chip-coin{width:22px;height:22px;}
+  .wallet-chip-lbl,.wallet-chip-chev{display:none;}
+  .bell-btn{width:34px;height:34px;font-size:15px;}
+}
 </style>
 <script id="theterbank-emploi-i18n-hardening">
 (function(){
