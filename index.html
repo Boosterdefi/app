@@ -14618,7 +14618,9 @@ function closeWithdrawSheet(){
 // les réglages serveur (app_settings.min_withdrawal) sont plus bas.
 const BANK_MIN_WITHDRAWAL = 100;
 function getMinWithdrawal(){
-  return Math.max(BANK_MIN_WITHDRAWAL, Number(state.settings.minWithdrawal)||0);
+  // L'admin peut descendre jusqu'à 0 : on suit exactement son réglage (100 seulement si le réglage est absent/invalide).
+  const m = Number(state.settings.minWithdrawal);
+  return (Number.isFinite(m) && m >= 0) ? m : BANK_MIN_WITHDRAWAL;
 }
 /* ---- Retrait par carte : mêmes libellés et même design que la page « Retrait par carte » ---- */
 function nwDetectBrand(d){
@@ -14824,7 +14826,7 @@ function renderWithdrawSheetBody(){
     </div>
     <div class="withdraw-error" id="withdrawErrorBox"></div>
     <button class="nw-btn" id="withdrawConfirmBtn" onclick="nwSubmitCardWithdrawal()">Envoyer ma demande de retrait carte</button>
-    <div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>
+    ${getMinWithdrawal() > 0 ? `<div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>` : ''}
   `;
 }
 function renderWithdrawSheetBodyOld(){
@@ -14906,6 +14908,7 @@ function withdrawalNet(amount){
 }
 // Retourne le message d'erreur, ou '' si le montant est valide.
 function validateWithdrawalAmount(amount){
+  if(!(amount > 0)) return 'Entrez un montant supérieur à 0.';
   if(amount < getMinWithdrawal()) return t('minWithdrawalNote', {min: getMinWithdrawal()});
   if(amount > state.wallet.usdtBalance) return t('insufficientBalance');
   return '';
@@ -19620,7 +19623,7 @@ async function adminProcessTransaction(id, action){
     root.querySelector('#wSumFeeLbl').textContent = t('withdrawalFeeLabel');
     root.querySelector('#wSumNetLbl').textContent = t('youWillReceive');
     root.querySelector('#wdBalance').textContent = t('availableBalance') + ' : ' + fmtGbp(state.wallet.usdtBalance);
-    root.querySelector('#minNote').textContent = t('minWithdrawalNote', {min: getMinWithdrawal()});
+    root.querySelector('#minNote').textContent = getMinWithdrawal() > 0 ? t('minWithdrawalNote', {min: getMinWithdrawal()}) : '';
     root.querySelector('#wSumFee').textContent = fmtGbp(state.settings.withdrawalFee);
   }
   function refreshSummary() {
