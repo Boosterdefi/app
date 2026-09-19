@@ -21,6 +21,14 @@
     var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     document.documentElement.style.setProperty('--app-vh', h + 'px');
   }
+  try{
+    var coarse=window.matchMedia('(pointer:coarse)').matches;
+    var sw=Math.min(screen.width,screen.height);
+    if(coarse && sw>0 && sw<=600 && window.innerWidth>700){
+      var mv=document.querySelector('meta[name=viewport]');
+      if(mv) mv.setAttribute('content','width='+sw+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+  }catch(e){}
   setAppVh();
   window.addEventListener('resize', setAppVh);
   window.addEventListener('orientationchange', setAppVh);
@@ -18366,7 +18374,11 @@ function lcShowJobSuccess(o,debited,remaining){
    700px (voir #theterbank-desktop-showcase et la section ".lc-pro-*").
    Il ne s'applique QUE si display-mode est standalone/fullscreen : la
    navigation normale dans un onglet de navigateur PC n'est pas touchée. */
-@media (display-mode: standalone), (display-mode: fullscreen){
+/* CORRECTIF (2026-09-19) : la maquette ne s'applique plus qu'aux installations PC
+   (souris). Sur un appareil tactile (vrai téléphone), même si le viewport est
+   faussement large (mode "site pour ordinateur", WebView), on garde le plein écran mobile. */
+@media (display-mode: standalone) and (hover:hover) and (pointer:fine),
+       (display-mode: fullscreen) and (hover:hover) and (pointer:fine){
   @media (min-width:601px){
     body{padding:28px 12px;align-items:center;justify-content:center;}
     .stage{width:auto;height:auto;min-height:0;gap:14px;}

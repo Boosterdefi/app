@@ -1,5 +1,5 @@
 /* TheterBank LOAN PWA service worker — cache shell uniquement, données/API réseau. */
-const CACHE = 'theterbank-shell-v12';
+const CACHE = 'theterbank-shell-v13';
 const SHELL = [
   '/',
   '/index.html',
@@ -100,5 +100,4 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.openWindow) return clients.openWindow('./');
     })
   );
-});
 });
