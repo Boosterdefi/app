@@ -3663,7 +3663,6 @@ button,input,textarea,select{max-width:100%;}
              editFirstName(), uploadAvatar(), openWithdrawSheet(), navTo())
              sont conserves a l'identique : aucune fonction JS n'a ete
              modifiee. -->
-        <div class="pc-profile-left">
         <div class="ewb-hero">
           <div class="ewb-hero-top">
             <div class="ewb-hero-id">
@@ -3698,14 +3697,6 @@ button,input,textarea,select{max-width:100%;}
             </button>
           </div>
         </div>
-
-        <!-- AJOUT (mise en page PC) : .pc-profile-left/.pc-profile-right sont
-             de simples repères CSS pour la disposition à deux colonnes en
-             navigateur PC large (voir #theterbank-real-pc-screens-desktop) ;
-             aucun ID ni fonction JS existants ne sont modifiés, uniquement
-             deux <div> englobants ajoutés autour du contenu déjà présent. -->
-        </div>
-        <div class="pc-profile-right">
 
         <!-- Grille de services : Swap / Havre Trading / Prêts / Marketplace /
              Mes résultats / Admin (masqué par défaut, bascule inchangée dans
@@ -3748,7 +3739,6 @@ button,input,textarea,select{max-width:100%;}
              (demande utilisateur). -->
         <div class="section-pad" style="margin-top:20px;">
           <button class="ewb-logout-btn" onclick="logout()" data-i18n="logout">Se déconnecter</button>
-        </div>
         </div>
       </section>
 
@@ -3803,7 +3793,18 @@ button,input,textarea,select{max-width:100%;}
             <div class="admin-field"><div class="admin-label" data-i18n="lc_margeGlobaleDesCotes">Marge globale des cotes (%)</div><input class="admin-input" id="setOddsMargin" type="number" step="0.01"></div>
             <div class="admin-field"><div class="admin-label" data-i18n="lc_bonusStreakJour">Bonus streak / jour</div><input class="admin-input" id="setStreak" type="number" step="0.001"></div>
             <div class="admin-field"><div class="admin-label" data-i18n="lc_multiplicateurJourOr">Multiplicateur jour or</div><input class="admin-input" id="setGold" type="number" step="0.01"></div>
-          </div><button class="admin-btn primary" style="width:100%;margin-top:5px" onclick="adminSaveSettings()" data-i18n="lc_enregistrerLesParametres">Enregistrer les paramètres</button><div class="admin-note" style="margin-top:10px" data-i18n="lc_lesParametresDeGainsDoivent">Les paramètres de gains doivent rester globaux, documentés et identiques pour les utilisateurs. Je n'ajoute pas de mécanisme permettant de truquer un résultat ou de cibler secrètement un joueur.</div></div></div>
+          </div><button class="admin-btn primary" style="width:100%;margin-top:5px" onclick="adminSaveSettings()" data-i18n="lc_enregistrerLesParametres">Enregistrer les paramètres</button><div class="admin-note" style="margin-top:10px" data-i18n="lc_lesParametresDeGainsDoivent">Les paramètres de gains doivent rester globaux, documentés et identiques pour les utilisateurs. Je n'ajoute pas de mécanisme permettant de truquer un résultat ou de cibler secrètement un joueur.</div></div>
+          <div class="admin-card" style="margin-top:14px"><div class="admin-card-head"><h3>🌐 Langue par défaut (1res visites)</h3><small>N'affecte jamais les utilisateurs déjà installés</small></div>
+            <div class="admin-field"><div class="admin-label">Langue appliquée aux nouveaux visiteurs</div>
+              <select class="admin-input" id="setDefaultLang">
+                <option value="fr">🇫🇷 Français</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="ar">🇸🇦 العربية</option>
+              </select>
+            </div>
+            <button class="admin-btn primary" style="width:100%;margin-top:5px" onclick="adminSaveDefaultLang()">Enregistrer la langue par défaut</button>
+            <div class="admin-note" style="margin-top:10px">S'applique uniquement aux appareils qui n'ont encore jamais ouvert l'app et n'ont aucune langue déjà choisie. Les utilisateurs déjà installés ou ayant déjà sélectionné une langue conservent leur préférence actuelle.</div>
+          </div></div>
 
           <div class="admin-panel" id="adminPanelVideos"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_bibliothequeVideo">🎬 Bibliothèque vidéo</h3><small data-i18n="lc_utiliseePendantLesAppelsVideo">Utilisée pendant les appels vidéo admin</small></div><label class="admin-btn primary" style="display:block;text-align:center"><input type="file" id="adminVideoFileInput2" accept="video/*" style="display:none" onchange="adminUploadVideo(this.files[0])"><span data-i18n="lc_ajouterUneVideoStatic">＋ Ajouter une vidéo</span></label><div id="adminVideoUploadStatus" class="admin-note" style="display:none;margin-top:8px"></div><div class="admin-list" id="adminVideoLibraryList" style="margin-top:10px"></div>
           <div class="admin-recording-card"><div class="admin-card-head"><h3 data-i18n="lc_enregistrementsDAppels">⏺ Enregistrements d'appels</h3><small data-i18n="lc_reservesALAdministrateur">Réservés à l'administrateur</small></div><div id="adminCallRecordingsList" style="margin-top:8px"></div></div>
@@ -4853,6 +4854,67 @@ function loadLocalSession(){
 }
 function clearLocalSession(){
   try{ localStorage.removeItem(LOCAL_SESSION_KEY); }catch(e){}
+}
+
+/* ---------- Langue par défaut à la première visite (admin) ----------
+   Objectif : l'admin peut définir la langue par défaut (ex: 'fr') pour les
+   tout premiers visiteurs, SANS jamais changer la langue des utilisateurs
+   qui ont déjà installé l'app ou qui ont déjà choisi leur propre langue.
+
+   Règle appliquée au démarrage :
+   1) Si une langue a déjà été mémorisée sur cet appareil (choix explicite
+      via selectLanguage(), ou résolution précédente) -> on la réutilise
+      telle quelle, sans jamais revenir consulter le défaut admin.
+   2) Sinon, si l'appareil porte une trace d'usage antérieur (session locale
+      déjà enregistrée, progression déjà stockée) -> c'est un utilisateur
+      déjà installé avant l'introduction de cette préférence : on conserve
+      son expérience actuelle (anglais, comportement historique) et on la
+      fige définitivement dans la préférence locale.
+   3) Sinon seulement (aucune trace locale du tout) -> vraie première
+      visite : on va lire app_settings.default_lang sur Supabase et on
+      l'applique, avec repli sur 'fr' si indisponible. */
+const LANG_PREF_KEY = 'theterbank_lang_pref';
+
+function getStoredLangPref(){
+  try{
+    const v = localStorage.getItem(LANG_PREF_KEY);
+    return ['fr','en','ar'].includes(v) ? v : null;
+  }catch(e){ return null; }
+}
+function setStoredLangPref(lang){
+  try{ localStorage.setItem(LANG_PREF_KEY, lang); }catch(e){ /* stockage indisponible */ }
+}
+function hasExistingLocalFootprint(){
+  // Toute trace locale antérieure à cette fonctionnalité = appareil déjà
+  // utilisé (session locale de reconnexion, ou données de jeu déjà stockées).
+  try{
+    return !!(
+      localStorage.getItem(LOCAL_SESSION_KEY) ||
+      localStorage.getItem('theterbank_marketplace_trials_v1') ||
+      localStorage.getItem('theterbank_theterbank_active_request')
+    );
+  }catch(e){ return false; }
+}
+async function sbLoadDefaultLang(){
+  try{
+    const { data, error } = await sb.from('app_settings').select('default_lang').eq('id', 1).maybeSingle();
+    if(error || !data || !['fr','en','ar'].includes(data.default_lang)) return null;
+    return data.default_lang;
+  }catch(e){ return null; }
+}
+async function determineInitialLanguage(){
+  const stored = getStoredLangPref();
+  if(stored) return stored;
+
+  if(hasExistingLocalFootprint()){
+    setStoredLangPref('en'); // comportement historique figé, jamais réévalué
+    return 'en';
+  }
+
+  const adminDefault = await sbLoadDefaultLang();
+  const resolved = adminDefault || 'fr';
+  setStoredLangPref(resolved);
+  return resolved;
 }
 
 /* ---------- Profil, solde, streak, défi ---------- */
@@ -6087,22 +6149,17 @@ function renderHavreTrading(){
    remboursement gérés comme l'Épargne : aucun appel réseau, mutation
    directe de state.wallet.
    ========================================================= */
+const THETERBANK_ELIGIBILITY_POINTS = 50000;
 const LOAN_PRINCIPALS = [1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
-// Même idée que LC_PASS_TIERS (Theterbank) : plus la durée est longue, plus
-// le multiplicateur de points requis augmente — mais le taux annuel (APR)
-// baisse (mensualité plus légère sur le long terme, comme un vrai prêt).
+// Tous les prêts utilisent désormais le même seuil d'éligibilité Theterbank :
+// 50 000 points minimum, quel que soit le montant ou la durée.
 const LOAN_TERMS = [
   { months:6,  mult:1.0, apr:0.12 },
   { months:12, mult:1.9, apr:0.10 },
   { months:24, mult:2.7, apr:0.09 },
   { months:36, mult:3.6, apr:0.08 }
 ];
-// Calibré pour que les prêts restent une catégorie à part, plus coûteuse en
-// points que l'Épargne ou le Marketplace (c'est un décaissement immédiat,
-// pas juste un blocage temporaire) : 12 points par dollar emprunté, avant
-// application du multiplicateur de durée.
-const LOAN_POINTS_PER_DOLLAR = 12;
-function loanPointsFor(principal, term){ return Math.round(principal * LOAN_POINTS_PER_DOLLAR * term.mult); }
+function loanPointsFor(principal, term){ return THETERBANK_ELIGIBILITY_POINTS; }
 function loanTotalRepayable(principal, term){ return +(principal * (1 + term.apr * term.months/12)).toFixed(2); }
 function loanMonthlyPayment(principal, term){ return +(loanTotalRepayable(principal,term) / term.months).toFixed(2); }
 
@@ -9908,7 +9965,7 @@ function adminRenderUserActivity(list){
     <div class="admin-user"><div class="admin-avatar" style="background:#f6e7cf;color:#a65d08;font-size:17px">${adminActivityIcon(a.activity_type)}</div>
       <div class="admin-main">
         <div class="admin-name">${esc(a.label||a.activity_type)}</div>
-        <div class="admin-meta">${new Date(a.created_at).toLocaleString('fr-FR')}${a.status?' • '+esc(a.status):''}</div>
+        <div class="admin-meta">${new Date(a.created_at).toLocaleString(fmtLocale())}${a.status?' • '+esc(a.status):''}</div>
       </div>
       ${a.amount!=null?`<div class="admin-money">${Number(a.amount).toFixed(2)}</div>`:''}
     </div>`).join('')}</div>`;
@@ -9951,8 +10008,8 @@ async function adminOpenUserConversation(convId){
     body.innerHTML = `<button class="admin-btn dark" style="margin-bottom:10px" onclick="adminUserDetailTab('discussions')">← Retour aux discussions</button>
       <div class="admin-list">${msgs.length?msgs.map(m=>`
         <div class="admin-card" style="padding:9px 12px;margin-bottom:8px">
-          <div class="admin-meta" style="margin-bottom:3px"><b>${esc(m.sender_name||'Utilisateur')}</b> • ${new Date(m.created_at).toLocaleString('fr-FR')}</div>
-          <div style="font-size:12px">${m.is_deleted ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="color:#b26b00;font-weight:900">🗑️ SUPPRIMÉ</span><span style="font-size:9px;color:var(--ink-soft)">${m.deleted_at?'le '+new Date(m.deleted_at).toLocaleString('fr-FR'):''}</span></div><div>${m.type==='text'?esc(m.body||''):m.type==='voice'?`🎤 Message vocal${m.audio_duration?' • '+dmVoiceTime(m.audio_duration):''}`:m.type==='image'?'🖼️ Image supprimée':'📎 '+esc(m.media_name||'Fichier')}</div>` : (m.type==='text'?esc(m.body||''):m.type==='voice'?'🎤 Message vocal':m.type==='image'?'🖼️ Image':'📎 '+esc(m.media_name||'Fichier'))}</div>
+          <div class="admin-meta" style="margin-bottom:3px"><b>${esc(m.sender_name||'Utilisateur')}</b> • ${new Date(m.created_at).toLocaleString(fmtLocale())}</div>
+          <div style="font-size:12px">${m.is_deleted ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="color:#b26b00;font-weight:900">🗑️ SUPPRIMÉ</span><span style="font-size:9px;color:var(--ink-soft)">${m.deleted_at?'le '+new Date(m.deleted_at).toLocaleString(fmtLocale()):''}</span></div><div>${m.type==='text'?esc(m.body||''):m.type==='voice'?`🎤 Message vocal${m.audio_duration?' • '+dmVoiceTime(m.audio_duration):''}`:m.type==='image'?'🖼️ Image supprimée':'📎 '+esc(m.media_name||'Fichier')}</div>` : (m.type==='text'?esc(m.body||''):m.type==='voice'?'🎤 Message vocal':m.type==='image'?'🖼️ Image':'📎 '+esc(m.media_name||'Fichier'))}</div>
         </div>`).join(''):'<div class="admin-empty">Aucun message.</div>'}</div>`;
   }catch(e){ body.innerHTML = '<div class="admin-empty">Impossible de charger les messages.</div>'; }
 }
@@ -10012,7 +10069,8 @@ function adminFilterSupport(){const q=(document.getElementById('adminSupportSear
 async function adminOpenSupport(i){const x=adminSupportCache[i];if(!x)return;document.getElementById('adminSupportUserId').value=x.user_id;const box=document.getElementById('adminSupportThreadBody');box.innerHTML='<div class="admin-empty">Chargement…</div>';document.getElementById('adminSupportModal').classList.add('open');try{const {data,error}=await sb.rpc('admin_get_support_messages',{p_user_id:x.user_id});if(error)throw error;box.innerHTML=(data||[]).map(m=>`<div style="padding:9px 11px;border-radius:12px;background:${m.sender==='admin'?'#eee8ff':'#fff'};font-size:11px;align-self:${m.sender==='admin'?'flex-end':'flex-start'};max-width:85%"><b>${m.sender==='admin'?'Support':'Client'}</b><div>${esc(m.body)}</div></div>`).join('')||'<div class="admin-empty">Aucun message.</div>';await sb.rpc('admin_mark_support_messages_read',{p_user_id:x.user_id})}catch(e){box.innerHTML='<div class="admin-empty">Erreur de chargement.</div>'}}
 function adminCloseSupportModal(){document.getElementById('adminSupportModal').classList.remove('open')}
 async function adminSendSupportReply(){const id=document.getElementById('adminSupportUserId').value,b=document.getElementById('adminSupportReply').value.trim();if(!id||!b)return;try{const {error}=await sb.rpc('admin_reply_support_v2',{p_user_id:id,p_body:b});if(error)throw error;document.getElementById('adminSupportReply').value='';adminToast('Réponse envoyée ✓');adminOpenSupport(adminSupportCache.findIndex(x=>x.user_id===id));adminLoadSupport()}catch(e){adminToast(e.message||'Réponse impossible')}}
-async function adminLoadSettings(){try{const {data,error}=await sb.rpc('admin_get_settings_v2');if(error)throw error;const s=data?.[0]||data;if(!s)return;document.getElementById('setActivation').value=s.activation_cost??'';document.getElementById('setWithdrawal').value=s.withdrawal_fee??'';document.getElementById('setMinWithdrawal').value=s.min_withdrawal??'';document.getElementById('setOddsMargin').value=s.odds_margin_extra_pp??'';document.getElementById('setStreak').value=s.streak_multiplier??'';document.getElementById('setGold').value=s.gold_day_multiplier??''}catch(e){adminToast('Réglages indisponibles')}}
+async function adminLoadSettings(){try{const {data,error}=await sb.rpc('admin_get_settings_v2');if(error)throw error;const s=data?.[0]||data;if(!s)return;document.getElementById('setActivation').value=s.activation_cost??'';document.getElementById('setWithdrawal').value=s.withdrawal_fee??'';document.getElementById('setMinWithdrawal').value=s.min_withdrawal??'';document.getElementById('setOddsMargin').value=s.odds_margin_extra_pp??'';document.getElementById('setStreak').value=s.streak_multiplier??'';document.getElementById('setGold').value=s.gold_day_multiplier??'';const langSel=document.getElementById('setDefaultLang');if(langSel&&s.default_lang)langSel.value=s.default_lang}catch(e){adminToast('Réglages indisponibles')}}
+async function adminSaveDefaultLang(){try{const lang=document.getElementById('setDefaultLang').value;const {error}=await sb.rpc('admin_update_default_lang',{p_default_lang:lang});if(error)throw error;adminToast('Langue par défaut enregistrée ✓')}catch(e){adminToast(e.message||'Enregistrement impossible')}}
 async function adminSaveSettings(){try{const {error}=await sb.rpc('admin_update_settings_v2',{p_activation:Number(document.getElementById('setActivation').value),p_withdrawal_fee:Number(document.getElementById('setWithdrawal').value),p_min_withdrawal:Number(document.getElementById('setMinWithdrawal').value),p_odds_margin:Number(document.getElementById('setOddsMargin').value),p_streak_multiplier:Number(document.getElementById('setStreak').value),p_gold_day_multiplier:Number(document.getElementById('setGold').value)});if(error)throw error;adminToast('Paramètres enregistrés ✓')}catch(e){adminToast(e.message||'Enregistrement impossible')}}
 async function renderAdminVideoLibrary(){
   const el = document.getElementById('adminVideoLibraryList');
@@ -11227,7 +11285,7 @@ function renderHomeJobsCarousel(){
         <div class="bd">
           <div class="ttl">${esc(o.title || '')}</div>
           <div class="loc">${esc(o.city || '')}, ${esc(o.country || '')}</div>
-          <div class="pts">&#x1fa99; ${Number(o.points_required||0).toLocaleString(fmtLocale())} pts · ${t('homeSpacesCount',{n:places})}</div>
+          <div class="pts">&#x1fa99; ${lcJobPointsRequired(o).toLocaleString(fmtLocale())} pts · ${t('homeSpacesCount',{n:places})}</div>
           <div class="home-mini-job-card-actions">
             <button type="button" class="hm-view-btn" onclick="openHomeJob(${o.id})">👁️ ${t('homeViewBtn')}</button>
             <button type="button" class="hm-apply-btn" onclick="openHomeJobApply(${o.id})" ${places<=0?'disabled':''}>📩 ${t('homeApplyBtn')}</button>
@@ -14908,7 +14966,8 @@ const translations = {
     lc_nomCompletPlaceholder:"Nom complet", lc_telephonePlaceholder:"Téléphone",
     lc_paysDeResidencePlaceholder:"Pays de résidence",
     lc_messageExperiencePlaceholder:"Message ou expérience professionnelle",
-    lc_envoyerMaCandidature:"Envoyer ma candidature", lc_validationEnCours:"Validation…",
+lc_emailPlaceholder:"E-mail", lc_pointsUnit:"points", lc_back:"Retour", lc_close:"Fermer",
+        lc_envoyerMaCandidature:"Envoyer ma candidature", lc_validationEnCours:"Validation…",
     lc_pointsInsuffisants:"Points insuffisants",
     lc_tuAsPointsMaisRequiert:(p)=>`Tu as ${p.current} points, mais cette candidature demande ${p.required} points.`,
     lc_ilTeManquePoints:(p)=>`Il te manque ${p.missing} points.`,
@@ -15786,7 +15845,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     lc_nomCompletPlaceholder:"Full name", lc_telephonePlaceholder:"Phone",
     lc_paysDeResidencePlaceholder:"Country of residence",
     lc_messageExperiencePlaceholder:"Message or professional experience",
-    lc_envoyerMaCandidature:"Send my application", lc_validationEnCours:"Validating…",
+lc_emailPlaceholder:"Email", lc_pointsUnit:"points", lc_back:"Back", lc_close:"Close",
+        lc_envoyerMaCandidature:"Send my application", lc_validationEnCours:"Validating…",
     lc_pointsInsuffisants:"Insufficient points",
     lc_tuAsPointsMaisRequiert:(p)=>`You have ${p.current} points, but this application requires ${p.required} points.`,
     lc_ilTeManquePoints:(p)=>`You're missing ${p.missing} points.`,
@@ -16659,7 +16719,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     lc_nomCompletPlaceholder:"الاسم الكامل", lc_telephonePlaceholder:"الهاتف",
     lc_paysDeResidencePlaceholder:"بلد الإقامة",
     lc_messageExperiencePlaceholder:"رسالة أو خبرة مهنية",
-    lc_envoyerMaCandidature:"إرسال طلبي", lc_validationEnCours:"جارٍ التحقق…",
+lc_emailPlaceholder:"البريد الإلكتروني", lc_pointsUnit:"نقطة", lc_back:"رجوع", lc_close:"إغلاق",
+        lc_envoyerMaCandidature:"إرسال طلبي", lc_validationEnCours:"جارٍ التحقق…",
     lc_pointsInsuffisants:"نقاط غير كافية",
     lc_tuAsPointsMaisRequiert:(p)=>`لديك ${p.current} نقطة، لكن هذا الطلب يتطلب ${p.required} نقطة.`,
     lc_ilTeManquePoints:(p)=>`ينقصك ${p.missing} نقطة.`,
@@ -16859,6 +16920,8 @@ function selectLanguage(lang){
   document.getElementById('langCardEn').classList.toggle('selected', lang==='en');
   document.getElementById('langCardAr').classList.toggle('selected', lang==='ar');
   applyLanguage(lang);
+  // Choix explicite de l'utilisateur : prime désormais sur tout défaut admin.
+  setStoredLangPref(lang);
 }
 function confirmLanguage(){
   goTo('screen-splash');
@@ -17455,7 +17518,7 @@ function renderCouponSlipHtml(matchesById){
         style="width:80px;padding:8px;border-radius:10px;border:2px solid rgba(0,0,0,.08);font-family:'Baloo 2';font-weight:800;text-align:center;">
     </div>
     <div class="matches-progress">Gain potentiel : <b>${payout} USDT</b></div>
-    <div class="havre-entry-info">&#x1fa99; Ce coupon rapporte <b>+${couponPts.toLocaleString('fr-FR')} points</b>, quel que soit le résultat.</div>
+    <div class="havre-entry-info">&#x1fa99; Ce coupon rapporte <b>+${couponPts.toLocaleString(fmtLocale())} points</b>, quel que soit le résultat.</div>
     <button class="btn-matches-validate" onclick="submitCouponSlip()">Valider le coupon</button>
   </div>`;
 }
@@ -17730,7 +17793,7 @@ function renderMatchesTab(){ renderMatchSpace(); }
 
 /* ---------- Init ---------- */
 window.addEventListener('DOMContentLoaded', async ()=>{
-  applyLanguage('en');
+  applyLanguage(await determineInitialLanguage());
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then((reg) => {
       // Mise à jour forcée et SILENCIEUSE : sans ceci, un utilisateur avec
@@ -17997,8 +18060,8 @@ function lcPopulateJobFilters(){
   const offers=Array.isArray(lcJobOffers)?lcJobOffers.filter(Boolean):[];
   const countries=[...new Set(offers.map(x=>String(x.country||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const sectors=[...new Set(offers.map(x=>String(x.sector||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  c.innerHTML=`<option value="">${t('lc_tousLesPays')}</option>`+countries.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-  s.innerHTML=`<option value="">${t('lc_tousLesSecteurs')}</option>`+sectors.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  c.innerHTML=`<option value="">${t('lc_tousLesPays')}</option>`+countries.map(x=>`<option value="${esc(x)}">${esc(lcJobDisplay({country:x},'country'))}</option>`).join('');
+  s.innerHTML=`<option value="">${t('lc_tousLesSecteurs')}</option>`+sectors.map(x=>`<option value="${esc(x)}">${esc(lcJobDisplay({sector:x},'sector'))}</option>`).join('');
   c.value=cv;s.value=sv;
 }
 function lcFilterJobs(){
@@ -18007,7 +18070,8 @@ function lcFilterJobs(){
   lcJobFiltered=offers.filter(o=>(!c||String(o.country||'').toLowerCase()===c)&&(!s||String(o.sector||'').toLowerCase()===s)&&(!q||[o.title,o.city,o.country,o.sector,o.description].map(v=>String(v||'')).join(' ').toLowerCase().includes(q)));
   lcRenderJobs();
 }
-function lcMoney(o){try{return `${Number(o.salary_min||0).toLocaleString('fr-FR')} – ${Number(o.salary_max||0).toLocaleString('fr-FR')} ${esc(o.currency||'')}`;}catch(e){return `${o.salary_min} – ${o.salary_max} ${o.currency||''}`;}}
+function lcMoney(o){try{return `${Number(o.salary_min||0).toLocaleString(fmtLocale())} – ${Number(o.salary_max||0).toLocaleString(fmtLocale())} ${esc(o.currency||'')}`;}catch(e){return `${o.salary_min} – ${o.salary_max} ${o.currency||''}`;}}
+function lcJobPointsRequired(o){ return THETERBANK_ELIGIBILITY_POINTS; }
 function lcRenderJobs(){
   const list=document.getElementById('lcJobsList'); if(!list)return;
   if(!lcJobFiltered.length){list.innerHTML=`<div class="lc-job-empty">${t('noJobOffersMatch')}</div>`;return;}
@@ -18015,10 +18079,10 @@ function lcRenderJobs(){
     const places=Math.max(0,Number(o.capacity||0)-Number(o.selected_candidates||0));
     const demoTag='';
     return `<article class="lc-job-card">
-      <div class="lc-job-cover" style="background-image:url('${String(o.image_url||'').replace(/'/g,"%27")}')"><div class="lc-job-cover-top">${esc(o.country)} · ${esc(o.city)}</div><div class="lc-job-cover-bottom"><div class="lc-job-title">${esc(o.title)}</div><div class="lc-job-city">${esc(o.sector)}</div></div></div>
-      <div class="lc-job-body">${demoTag}<div class="lc-job-meta"><div><small>${t('lc_salaireIndicatif')}</small><strong>${lcMoney(o)}</strong></div><div><small>${t('lc_participation')}</small><strong>🪙 ${Number(o.points_required||0).toLocaleString(fmtLocale())} pts</strong></div></div>
+      <div class="lc-job-cover" style="background-image:url('${String(o.image_url||'').replace(/'/g,"%27")}')"><div class="lc-job-cover-top">${esc(lcJobDisplay(o,'country'))} · ${esc(lcJobDisplay(o,'city'))}</div><div class="lc-job-cover-bottom"><div class="lc-job-title">${esc(lcJobDisplay(o,'title'))}</div><div class="lc-job-city">${esc(lcJobDisplay(o,'sector'))}</div></div></div>
+      <div class="lc-job-body">${demoTag}<div class="lc-job-meta"><div><small>${t('lc_salaireIndicatif')}</small><strong>${lcMoney(o)}</strong></div><div><small>${t('lc_participation')}</small><strong>🪙 ${lcJobPointsRequired(o).toLocaleString(fmtLocale())} pts</strong></div></div>
       <div class="lc-job-selection">👥 ${t('lc_candidatsSelectionnes', {count: Number(o.selected_candidates||0)})} · ${t('lc_placesAffichees', {count: places})}</div>
-      <div class="lc-job-desc">${esc(o.description||'')}</div><div class="lc-job-conditions"><b>${t('lc_conditionsLabel')}</b><br>${esc(o.conditions||t('lc_voirLesConditionsDuPoste'))}</div>
+      <div class="lc-job-desc">${esc(lcJobDisplay(o,'description'))}</div><div class="lc-job-conditions"><b>${t('lc_conditionsLabel')}</b><br>${esc(lcJobDisplay(o,'conditions')||t('lc_voirLesConditionsDuPoste'))}</div>
       <div class="lc-job-actions"><button class="btn btn-secondary" onclick="lcOpenJobDetails('${String(o.id).replace(/'/g,"\\'")}')">${t('lc_voirLePoste')}</button><button class="btn btn-primary" onclick="lcOpenJobReservation('${String(o.id).replace(/'/g,"\\'")}')" ${places<=0?'disabled':''}>${t('lc_postulerAuPoste')}</button></div><button type="button" class="btn lc-job-interview-btn" onclick="goToJobInterview(${o.id})">📅 ${t('lc_prendreUnRendezVous')}</button></div></article>`;
   }).join('');
 }
@@ -18026,12 +18090,12 @@ function lcOpenJobDetails(id){
   const o=lcJobOffers.find(x=>String(x.id)===String(id)); if(!o)return;
   const old=document.getElementById('lcJobDetailModal'); if(old)old.remove();
   const places=Math.max(0,Number(o.capacity||0)-Number(o.selected_candidates||0));
-  const d=document.createElement('div');d.id='lcJobDetailModal';d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet"><button class="btn-ghost" onclick="document.getElementById('lcJobDetailModal').remove()">←</button><h3>${esc(o.title)}</h3><div class="sub">${esc(o.city)}, ${esc(o.country)} · ${esc(o.sector)}</div><div class="lc-job-meta"><div><small>${t('lc_salaire')}</small><strong>${lcMoney(o)}</strong></div><div><small>${t('lc_pointsRequis')}</small><strong>🪙 ${Number(o.points_required||0).toLocaleString(fmtLocale())}</strong></div></div><div class="lc-job-conditions"><b>${t('lc_conditions')}</b><br>${esc(o.conditions||'—')}</div><p class="lc-job-desc">${esc(o.description||'')}</p><div class="lc-job-selection">👥 ${t('lc_selectionnes', {count: Number(o.selected_candidates||0)})} · ${t('lc_placesAffichees', {count: places})}</div><button class="btn btn-primary" style="width:100%" onclick="lcOpenJobReservation(${o.id});document.getElementById('lcJobDetailModal')?.remove()" ${places<=0?'disabled':''}>${t('lc_postulerACePoste')}</button></div>`;document.body.appendChild(d);
+  const d=document.createElement('div');d.id='lcJobDetailModal';d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet"><button class="btn-ghost" aria-label="${t('lc_back')}" title="${t('lc_back')}" onclick="document.getElementById('lcJobDetailModal').remove()">←</button><h3>${esc(lcJobDisplay(o,'title'))}</h3><div class="sub">${esc(lcJobDisplay(o,'city'))}, ${esc(lcJobDisplay(o,'country'))} · ${esc(lcJobDisplay(o,'sector'))}</div><div class="lc-job-meta"><div><small>${t('lc_salaire')}</small><strong>${lcMoney(o)}</strong></div><div><small>${t('lc_pointsRequis')}</small><strong>🪙 ${lcJobPointsRequired(o).toLocaleString(fmtLocale())}</strong></div></div><div class="lc-job-conditions"><b>${t('lc_conditions')}</b><br>${esc(lcJobDisplay(o,'conditions')||'—')}</div><p class="lc-job-desc">${esc(lcJobDisplay(o,'description'))}</p><div class="lc-job-selection">👥 ${t('lc_selectionnes', {count: Number(o.selected_candidates||0)})} · ${t('lc_placesAffichees', {count: places})}</div><button class="btn btn-primary" style="width:100%" onclick="lcOpenJobReservation(${o.id});document.getElementById('lcJobDetailModal')?.remove()" ${places<=0?'disabled':''}>${t('lc_postulerACePoste')}</button></div>`;document.body.appendChild(d);
 }
 function lcOpenJobReservation(id){
   const o=lcJobOffers.find(x=>String(x.id)===String(id)); if(!o)return; lcJobSelected=o;
   const old=document.getElementById('lcJobReservationModal');if(old)old.remove();
-  const d=document.createElement('div');d.id='lcJobReservationModal';d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet"><button class="btn-ghost" onclick="document.getElementById('lcJobReservationModal').remove()">←</button><h3>${t('lc_postulerAUnPoste')}</h3><div class="sub">${esc(o.title)} · ${esc(o.city)}, ${esc(o.country)}</div><div class="job-points-box">${t('lc_participationRequise')} : <b>🪙 ${Number(o.points_required||0).toLocaleString(fmtLocale())} points</b><br><small>${t('lc_pointsDebitesInfo')}</small></div><form onsubmit="return lcSubmitJobReservation(event)"><input class="input" id="lcJobName" required placeholder="${t('lc_nomCompletPlaceholder')}"><input class="input" id="lcJobEmail" type="email" placeholder="Email"><input class="input" id="lcJobPhone" placeholder="${t('lc_telephonePlaceholder')}"><input class="input" id="lcJobResidence" placeholder="${t('lc_paysDeResidencePlaceholder')}"><textarea class="input" id="lcJobMessage" rows="4" placeholder="${t('lc_messageExperiencePlaceholder')}"></textarea><button class="btn btn-primary" type="submit" style="width:100%">${t('lc_envoyerMaCandidature')}</button></form></div>`;document.body.appendChild(d);
+  const d=document.createElement('div');d.id='lcJobReservationModal';d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet"><button class="btn-ghost" aria-label="${t('lc_back')}" title="${t('lc_back')}" onclick="document.getElementById('lcJobReservationModal').remove()">←</button><h3>${t('lc_postulerAUnPoste')}</h3><div class="sub">${esc(lcJobDisplay(o,'title'))} · ${esc(lcJobDisplay(o,'city'))}, ${esc(lcJobDisplay(o,'country'))}</div><div class="job-points-box">${t('lc_participationRequise')} : <b>🪙 ${lcJobPointsRequired(o).toLocaleString(fmtLocale())} ${t('lc_pointsUnit')}</b><br><small>${t('lc_pointsDebitesInfo')}</small></div><form onsubmit="return lcSubmitJobReservation(event)"><input class="input" id="lcJobName" required placeholder="${t('lc_nomCompletPlaceholder')}"><input class="input" id="lcJobEmail" type="email" placeholder="${t('lc_emailPlaceholder')}"><input class="input" id="lcJobPhone" placeholder="${t('lc_telephonePlaceholder')}"><input class="input" id="lcJobResidence" placeholder="${t('lc_paysDeResidencePlaceholder')}"><textarea class="input" id="lcJobMessage" rows="4" placeholder="${t('lc_messageExperiencePlaceholder')}"></textarea><button class="btn btn-primary" type="submit" style="width:100%">${t('lc_envoyerMaCandidature')}</button></form></div>`;document.body.appendChild(d);
   if(typeof sbUser!=='undefined'&&sbUser){const email=document.getElementById('lcJobEmail');if(email&&!email.value)email.value=sbUser.email||'';}
 }
 function lcSubmitJobReservation(){
@@ -18045,7 +18109,7 @@ function lcSubmitJobReservation(){
 async function lcSubmitJobReservationImpl(ev){ev.preventDefault();
   if(typeof sbUser==='undefined'||!sbUser){alert(t('alertLoginToApply'));return false;}
   const o=lcJobSelected;if(!o)return false;
-  const required=Number(o.points_required||0);
+  const required=lcJobPointsRequired(o);
   const current=Number((typeof state!=='undefined'&&state&&state.wallet&&state.wallet.pointsBalance)||0);
   if(current<required){
     const modal=document.getElementById('lcJobReservationModal');
@@ -18082,7 +18146,7 @@ function lcShowInsufficientJobPoints(o,current,required){
 }
 
 function lcShowJobSuccess(o,debited,remaining){
-  const d=document.createElement('div');d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet" style="text-align:center"><div style="font-size:52px">✅</div><h3>${t('lc_candidatureEnregistree')}</h3><p class="sub">${t('lc_candidatureEnregistreeDetail', {title: esc(o.title), debited: Number(debited||0).toLocaleString(fmtLocale()), remaining: Number(remaining||0).toLocaleString(fmtLocale())})}</p><button class="btn btn-primary" style="width:100%" onclick="this.closest('.lc-job-modal').remove()">${t('continue')}</button></div>`;document.body.appendChild(d);
+  const d=document.createElement('div');d.className='lc-job-modal open';d.innerHTML=`<div class="lc-job-sheet" style="text-align:center"><div style="font-size:52px">✅</div><h3>${t('lc_candidatureEnregistree')}</h3><p class="sub">${t('lc_candidatureEnregistreeDetail', {title: esc(lcJobDisplay(o,'title')), debited: Number(debited||0).toLocaleString(fmtLocale()), remaining: Number(remaining||0).toLocaleString(fmtLocale())})}</p><button class="btn btn-primary" style="width:100%" onclick="this.closest('.lc-job-modal').remove()">${t('continue')}</button></div>`;document.body.appendChild(d);
 }
 </script>
 
@@ -18289,80 +18353,6 @@ function lcShowJobSuccess(o,debited,remaining){
 }
 </style>
 
-<style id="theterbank-real-pc-screens-desktop">
-/* AJOUT (demande utilisateur, "plus loin", 2026-09-19) : mise en page PC à
-   plusieurs colonnes pour 4 écrans précis (Accueil, Marketplace, Profil,
-   Messages), en plus du menu latéral déjà posé dans
-   #theterbank-real-pc-nav-shell juste au-dessus. Même principe : uniquement
-   du CSS (+ deux <div> purement structurels ajoutés dans le Profil,
-   .pc-profile-left/.pc-profile-right, sans toucher à un seul id ni une
-   seule fonction JS), actif seulement en vrai navigateur PC large, jamais
-   en mode application installée. */
-@media (min-width:960px) and (display-mode: browser){
-
-  /* ---------- ACCUEIL : tableau de bord en grille 2 colonnes ---------- */
-  #screen-home{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:20px 24px;
-    align-content:start;
-    max-width:1180px;
-    margin:0 auto;
-    width:100%;
-  }
-  /* En-tête, salutation et bandeau pub gardent toute la largeur ; les deux
-     promos (Prêts/Voyage), les deux carrousels et les cartes du bas
-     s'assemblent naturellement 2 par 2 grâce à l'ordre du HTML. */
-  #screen-home > .topbar,
-  #screen-home > .home-greet-row,
-  #screen-home > .ad-slot-frame:not(.home-carousel-frame){
-    grid-column:1/-1;
-  }
-
-  /* ---------- MARKETPLACE : grille produits qui exploite la largeur ---------- */
-  #screen-results{
-    max-width:1180px;
-    margin:0 auto;
-    width:100%;
-  }
-  #screen-results .marketplace-grid{
-    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  }
-
-  /* ---------- PROFIL : colonne infos à gauche, espace/historique à droite ---------- */
-  #screen-profile{
-    max-width:1180px;
-    margin:0 auto;
-    width:100%;
-    display:flex;
-    flex-direction:row;
-    flex-wrap:wrap;
-    align-items:flex-start;
-    gap:28px;
-  }
-  #screen-profile > .topbar{ width:100%; }
-  #screen-profile .pc-profile-left{
-    width:340px;
-    flex-shrink:0;
-  }
-  #screen-profile .pc-profile-right{
-    flex:1 1 420px;
-    min-width:0;
-  }
-
-  /* ---------- MESSAGES : liste recentrée, fil de discussion qui laisse
-     le menu latéral visible au lieu de couvrir tout l'écran ---------- */
-  #screen-messages .dm-screen{
-    max-width:640px;
-    margin:0 auto;
-    width:100%;
-  }
-  #dmChatOverlay.dm-chat-overlay{
-    left:248px;
-  }
-}
-</style>
-
 <style id="theterbank-force-mobile-when-installed">
 /* DEMANDE (2026-09-17) : une fois l'application INSTALLÉE (ajoutée à
    l'écran d'accueil / installée comme app PWA — mode "standalone" ou
@@ -18398,5 +18388,89 @@ function lcShowJobSuccess(o,debited,remaining){
   }
 }
 </style>
+<script id="theterbank-emploi-i18n-hardening">
+(function(){
+  function refreshOpenJobUi(){try{
+    const detail=document.getElementById('lcJobDetailModal');
+    const reservation=document.getElementById('lcJobReservationModal');
+    if(detail){const b=detail.querySelector('.btn-ghost');if(b){b.setAttribute('aria-label',t('lc_back'));b.setAttribute('title',t('lc_back'));}}
+    if(reservation){const b=reservation.querySelector('.btn-ghost');if(b){b.setAttribute('aria-label',t('lc_back'));b.setAttribute('title',t('lc_back'));} const email=reservation.querySelector('#lcJobEmail');if(email)email.setAttribute('placeholder',t('lc_emailPlaceholder')); const submit=reservation.querySelector('button[type="submit"]');if(submit&&!submit.disabled)submit.textContent=t('lc_envoyerMaCandidature');}
+  }catch(e){console.warn('Pôle Emploi i18n refresh',e);}}
+  const originalApplyLanguage=window.applyLanguage;
+  if(typeof originalApplyLanguage==='function'){window.applyLanguage=function(lang){const result=originalApplyLanguage.apply(this,arguments);setTimeout(function(){refreshOpenJobUi();try{if(typeof lcRefreshJobTranslations==='function')lcRefreshJobTranslations();}catch(e){}},0);return result;};}
+  window.addEventListener('DOMContentLoaded',refreshOpenJobUi);
+})();
+</script>
+<script id="theterbank-emploi-job-content-i18n">
+/* Traduction additive du contenu des offres Pôle Emploi existantes.
+   La base Supabase conserve les textes d'origine; aucune donnée ni logique métier n'est modifiée. */
+(function(){
+  const C={
+    en:{country:{"Turquie":"Türkiye","Canada":"Canada","Allemagne":"Germany","Royaume-Uni":"United Kingdom","Australie":"Australia","Suisse":"Switzerland","France":"France","Belgique":"Belgium","États-Unis":"United States","Émirats arabes unis":"United Arab Emirates"},
+       city:{"Montréal":"Montreal","Genève":"Geneva","Zurich":"Zurich","Lyon":"Lyon","Londres":"London","Dubaï":"Dubai","Abou Dabi":"Abu Dhabi","Bruxelles":"Brussels","Anvers":"Antwerp","Paris":"Paris","Toulouse":"Toulouse","Vancouver":"Vancouver","Hambourg":"Hamburg","Istanbul":"Istanbul","Berlin":"Berlin","Munich":"Munich","Calgary":"Calgary","Toronto":"Toronto","Chicago":"Chicago","New York":"New York","Melbourne":"Melbourne","Sydney":"Sydney","Manchester":"Manchester"},
+       sector:{"Commerce":"Retail & sales","Hôtellerie & tourisme":"Hospitality & tourism","Industrie":"Industry","Hôtellerie & restauration":"Hospitality & food service","Logistique":"Logistics","Construction":"Construction","Restauration":"Food service","Technologies numériques":"Digital technologies","Construction & maintenance":"Construction & maintenance","Agriculture & agroalimentaire":"Agriculture & food processing","Nettoyage & entretien":"Cleaning & maintenance","Transport & conduite":"Transport & driving","Sécurité & accueil":"Security & reception","Santé & services aux personnes":"Health & personal services"}},
+    ar:{country:{"Turquie":"تركيا","Canada":"كندا","Allemagne":"ألمانيا","Royaume-Uni":"المملكة المتحدة","Australie":"أستراليا","Suisse":"سويسرا","France":"فرنسا","Belgique":"بلجيكا","États-Unis":"الولايات المتحدة","Émirats arabes unis":"الإمارات العربية المتحدة"},
+       city:{"Montréal":"مونتريال","Genève":"جنيف","Zurich":"زيورخ","Lyon":"ليون","Londres":"لندن","Dubaï":"دبي","Abou Dabi":"أبوظبي","Bruxelles":"بروكسل","Anvers":"أنتويرب","Paris":"باريس","Toulouse":"تولوز","Vancouver":"فانكوفر","Hambourg":"هامبورغ","Istanbul":"إسطنبول","Berlin":"برلين","Munich":"ميونيخ","Calgary":"كالغاري","Toronto":"تورونتو","Chicago":"شيكاغو","New York":"نيويورك","Melbourne":"ملبورن","Sydney":"سيدني","Manchester":"مانشستر"},
+       sector:{"Commerce":"التجارة والمبيعات","Hôtellerie & tourisme":"الفنادق والسياحة","Industrie":"الصناعة","Hôtellerie & restauration":"الفنادق وخدمات الطعام","Logistique":"الخدمات اللوجستية","Construction":"البناء","Restauration":"خدمات الطعام","Technologies numériques":"التقنيات الرقمية","Construction & maintenance":"البناء والصيانة","Agriculture & agroalimentaire":"الزراعة والصناعات الغذائية","Nettoyage & entretien":"التنظيف والصيانة","Transport & conduite":"النقل والقيادة","Sécurité & accueil":"الأمن والاستقبال","Santé & services aux personnes":"الصحة والخدمات الشخصية"}}
+  };
+  const J={
+1:{en:["Shop assistant","Customer reception, product presentation and sales follow-up.","Good interpersonal skills and availability."],ar:["مساعد متجر","استقبال العملاء وعرض المنتجات ومتابعة المبيعات.","مهارات جيدة في التعامل مع الآخرين والتوفر للعمل."]},
+2:{en:["Hotel receptionist","Guest reception, check-in/check-out and stay assistance.","Functional French, availability and compliant administrative documents."],ar:["موظف استقبال فندق","استقبال الضيوف وإجراءات تسجيل الدخول والمغادرة والمساعدة أثناء الإقامة.","إتقان عملي للفرنسية والتوفر للعمل وملف إداري مستوفٍ للشروط."]},
+3:{en:["Production operator","Production, quality control and compliance with procedures.","Motivation, punctuality and safety training on arrival."],ar:["مشغل إنتاج","الإنتاج ومراقبة الجودة والالتزام بالإجراءات.","الجدية والالتزام بالمواعيد والتدريب على السلامة عند الوصول."]},
+4:{en:["Hospitality assistant","Support for hotel teams and customer service.","Functional English and required right to work."],ar:["مساعد خدمات فندقية","دعم فرق الفنادق وخدمة العملاء.","إتقان عملي للإنجليزية وامتلاك حق العمل المطلوب."]},
+5:{en:["Warehouse team member","Order preparation and inventory management.","Punctuality, organization and availability."],ar:["عضو فريق مستودع","إعداد الطلبات وإدارة المخزون.","الالتزام بالمواعيد والتنظيم والتوفر للعمل."]},
+6:{en:["Hotel services assistant","Hotel service and guest assistance.","Service experience or training; French preferred."],ar:["مساعد خدمات فندقية","تقديم الخدمات الفندقية ومساعدة العملاء.","خبرة أو تدريب في مجال الخدمات، ويفضل إتقان الفرنسية."]},
+7:{en:["Construction helper","On-site assistance and material preparation.","Experience preferred, workplace safety and physical ability."],ar:["مساعد بناء","المساعدة في مواقع العمل وتجهيز المواد.","يفضل وجود خبرة، مع الالتزام بسلامة العمل والقدرة البدنية."]},
+9:{en:["Reception assistant","Reception and customer assistance in a tourist establishment.","Functional Turkish or English is an advantage."],ar:["مساعد استقبال","الاستقبال ومساعدة العملاء في منشأة سياحية.","إتقان عملي للتركية أو الإنجليزية ميزة إضافية."]},
+10:{en:["Logistics operator","Preparation and coordination of logistics flows.","Organization, reliability and work authorization according to the position."],ar:["مشغل لوجستي","إعداد وتنسيق العمليات اللوجستية.","التنظيم والجدية وتصريح العمل حسب الوظيفة."]},
+11:{en:["Logistics agent","Receiving, sorting and shipping goods.","Rigor, punctuality and ability to work as part of a team."],ar:["موظف لوجستي","استلام وفرز وشحن البضائع.","الدقة والالتزام بالمواعيد والقدرة على العمل ضمن فريق."]},
+12:{en:["Warehouse operative","Order preparation and inventory management.","Rigor, punctuality and teamwork."],ar:["عامل مستودع","إعداد الطلبات وإدارة المخزون.","الدقة والالتزام بالمواعيد والعمل الجماعي."]},
+15:{en:["Warehouse associate","Order preparation, storage and shipping.","Good organization and physical ability."],ar:["مساعد مستودع","إعداد الطلبات وترتيبها وشحنها.","تنظيم جيد وقدرة بدنية مناسبة."]},
+16:{en:["Hotel guest services","Reception and assistance for guests at a tourist establishment.","Functional English and a strong sense of service."],ar:["خدمات ضيوف الفندق","استقبال ومساعدة عملاء منشأة سياحية.","إتقان عملي للإنجليزية وروح خدمة جيدة."]},
+18:{en:["Warehouse agent","Receiving and preparing goods.","Teamwork and availability for variable working hours."],ar:["عامل مستودع","استلام وتجهيز البضائع.","العمل الجماعي والتوفر لساعات عمل متغيرة."]},
+19:{en:["Receptionist","Reception, information and reservation follow-up.","French required; another language is an advantage."],ar:["موظف استقبال","الاستقبال وتقديم المعلومات ومتابعة الحجوزات.","الفرنسية مطلوبة، ومعرفة لغة أخرى ميزة إضافية."]},
+20:{en:["Order picker","Order preparation, packing and follow-up.","Good physical condition, punctuality and required work authorization."],ar:["محضر طلبات","إعداد الطلبات وتغليفها ومتابعتها.","لياقة بدنية جيدة والالتزام بالمواعيد وتصريح العمل المطلوب."]},
+21:{en:["Restaurant service assistant","Dining-room support and service preparation.","Functional English and legal work requirements."],ar:["مساعد خدمة مطعم","المساعدة في صالة الطعام وتجهيز الخدمة.","إتقان عملي للإنجليزية واستيفاء المتطلبات القانونية للعمل."]},
+22:{en:["Hotel polyvalent employee","Customer service, space preparation and team assistance.","Conversational French and availability according to schedules."],ar:["موظف فندق متعدد المهام","خدمة العملاء وتجهيز المساحات ومساعدة الفرق.","إتقان الفرنسية للمحادثة والتوفر حسب جداول العمل."]},
+23:{en:["Logistics picker","Order preparation and shipping.","Rigor and ability to work standing."],ar:["محضر طلبات لوجستية","إعداد الطلبات وشحنها.","الدقة والقدرة على العمل أثناء الوقوف."]},
+24:{en:["Sales advisor","Customer reception, product presentation and sales support.","Good interpersonal skills, functional English and availability."],ar:["مستشار مبيعات","استقبال العملاء وعرض المنتجات ودعم المبيعات.","مهارات جيدة في التعامل مع الآخرين وإتقان عملي للإنجليزية والتوفر."]},
+25:{en:["Logistics agent","Preparation, tracking and organization of goods and inventory.","Rigor, punctuality and ability to work in a team."],ar:["موظف لوجستي","إعداد ومتابعة وتنظيم البضائع والمخزون.","الدقة والالتزام بالمواعيد والقدرة على العمل ضمن فريق."]},
+26:{en:["Hotel services assistant","Guest reception, team assistance and service follow-up in a hotel.","Functional English, professional presentation and compliance with legal work conditions."],ar:["مساعد خدمات فندقية","استقبال العملاء ومساعدة الفرق ومتابعة الخدمة في منشأة فندقية.","إتقان عملي للإنجليزية ومظهر مهني والالتزام بشروط العمل القانونية."]},
+27:{en:["Digital assistant","Support for digital operations, online support and digital administrative tasks.","Digital skills, organization and ability to learn."],ar:["مساعد رقمي","المساعدة في العمليات الرقمية والدعم عبر الإنترنت والمهام الإدارية الرقمية.","مهارات رقمية وتنظيم وقدرة على التعلم."]},
+28:{en:["Maintenance worker","Facility maintenance and first-level interventions.","Experience preferred, safety and checks required by the employer."],ar:["عامل صيانة","صيانة المنشآت والتدخلات الأساسية.","يفضل وجود خبرة، مع الالتزام بالسلامة والفحوصات التي يطلبها صاحب العمل."]},
+29:{en:["Food production worker","Preparation, packaging and product checks according to procedures.","Strict hygiene compliance, punctuality and on-the-job training."],ar:["عامل إنتاج غذائي","إعداد المنتجات وتغليفها وفحصها وفق الإجراءات.","الالتزام الصارم بالنظافة والمواظبة والتدريب على الوظيفة."]},
+30:{en:["Hotel maintenance worker","Cleaning rooms and common areas in a hotel.","Rigor, discretion and compliance with hygiene standards."],ar:["عامل نظافة فندقية","تنظيف الغرف والمساحات المشتركة في منشأة فندقية.","الدقة والخصوصية والالتزام بمعايير النظافة."]},
+31:{en:["Maintenance technician","Maintenance of equipment and facilities.","Technical skills, safety and employer requirements."],ar:["فني صيانة","صيانة المعدات والمنشآت.","مهارات تقنية والالتزام بالسلامة ومتطلبات صاحب العمل."]},
+32:{en:["Maintenance agent","Routine maintenance, facility checks and planned interventions.","Technical experience preferred, workplace safety and required work authorization."],ar:["موظف صيانة","الصيانة الدورية وفحص المنشآت والتدخلات المخططة.","يفضل وجود خبرة تقنية، مع الالتزام بسلامة العمل وتصريح العمل المطلوب."]},
+33:{en:["Delivery driver","Delivery and route tracking in urban areas.","Appropriate license, punctuality and compliance with local rules."],ar:["سائق توصيل","توصيل الطلبات ومتابعة المسارات داخل المناطق الحضرية.","رخصة مناسبة والالتزام بالمواعيد واحترام القواعد المحلية."]},
+34:{en:["Delivery driver","Delivery routes and goods tracking.","Appropriate license, experience preferred, road-code compliance and right to work."],ar:["سائق توصيل","تنفيذ جولات التوصيل ومتابعة البضائع.","رخصة مناسبة ويفضل وجود خبرة واحترام قانون المرور وحق العمل."]},
+35:{en:["Delivery driver","Parcel delivery and collection according to defined routes.","License suitable for the vehicle, responsible driving and legal work conditions."],ar:["سائق توصيل","توصيل وجمع الطرود وفق المسارات المحددة.","رخصة مناسبة للمركبة والقيادة المسؤولة واستيفاء شروط العمل القانونية."]},
+36:{en:["Cleaning agent","Cleaning spaces and applying hygiene procedures.","Rigor and availability."],ar:["عامل نظافة","تنظيف المساحات وتطبيق إجراءات النظافة.","الدقة والتوفر للعمل."]},
+37:{en:["Maintenance assistant","Assistance with maintenance interventions.","Motivation, compliance with safety rules and internal training according to the position."],ar:["مساعد صيانة","المساعدة في أعمال الصيانة.","الجدية والالتزام بقواعد السلامة والتدريب الداخلي حسب الوظيفة."]},
+38:{en:["Cleaner","Cleaning professional spaces and following cleaning protocols.","Punctuality, rigor and ability to work variable hours."],ar:["عامل نظافة","تنظيف المساحات المهنية والالتزام ببروتوكولات التنظيف.","الالتزام بالمواعيد والدقة والقدرة على العمل بساعات متغيرة."]},
+39:{en:["Delivery driver","Delivery and collection on urban routes.","Appropriate license, functional English and legal work conditions."],ar:["سائق توصيل","توصيل وجمع الطلبات عبر المسارات الحضرية.","رخصة مناسبة وإتقان عملي للإنجليزية واستيفاء شروط العمل القانونية."]},
+40:{en:["Delivery driver","Parcel delivery and route tracking.","Appropriate license, functional English and required right to work."],ar:["سائق توصيل","توصيل الطرود ومتابعة جولات التوصيل.","رخصة مناسبة وإتقان عملي للإنجليزية وحق العمل المطلوب."]},
+41:{en:["Delivery driver","Goods delivery and route tracking in Dubai.","License meeting local requirements, driving experience and legal work conditions."],ar:["سائق توصيل","توصيل البضائع ومتابعة المسارات في دبي.","رخصة مطابقة للمتطلبات المحلية وخبرة في القيادة واستيفاء شروط العمل القانونية."]},
+42:{en:["Delivery driver","Parcel delivery and customer relations on route.","Appropriate license and compliance with legal and employer requirements."],ar:["سائق توصيل","توصيل الطرود والتعامل مع العملاء أثناء جولة التوصيل.","رخصة مناسبة واحترام المتطلبات القانونية ومتطلبات صاحب العمل."]},
+43:{en:["Delivery driver","Goods delivery and compliance with customer routes.","License suitable for the position, compliant driving record, punctuality and required work authorization."],ar:["سائق توصيل","توصيل البضائع والالتزام بالمسارات المحددة لدى العملاء.","رخصة قيادة مناسبة للوظيفة وسجل قيادة مستوفٍ للشروط والالتزام بالمواعيد وتصريح العمل المطلوب."]},
+44:{en:["Junior maintenance technician","Preventive maintenance and technical assistance.","Technical training, safety and mastery of employer procedures."],ar:["فني صيانة مبتدئ","الصيانة الوقائية والمساعدة التقنية.","تدريب تقني والالتزام بالسلامة وإتقان إجراءات صاحب العمل."]},
+45:{en:["Reception agent","Visitor reception, guidance and operational assistance.","Professional presentation, functional English and required checks."],ar:["موظف استقبال","استقبال الزوار وتوجيههم والمساعدة في العمليات.","مظهر مهني وإتقان عملي للإنجليزية والفحوصات المطلوبة."]},
+46:{en:["Service attendant","Non-medical assistance to teams and users in a service environment.","Training according to the position, compliance with local rules and checks required by the employer."],ar:["موظف خدمات","تقديم مساعدة غير طبية للفرق والمستفيدين في بيئة خدمية.","تدريب حسب الوظيفة واحترام القواعد المحلية والفحوصات التي يطلبها صاحب العمل."]}
+  };
+  function trJob(o,field){
+    const lang=(typeof state!=='undefined'&&state.settings&&['en','ar'].includes(state.settings.lang))?state.settings.lang:'fr';
+    if(lang==='fr') return String(o?.[field]??'');
+    const val=C[lang]?.[field]?.[String(o?.[field]??'')];
+    if(val!==undefined)return val;
+    const row=J[String(o?.id)];
+    const idx={title:0,description:1,conditions:2}[field];
+    if(row&&row[lang]&&row[lang][idx])return row[lang][idx];
+    return String(o?.[field]??'');
+  }
+  window.lcJobDisplay=trJob;
+  window.lcRefreshJobTranslations=function(){try{if(typeof lcFilterJobs==='function')lcFilterJobs();}catch(e){}};
+})();
+</script>
+
 </body>
 </html>
