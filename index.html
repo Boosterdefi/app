@@ -3663,6 +3663,7 @@ button,input,textarea,select{max-width:100%;}
              editFirstName(), uploadAvatar(), openWithdrawSheet(), navTo())
              sont conserves a l'identique : aucune fonction JS n'a ete
              modifiee. -->
+        <div class="pc-profile-left">
         <div class="ewb-hero">
           <div class="ewb-hero-top">
             <div class="ewb-hero-id">
@@ -3697,6 +3698,14 @@ button,input,textarea,select{max-width:100%;}
             </button>
           </div>
         </div>
+
+        <!-- AJOUT (mise en page PC) : .pc-profile-left/.pc-profile-right sont
+             de simples repères CSS pour la disposition à deux colonnes en
+             navigateur PC large (voir #theterbank-real-pc-screens-desktop) ;
+             aucun ID ni fonction JS existants ne sont modifiés, uniquement
+             deux <div> englobants ajoutés autour du contenu déjà présent. -->
+        </div>
+        <div class="pc-profile-right">
 
         <!-- Grille de services : Swap / Havre Trading / Prêts / Marketplace /
              Mes résultats / Admin (masqué par défaut, bascule inchangée dans
@@ -3739,6 +3748,7 @@ button,input,textarea,select{max-width:100%;}
              (demande utilisateur). -->
         <div class="section-pad" style="margin-top:20px;">
           <button class="ewb-logout-btn" onclick="logout()" data-i18n="logout">Se déconnecter</button>
+        </div>
         </div>
       </section>
 
@@ -18275,6 +18285,80 @@ function lcShowJobSuccess(o,debited,remaining){
   .screen{
     padding-bottom:40px !important;
     scroll-padding-bottom:40px;
+  }
+}
+</style>
+
+<style id="theterbank-real-pc-screens-desktop">
+/* AJOUT (demande utilisateur, "plus loin", 2026-09-19) : mise en page PC à
+   plusieurs colonnes pour 4 écrans précis (Accueil, Marketplace, Profil,
+   Messages), en plus du menu latéral déjà posé dans
+   #theterbank-real-pc-nav-shell juste au-dessus. Même principe : uniquement
+   du CSS (+ deux <div> purement structurels ajoutés dans le Profil,
+   .pc-profile-left/.pc-profile-right, sans toucher à un seul id ni une
+   seule fonction JS), actif seulement en vrai navigateur PC large, jamais
+   en mode application installée. */
+@media (min-width:960px) and (display-mode: browser){
+
+  /* ---------- ACCUEIL : tableau de bord en grille 2 colonnes ---------- */
+  #screen-home{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:20px 24px;
+    align-content:start;
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+  }
+  /* En-tête, salutation et bandeau pub gardent toute la largeur ; les deux
+     promos (Prêts/Voyage), les deux carrousels et les cartes du bas
+     s'assemblent naturellement 2 par 2 grâce à l'ordre du HTML. */
+  #screen-home > .topbar,
+  #screen-home > .home-greet-row,
+  #screen-home > .ad-slot-frame:not(.home-carousel-frame){
+    grid-column:1/-1;
+  }
+
+  /* ---------- MARKETPLACE : grille produits qui exploite la largeur ---------- */
+  #screen-results{
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+  }
+  #screen-results .marketplace-grid{
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  }
+
+  /* ---------- PROFIL : colonne infos à gauche, espace/historique à droite ---------- */
+  #screen-profile{
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    gap:28px;
+  }
+  #screen-profile > .topbar{ width:100%; }
+  #screen-profile .pc-profile-left{
+    width:340px;
+    flex-shrink:0;
+  }
+  #screen-profile .pc-profile-right{
+    flex:1 1 420px;
+    min-width:0;
+  }
+
+  /* ---------- MESSAGES : liste recentrée, fil de discussion qui laisse
+     le menu latéral visible au lieu de couvrir tout l'écran ---------- */
+  #screen-messages .dm-screen{
+    max-width:640px;
+    margin:0 auto;
+    width:100%;
+  }
+  #dmChatOverlay.dm-chat-overlay{
+    left:248px;
   }
 }
 </style>
