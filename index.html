@@ -30,7 +30,7 @@
 })();
 </script>
 <title>Theterbank</title>
-<link rel="manifest" href="manifest.json?v=3">
+<link rel="manifest" href="manifest.json?v=4">
 <meta name="theme-color" content="#D97706">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- Apple / iOS -->
@@ -39,10 +39,10 @@
 <meta name="apple-mobile-web-app-title" content="Theterbank">
 <!-- ?v=2 (2026-08-22) : casse le cache navigateur/PWA sur les anciennes icônes
      rognées/zoomées, pour forcer le chargement des nouveaux fichiers corrigés. -->
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=3">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=4">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- PERF (2026-08-24) : preconnect vers Supabase pour démarrer la poignée de
@@ -3709,7 +3709,7 @@ button,input,textarea,select{max-width:100%;}
           </button>
           <button class="ewb-service-tile trading" onclick="navTo('screen-havre')">
             <span class="ic">&#x1f4c8;</span>
-            <span class="lbl">Havre · Trading</span>
+            <span class="lbl" data-i18n="bankHavreNav">Havre · Trading</span>
           </button>
           <button class="ewb-service-tile loans" onclick="navTo('screen-loans')">
             <span class="ic">&#x1f3e6;</span>
@@ -3780,7 +3780,7 @@ button,input,textarea,select{max-width:100%;}
 
           <div class="admin-panel" id="adminPanelUsers"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_comptesUtilisateurs">👥 Comptes utilisateurs</h3><small id="adminUserCount">—</small></div><input class="admin-input admin-search" id="adminUserSearch" placeholder="Rechercher nom, email, téléphone…" oninput="adminFilterUsers()"><div class="admin-list" id="adminUsersList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
-          <div class="admin-panel" id="adminPanelMarket"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_marketplace2">🛍️ Marketplace</h3><button class="admin-btn primary" onclick="adminOpenProductModal()" data-i18n="lc_produit">＋ Produit</button></div><input class="admin-input admin-search" id="adminProductSearch" placeholder="Rechercher un produit…" oninput="adminFilterProducts()"><div class="admin-list" id="adminProductsList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
+          <div class="admin-panel" id="adminPanelMarket"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_marketplace2">🛍️ Marketplace</h3><button class="admin-btn primary" onclick="adminOpenProductModal()" data-i18n="lc_produit">＋ Produit</button></div><input class="admin-input admin-search" id="adminProductSearch" placeholder="Rechercher un produit…" data-i18n-placeholder="mpAdminSearchPlaceholder" oninput="adminFilterProducts()"><div class="admin-list" id="adminProductsList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
           <div class="admin-panel" id="adminPanelSupport"><div class="admin-card"><div class="admin-card-head"><h3 data-i18n="lc_supportClient">💬 Support client</h3><small data-i18n="lc_reponsesEnTantQueSupport">Réponses en tant que support</small></div><input class="admin-input admin-search" id="adminSupportSearch" placeholder="Rechercher un ticket…" oninput="adminFilterSupport()"><div class="admin-list" id="adminSupportList"><div class="admin-empty" data-i18n="lc_chargement">Chargement…</div></div></div></div>
 
@@ -3848,7 +3848,7 @@ button,input,textarea,select{max-width:100%;}
       <!-- HAVRE TRADING : espace de trading séparé du Swap et du jeu Vol Rouge. -->
       <section class="screen" id="screen-havre">
         <div class="topbar">
-          <div class="brand"><div class="logo-ball"><img class="js-theterbank-icon" alt="Theterbank"></div><div class="brand-name">Havre · Trading</div></div>
+          <div class="brand"><div class="logo-ball"><img class="js-theterbank-icon" alt="Theterbank"></div><div class="brand-name" data-i18n="bankHavreNav">Havre · Trading</div></div>
           <button class="topbar-close" onclick="navTo('screen-profile')" aria-label="Fermer">&times;</button>
         </div>
         <div class="section-pad" id="havreTradingContent"></div>
@@ -3879,8 +3879,8 @@ button,input,textarea,select{max-width:100%;}
         </div>
 
         <div class="lc-mode-switch" aria-label="Espace Theterbank">
-          <button type="button" class="lc-mode-btn active" id="lcModeVacances" onclick="lcSwitchMode('vacances')">🏖️ Vacances</button>
-          <button type="button" class="lc-mode-btn" id="lcModeEmploi" onclick="lcSwitchMode('emploi')">💼 Pôle Emploi</button>
+          <button type="button" class="lc-mode-btn active" id="lcModeVacances" onclick="lcSwitchMode('vacances')" data-i18n="lcModeVacances">🏖️ Vacances</button>
+          <button type="button" class="lc-mode-btn" id="lcModeEmploi" onclick="lcSwitchMode('emploi')" data-i18n="lcModeEmploi">💼 Pôle Emploi</button>
         </div>
 
         <div id="lcVacancesContent">
@@ -7590,15 +7590,16 @@ function lcSubmitRequestImpl(e){
 function lcRenderRejectModal({departure, daysUntil}){
   if(lcCountdownTimer){ clearInterval(lcCountdownTimer); lcCountdownTimer=null; }
   const body = document.getElementById('lcCountBody');
+  const days = Math.max(0,daysUntil);
   body.innerHTML = `
     <div class="lc-reject-box">
       <div class="ic">&#x26d4;</div>
-      <h3>Demande refusée</h3>
-      <p>La date de départ choisie (${departure.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}) est dans ${Math.max(0,daysUntil)} jour${daysUntil>1?'s':''} seulement, soit moins d'un mois. Il faut au minimum ${LC_PREP_DAYS} jours avant le départ pour préparer le visa, le billet et l'itinéraire.</p>
+      <h3>${t('lcRejectTitle')}</h3>
+      <p>${t('lcRejectBody',{date:departure.toLocaleDateString(fmtLocale(),{day:'numeric',month:'long',year:'numeric'}), days, prepDays:LC_PREP_DAYS})}</p>
     </div>
-    <div class="lc-count-note">Modifie ta date de départ pour choisir une date à au moins un mois, puis renvoie ta demande.</div>
-    <button class="btn btn-secondary lc-home-btn" onclick="lcCloseCountModal()">Modifier ma demande</button>
-    <button class="btn btn-primary lc-home-btn" onclick="lcGoHomeFromCount()">Retour à l'accueil</button>
+    <div class="lc-count-note">${t('lcRejectNote')}</div>
+    <button class="btn btn-secondary lc-home-btn" onclick="lcCloseCountModal()">${t('lcEditRequestBtn')}</button>
+    <button class="btn btn-primary lc-home-btn" onclick="lcGoHomeFromCount()">${t('lcBackHomeBtn')}</button>
   `;
 }
 function lcRenderCountModal({durationValue, required, current, departure, deadline, destinationName}){
@@ -7608,33 +7609,33 @@ function lcRenderCountModal({durationValue, required, current, departure, deadli
   body.innerHTML = `
     <div class="lc-count-hero">
       <div class="ic">&#x2708;&#xfe0f;</div>
-      <h3>Ta demande de séjour est enregistrée</h3>
+      <h3>${t('lcCountTitle')}</h3>
       ${destinationName ? `<div class="lc-count-dest">${esc(destinationName)}</div>` : ''}
-      <p>${deadline ? "Il te reste un temps limité pour atteindre le nombre de points requis : utilise Épargne, la Marketplace et les autres actions de l'app pour accumuler des points et valider ta demande avant la date limite ci-dessous." : "Ajoute une date de départ pour connaître ton délai exact, puis utilise Épargne, la Marketplace et les autres actions de l'app pour accumuler des points et valider ta demande."}</p>
+      <p>${deadline ? t('lcCountIntroWithDeadline') : t('lcCountIntroNoDeadline')}</p>
     </div>
     <div class="lc-countdown-box">
-      <div class="lc-countdown-label">${deadline ? 'Temps restant pour finaliser la conversion' : 'Ajoute une date de départ pour lancer le compte à rebours'}</div>
+      <div class="lc-countdown-label">${deadline ? t('lcCountdownLabelWithDeadline') : t('lcCountdownLabelNoDeadline')}</div>
       <div class="lc-countdown-row" id="lcCountdownRow">
-        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdDays">--</div><div class="lc-countdown-sub">jours</div></div>
-        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdHours">--</div><div class="lc-countdown-sub">heures</div></div>
-        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdMins">--</div><div class="lc-countdown-sub">min</div></div>
-        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdSecs">--</div><div class="lc-countdown-sub">sec</div></div>
+        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdDays">--</div><div class="lc-countdown-sub">${t('lcCountdownDays')}</div></div>
+        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdHours">--</div><div class="lc-countdown-sub">${t('lcCountdownHours')}</div></div>
+        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdMins">--</div><div class="lc-countdown-sub">${t('lcCountdownMins')}</div></div>
+        <div class="lc-countdown-unit"><div class="lc-countdown-num" id="lcCdSecs">--</div><div class="lc-countdown-sub">${t('lcCountdownSecs')}</div></div>
       </div>
-      ${deadline ? `<div class="lc-countdown-deadline">Date limite : ${deadline.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} (départ prévu le ${departure.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}, moins ${LC_PREP_DAYS} jours de préparation)</div>` : ''}
+      ${deadline ? `<div class="lc-countdown-deadline">${t('lcDeadlineText',{deadline:deadline.toLocaleDateString(fmtLocale(),{day:'numeric',month:'long',year:'numeric'}), departure:departure.toLocaleDateString(fmtLocale(),{day:'numeric',month:'long',year:'numeric'}), prepDays:LC_PREP_DAYS})}</div>` : ''}
     </div>
     <div class="lc-progress-box">
-      <div class="lc-progress-head"><span class="lbl">Points requis pour la conversion</span><span class="pct">${pct}%</span></div>
+      <div class="lc-progress-head"><span class="lbl">${t('lcProgressLabel')}</span><span class="pct">${pct}%</span></div>
       <div class="lc-progress-track"><div class="lc-progress-fill${complete?' complete':''}" style="width:${pct}%;"></div></div>
-      <div class="lc-progress-nums"><span><b>${Math.round(current).toLocaleString('fr-FR')}</b> points actuels</span><span>${required?Math.round(required).toLocaleString('fr-FR'):'—'} requis</span></div>
+      <div class="lc-progress-nums"><span><b>${Math.round(current).toLocaleString(fmtLocale())}</b> ${t('lcProgressCurrentPoints')}</span><span>${required?Math.round(required).toLocaleString(fmtLocale()):'—'} ${t('lcProgressRequiredPoints')}</span></div>
     </div>
-    <div class="lc-count-note">${complete ? "Ton solde couvre déjà le nombre de points requis — la conversion pourra être finalisée dès confirmation de disponibilité." : "Chaque action rapporte des points : agis avant la date limite pour ne pas perdre ta place."}</div>
+    <div class="lc-count-note">${complete ? t('lcNoteComplete') : t('lcNoteIncomplete')}</div>
     <div class="lc-quicklinks">
-      <button class="lc-quicklink" onclick="lcGoAndClose('screen-epargne')"><div class="ic">&#x1f4b0;</div><div class="lbl">Épargne</div><div class="sub">Bloque des actifs, gagne des points</div></button>
-      <button class="lc-quicklink" onclick="lcGoAndClose('screen-results')"><div class="ic">&#x1f6cd;&#xfe0f;</div><div class="lbl">Marketplace</div><div class="sub">Échange et cumule des points</div></button>
-      <button class="lc-quicklink" onclick="lcGoAndClose('screen-home')"><div class="ic">&#x1f3af;</div><div class="lbl">Diverses actions</div><div class="sub">Toutes les façons de gagner</div></button>
+      <button class="lc-quicklink" onclick="lcGoAndClose('screen-epargne')"><div class="ic">&#x1f4b0;</div><div class="lbl">${t('lc_epargne')}</div><div class="sub">${t('lcQuickEpargneSub')}</div></button>
+      <button class="lc-quicklink" onclick="lcGoAndClose('screen-results')"><div class="ic">&#x1f6cd;&#xfe0f;</div><div class="lbl">${t('lc_marketplace')}</div><div class="sub">${t('lcQuickMarketSub')}</div></button>
+      <button class="lc-quicklink" onclick="lcGoAndClose('screen-home')"><div class="ic">&#x1f3af;</div><div class="lbl">${t('lcQuickOtherLbl')}</div><div class="sub">${t('lcQuickOtherSub')}</div></button>
     </div>
-    <button class="btn btn-primary lc-home-btn" onclick="lcGoHomeFromCount()">Retour à l'accueil</button>
-    <button class="btn btn-secondary lc-home-btn" style="margin-top:8px;" onclick="if(confirm(t('confirmCancelStayRequest'))) lcCancelActiveRequest();">Annuler ma demande</button>
+    <button class="btn btn-primary lc-home-btn" onclick="lcGoHomeFromCount()">${t('lcBackHomeBtn')}</button>
+    <button class="btn btn-secondary lc-home-btn" style="margin-top:8px;" onclick="if(confirm(t('confirmCancelStayRequest'))) lcCancelActiveRequest();">${t('lcCancelRequestBtn')}</button>
   `;
   if(lcCountdownTimer){ clearInterval(lcCountdownTimer); lcCountdownTimer=null; }
   if(deadline){
@@ -7664,10 +7665,10 @@ function lcRenderCountModal({durationValue, required, current, departure, deadli
             if(body) body.innerHTML = `
               <div class="lc-reject-box">
                 <div class="ic">&#x23f3;</div>
-                <h3>Demande expirée</h3>
-                <p>Le délai pour atteindre les points requis est dépassé. Cette demande de séjour est annulée automatiquement — tu peux en envoyer une nouvelle dès maintenant.</p>
+                <h3>${t('lcExpiredTitle')}</h3>
+                <p>${t('lcExpiredBody')}</p>
               </div>
-              <button class="btn btn-primary lc-home-btn" onclick="lcCloseCountModal()">Fermer</button>
+              <button class="btn btn-primary lc-home-btn" onclick="lcCloseCountModal()">${t('close')}</button>
             `;
           });
         }
@@ -9986,15 +9987,15 @@ async function adminSaveBalance(){const id=document.getElementById('adminBalance
 async function adminDeleteUser(id,name){if(!confirm('Supprimer définitivement le compte de '+name+' ? Cette action est irréversible.'))return;try{const {error}=await sb.rpc('admin_delete_account',{p_user_id:id});if(error)throw error;adminToast('Compte supprimé ✓');adminLoadUsers()}catch(e){adminToast(e.message||'Suppression impossible')}}
 function adminOpenUserChat(id,name,avatar){if(typeof dmOpenConversationWithUser==='function')dmOpenConversationWithUser(id,name,avatar);else adminToast('Messagerie indisponible')}
 function adminCallUser(id,name,type){if(typeof dmOpenConversationWithUser!=='function'){adminToast('Messagerie indisponible');return}dmOpenConversationWithUser(id,name,'');setTimeout(()=>{if(type==='audio'&&typeof dmStartCall==='function')dmStartCall('audio');if(type==='video'&&typeof dmStartCall==='function')dmStartCall('video')},500)}
-async function adminLoadProducts(){const box=document.getElementById('adminProductsList');try{const {data,error}=await sb.rpc('admin_list_products_v2');if(error)throw error;adminProductsCache=data||[];adminRenderProducts(box,adminProductsCache);adminRefresh()}catch(e){box.innerHTML='<div class="admin-empty">Impossible de charger les produits.</div>'}}
+async function adminLoadProducts(){const box=document.getElementById('adminProductsList');try{const {data,error}=await sb.rpc('admin_list_products_v2');if(error)throw error;adminProductsCache=data||[];adminRenderProducts(box,adminProductsCache);adminRefresh()}catch(e){box.innerHTML=`<div class="admin-empty">${t('mpAdminLoadError')}</div>`}}
 function adminProductMatches(p,q){q=(q||'').toLowerCase();return !q||[p.name,p.brand,p.cat,p.cat_label].some(v=>String(v||'').toLowerCase().includes(q))}
-function adminRenderProducts(box,arr){box.innerHTML=arr.length?arr.map(p=>`<div class="admin-product">${p.image_url?`<img class="admin-product-img" src="${esc(p.image_url)}" alt="">`:'<div class="admin-product-img"></div>'}<div class="admin-main"><div class="admin-name">${esc(p.name)}</div><div class="admin-meta">${esc(p.brand||'')} • ${esc(p.cat_label||p.cat||'')}</div><div class="admin-meta">${p.active?'🟢 Actif':'⚪ Masqué'} • ${Number(p.price||0).toFixed(2)}</div></div><div class="admin-actions"><button class="admin-btn primary" onclick='adminEditProduct(${JSON.stringify(p).replace(/'/g,"&#39;")})'>✏️</button><button class="admin-btn danger" onclick="adminDeleteProduct(${p.id})">🗑️</button></div></div>`).join(''):'<div class="admin-empty">Aucun produit.</div>'}
+function adminRenderProducts(box,arr){box.innerHTML=arr.length?arr.map(p=>`<div class="admin-product">${p.image_url?`<img class="admin-product-img" src="${esc(p.image_url)}" alt="">`:'<div class="admin-product-img"></div>'}<div class="admin-main"><div class="admin-name">${esc(p.name)}</div><div class="admin-meta">${esc(p.brand||'')} • ${esc(p.cat_label||p.cat||'')}</div><div class="admin-meta">${p.active?t('mpAdminActive'):t('mpAdminHidden')} • ${Number(p.price||0).toFixed(2)}</div></div><div class="admin-actions"><button class="admin-btn primary" onclick='adminEditProduct(${JSON.stringify(p).replace(/'/g,"&#39;")})'>✏️</button><button class="admin-btn danger" onclick="adminDeleteProduct(${p.id})">🗑️</button></div></div>`).join(''):`<div class="admin-empty">${t('mpAdminNoProducts')}</div>`}
 function adminFilterProducts(){adminRenderProducts(document.getElementById('adminProductsList'),adminProductsCache.filter(p=>adminProductMatches(p,document.getElementById('adminProductSearch')?.value)))}
-function adminOpenProductModal(p){document.getElementById('adminProductId').value=p?.id||'';document.getElementById('adminProductModalTitle').textContent=p?'Modifier le produit':'Ajouter un produit';document.getElementById('prodName').value=p?.name||'';document.getElementById('prodCat').value=p?.cat||'';document.getElementById('prodCatLabel').value=p?.cat_label||'';document.getElementById('prodPrice').value=p?.price??'';document.getElementById('prodOldPrice').value=p?.old_price??'';document.getElementById('prodBrand').value=p?.brand||'';document.getElementById('prodImage').value=p?.image_url||'';document.getElementById('prodDescription').value=p?.description||'';document.getElementById('prodActive').checked=p?.active!==false;document.getElementById('adminProductModal').classList.add('open')}
+function adminOpenProductModal(p){document.getElementById('adminProductId').value=p?.id||'';document.getElementById('adminProductModalTitle').textContent=p?t('mpAdminEditProductTitle'):t('mpAdminAddProductTitle');document.getElementById('prodName').value=p?.name||'';document.getElementById('prodCat').value=p?.cat||'';document.getElementById('prodCatLabel').value=p?.cat_label||'';document.getElementById('prodPrice').value=p?.price??'';document.getElementById('prodOldPrice').value=p?.old_price??'';document.getElementById('prodBrand').value=p?.brand||'';document.getElementById('prodImage').value=p?.image_url||'';document.getElementById('prodDescription').value=p?.description||'';document.getElementById('prodActive').checked=p?.active!==false;document.getElementById('adminProductModal').classList.add('open')}
 function adminEditProduct(p){adminOpenProductModal(p)}
 function adminCloseProductModal(){document.getElementById('adminProductModal').classList.remove('open')}
 async function adminSaveProduct(){const id=document.getElementById('adminProductId').value;const args={p_name:document.getElementById('prodName').value.trim(),p_price:Number(document.getElementById('prodPrice').value||0),p_old_price:Number(document.getElementById('prodOldPrice').value||0)||null,p_active:document.getElementById('prodActive').checked,p_description:document.getElementById('prodDescription').value,p_image_url:document.getElementById('prodImage').value};try{let res;if(id)res=await sb.rpc('admin_update_product_v2',{p_id:Number(id),...args});else res=await sb.rpc('admin_create_product_v2',{p_cat:document.getElementById('prodCat').value.trim(),p_cat_label:document.getElementById('prodCatLabel').value.trim(),p_name:args.p_name,p_price:args.p_price,p_old_price:args.p_old_price,p_brand:document.getElementById('prodBrand').value.trim(),p_description:args.p_description,p_image_url:args.p_image_url,p_active:args.p_active});if(res.error)throw res.error;adminCloseProductModal();adminToast(id?'Produit modifié ✓':'Produit ajouté ✓');adminLoadProducts()}catch(e){adminToast(e.message||'Enregistrement impossible')}}
-async function adminDeleteProduct(id){if(!confirm('Retirer ce produit du Marketplace ?'))return;try{const {error}=await sb.rpc('admin_delete_product_v2',{p_id:id});if(error)throw error;adminToast('Produit retiré ✓');adminLoadProducts()}catch(e){adminToast(e.message||'Suppression impossible')}}
+async function adminDeleteProduct(id){if(!confirm(t('mpAdminConfirmDelete')))return;try{const {error}=await sb.rpc('admin_delete_product_v2',{p_id:id});if(error)throw error;adminToast(t('mpAdminDeletedToast'));adminLoadProducts()}catch(e){adminToast(e.message||t('mpAdminDeleteFailed'))}}
 async function adminLoadSupport(){const box=document.getElementById('adminSupportList');try{const {data,error}=await sb.rpc('admin_list_support_threads');if(error)throw error;adminSupportCache=data||[];adminRenderSupport(box,adminSupportCache)}catch(e){box.innerHTML='<div class="admin-empty">Impossible de charger le support.</div>'}}
 function adminRenderSupport(box,arr){box.innerHTML=arr.length?arr.map((x,i)=>`<div class="admin-thread"><div class="admin-avatar">${esc((x.first_name||'?').charAt(0).toUpperCase())}</div><div class="admin-main"><div class="admin-name">${esc(x.first_name||'Utilisateur')} ${x.unread_count?`<span class="admin-badge">${x.unread_count} nouveau</span>`:''}</div><div class="admin-meta">${esc(x.email||'')} • ${esc(x.last_message||'')}</div></div><button class="admin-btn primary" onclick="adminOpenSupport(${i})">Répondre</button></div>`).join(''):'<div class="admin-empty">Aucun ticket.</div>'}
 function adminFilterSupport(){const q=(document.getElementById('adminSupportSearch')?.value||'').toLowerCase();adminRenderSupport(document.getElementById('adminSupportList'),adminSupportCache.filter(x=>[x.first_name,x.email,x.last_message].some(v=>String(v||'').toLowerCase().includes(q))))}
@@ -11554,7 +11555,7 @@ function renderDailyLuckyCard(){
                 pas de points réels, contrairement à l'ancien espace Havre. -->
            <div id="luckyHavreInviteRow" class="lucky-multi-row">
            <button class="lucky-claim-btn lucky-claim-btn-half" style="background:linear-gradient(135deg,#3B6E91,#1E3A5F);" onclick="navTo('screen-play');"><span>&#x1f3af;</span>Divers →</button>
-           <button class="lucky-claim-btn lucky-claim-btn-half" style="background:linear-gradient(135deg,#3B6E91,#1E3A5F);" onclick="navTo('screen-results');"><span>&#x1f9ed;</span>Marketplace →</button>
+           <button class="lucky-claim-btn lucky-claim-btn-half" style="background:linear-gradient(135deg,#3B6E91,#1E3A5F);" onclick="navTo('screen-results');"><span>&#x1f9ed;</span>${t('lc_marketplaceArrowBtn')}</button>
            <button class="lucky-claim-btn lucky-claim-btn-half" style="background:linear-gradient(135deg,#8B5A2B,#4A2E13);" onclick="navTo('screen-epargne');"><span>&#x1f341;</span>Épargne →</button>
            </div>`
       }
@@ -12083,15 +12084,15 @@ function renderDeposit(){
 
     <div class="card" style="margin:14px 0 0;text-align:center;">
       ${depositAddressBoxHtml()}
-      <div style="font-size:11px;color:var(--ink-soft);margin:10px 0;">${t('networkBep20')} — envoie uniquement de l'USDT BEP20 à cette adresse</div>
+      <div style="font-size:11px;color:var(--ink-soft);margin:10px 0;">${t('networkBep20')} ${t('depositBep20OnlyNote')}</div>
       <button class="btn btn-primary" onclick="refreshWalletFromServer().then(()=>renderDeposit())">${t('refreshBalance')}</button>
     </div>
 
     <button class="deposit-support-btn" onclick="openSupportChat()">
       <span class="icon">&#x1f4ac;</span>
       <span>
-        Besoin d'aide ?
-        <div class="sub">Dépôt, retrait ou souci avec ton solde — discute avec le support en direct</div>
+        ${t('depositSupportTitle')}
+        <div class="sub">${t('depositSupportSub')}</div>
       </span>
       <span class="deposit-support-dot" id="depositSupportDot"></span>
     </button>
@@ -13920,7 +13921,7 @@ const badgeList = [
 
 function renderProfile(){
   const fnEl = document.getElementById('profileFirstName');
-  if(fnEl) fnEl.innerHTML = esc(state.player.firstName || 'Joueur') + ' <span style="font-size:.7em;opacity:.7;">&#x270f;&#xfe0f;</span>';
+  if(fnEl) fnEl.innerHTML = esc(state.player.firstName || t('defaultPlayerName')) + ' <span style="font-size:.7em;opacity:.7;">&#x270f;&#xfe0f;</span>';
   const avatarEl = document.getElementById('profileAvatarInner');
   if(avatarEl) avatarEl.innerHTML = state.player.avatarUrl ? `<img src="${esc(state.player.avatarUrl)}" alt="Photo de profil">` : '&#x1f642;';
   const phoneEl = document.getElementById('profilePhone');
@@ -13942,7 +13943,7 @@ function renderProfile(){
       <div class="nm">${t(b.key)}</div>
     </div>`).join('');
 
-  const tierNames = { bronze: 'Bronze', silver: 'Argent', gold: 'Or', diamond: 'Diamant' };
+  const tierNames = { bronze: t('vipTierBronze'), silver: t('vipTierSilver'), gold: t('vipTierGold'), diamond: t('vipTierDiamond') };
   const tierEmojis = { bronze: '&#x1f949;', silver: '&#x1f948;', gold: '&#x1f947;', diamond: '&#x1f48e;' };
   document.getElementById('profileTier').innerHTML = tierEmojis[state.vipTier] + ' ' + tierNames[state.vipTier];
 
@@ -13970,7 +13971,7 @@ function renderVipProgressCard(containerId){
   if(!el) return;
   const tier = getVipTier();
   const benefits = getVipBenefits(tier);
-  const tierNames = { bronze:'Bronze', silver:'Argent', gold:'Or', diamond:'Diamant' };
+  const tierNames = { bronze:t('vipTierBronze'), silver:t('vipTierSilver'), gold:t('vipTierGold'), diamond:t('vipTierDiamond') };
   const tierEmojis = { bronze:'&#x1f949;', silver:'&#x1f948;', gold:'&#x1f947;', diamond:'&#x1f48e;' };
   const thresholds = { bronze:0, silver:30, gold:60, diamond:100 };
   const order = ['bronze','silver','gold','diamond'];
@@ -14154,7 +14155,7 @@ const translations = {
   fr: {
     langTitle:"Choisissez votre langue", langSub:"Sélectionnez la langue que vous préférez utiliser sur Theterbank.",
     continue:"Continuer", back:"← Retour", backHome:"← Accueil",
-    splashTitle:"Theterbank", splashSub:"Ton chemin vers le Canada, un point à la fois.<br>Joue, abonne-toi, avance ensemble — chaque jour.",
+    splashTitle:"Theterbank", splashSub:"Ton chemin vers le Canada, un point à la fois.<br>Joue, gagne, emprunte des USDT — avance chaque jour.",
     createAccount:"Créer mon compte", haveAccount:"J'ai déjà un compte", exploreGuest:"Explorer sans compte",
     reg2Title:"Votre numéro", reg2Sub:"Choisissez votre pays, l'indicatif est ajouté automatiquement.", phoneLabel:"Entrer votre numéro de téléphone valide",
     passwordLabel:"Mot de passe", passwordConfirmLabel:"Confirmer le mot de passe",
@@ -14206,6 +14207,8 @@ const translations = {
     activateSub:"5 jours de jeu pour", debitedFromWallet:"Le montant sera débité de votre portefeuille USDT.",
     insufficientBalance:"Solde insuffisant", depositToContinue:"Déposez des USDT pour activer votre session.",
     networkBep20:"Réseau BEP20 (USDT)", confirmSent:"J'ai envoyé — Confirmer",
+    depositBep20OnlyNote:"— envoie uniquement de l'USDT BEP20 à cette adresse",
+    depositSupportTitle:"Besoin d'aide ?", depositSupportSub:"Dépôt, retrait ou souci avec ton solde — discute avec le support en direct",
     sessionAlreadyActive:"Une session est déjà active.", depositMoreUsdt:"Déposer plus d'USDT",
     walletDepositTitle:"Dépôt USDT", walletDepositSub:"Envoyez des USDT à l'adresse ci-dessous, puis confirmez.",
     refreshBalance:"Actualiser le solde",
@@ -14265,6 +14268,8 @@ const translations = {
     linkCopied:"Lien de parrainage copié !",
     badgeNameFirstGain:"1er gain", badgeNameFiveDays:"5 jours", badgeNameTenDays:"10 jours", badgeNameChallengeComplete:"Défi 30 jours relevé", badgeNamePrizeMaster:"3 prix réclamés",
     vipTier:"Niveau VIP", vipDiscount:"réduction activation", vipBonus:"bonus gains",
+    vipTierBronze:"Bronze", vipTierSilver:"Argent", vipTierGold:"Or", vipTierDiamond:"Diamant",
+    defaultPlayerName:"Joueur",
     recoveryCounter:"Récupération", totalSpent:"Dépensé", totalWon:"Gagné", luckyWonToday:"Étape franchie aujourd'hui !", claimLucky:"Avancer vers le Canada", luckyNumberHit:(p)=>`Votre numéro chanceux ${p.number} est sorti !`, luckyBonusUnlockedToday:"Grand prix débloqué aujourd'hui !", luckySubtitle:"Fais un pas vers le Canada chaque jour, ne rate pas ta série",
     dailyLuckyNumber:"Étape du jour", luckyCheckDraw:"Prêt à avancer aujourd'hui", luckyStreakLabel:"étape(s) vers le Canada / 30",
     luckyNextBonusIn:(p)=>`Encore ${p.days} jour(s) pour le grand prix`, luckyComeBackTomorrow:"Reviens demain pour continuer ta route vers le Canada !",
@@ -14546,6 +14551,27 @@ const translations = {
     lc_libelleCategorie:"Libellé catégorie",
     lc_theterbank:"Theterbank",
     lc_voyage:"Voyage",
+    lcModeVacances:"🏖️ Vacances", lcModeEmploi:"💼 Pôle Emploi",
+    lcRejectTitle:"Demande refusée",
+    lcRejectBody:(p)=>`La date de départ choisie (${p.date}) est dans ${p.days} jour${p.days>1?'s':''} seulement, soit moins d'un mois. Il faut au minimum ${p.prepDays} jours avant le départ pour préparer le visa, le billet et l'itinéraire.`,
+    lcRejectNote:"Modifie ta date de départ pour choisir une date à au moins un mois, puis renvoie ta demande.",
+    lcEditRequestBtn:"Modifier ma demande", lcBackHomeBtn:"Retour à l'accueil",
+    lcCountTitle:"Ta demande de séjour est enregistrée",
+    lcCountIntroWithDeadline:"Il te reste un temps limité pour atteindre le nombre de points requis : utilise Épargne, la Marketplace et les autres actions de l'app pour accumuler des points et valider ta demande avant la date limite ci-dessous.",
+    lcCountIntroNoDeadline:"Ajoute une date de départ pour connaître ton délai exact, puis utilise Épargne, la Marketplace et les autres actions de l'app pour accumuler des points et valider ta demande.",
+    lcCountdownLabelWithDeadline:"Temps restant pour finaliser la conversion",
+    lcCountdownLabelNoDeadline:"Ajoute une date de départ pour lancer le compte à rebours",
+    lcCountdownDays:"jours", lcCountdownHours:"heures", lcCountdownMins:"min", lcCountdownSecs:"sec",
+    lcDeadlineText:(p)=>`Date limite : ${p.deadline} (départ prévu le ${p.departure}, moins ${p.prepDays} jours de préparation)`,
+    lcProgressLabel:"Points requis pour la conversion", lcProgressCurrentPoints:"points actuels", lcProgressRequiredPoints:"requis",
+    lcNoteComplete:"Ton solde couvre déjà le nombre de points requis — la conversion pourra être finalisée dès confirmation de disponibilité.",
+    lcNoteIncomplete:"Chaque action rapporte des points : agis avant la date limite pour ne pas perdre ta place.",
+    lcQuickEpargneSub:"Bloque des actifs, gagne des points", lcQuickMarketSub:"Échange et cumule des points",
+    lcQuickOtherLbl:"Diverses actions", lcQuickOtherSub:"Toutes les façons de gagner",
+    lcCancelRequestBtn:"Annuler ma demande",
+    lcExpiredTitle:"Demande expirée",
+    lcExpiredBody:"Le délai pour atteindre les points requis est dépassé. Cette demande de séjour est annulée automatiquement — tu peux en envoyer une nouvelle dès maintenant.",
+    retry:"Réessayer",
     lc_theterbankComplet:"Theterbank complet",
     lc_manhattanEtGrandsPanoramas:"Manhattan et grands panoramas",
     lc_margeGlobaleDesCotes:"Marge globale des cotes (%)",
@@ -14709,6 +14735,19 @@ const translations = {
     mp_insufficientBalanceError:(p)=>`Solde insuffisant pour cet achat — il te manque ${p.amount} USDT.`,
     mp_buyInProgress:"Achat en cours…",
     mp_purchaseFailed:"Achat impossible",
+    // AJOUT : textes de l'espace admin "Gérer le Marketplace" (recherche,
+    // fiche produit, statut, suppression) — auparavant codés en dur.
+    mpAdminSearchPlaceholder:"Rechercher un produit…",
+    mpAdminAddProductTitle:"Ajouter un produit",
+    mpAdminEditProductTitle:"Modifier le produit",
+    mpAdminLoadError:"Impossible de charger les produits.",
+    mpAdminActive:"🟢 Actif",
+    mpAdminHidden:"⚪ Masqué",
+    mpAdminNoProducts:"Aucun produit.",
+    mpAdminConfirmDelete:"Retirer ce produit du Marketplace ?",
+    mpAdminDeletedToast:"Produit retiré ✓",
+    mpAdminDeleteFailed:"Suppression impossible",
+    lc_marketplaceArrowBtn:"Marketplace →",
     homeNoProductAvailable:"Aucun produit disponible pour le moment.",
     homeViewBtn:"Voir",
     homeOrderTrialBtn:"Commander en essai",
@@ -14872,6 +14911,7 @@ const translations = {
     // ---- BANK / SWAP HAVEN / PRÊTS (transformation Profil -> Bank) ----
     bankMyServices:"Mon espace", bankHistoryTitle:"Historique des transactions",
     bankSwapNav:"Swap Haven", bankSwapNavSub:"Échange tes points contre des USDT (et inversement), avec effet de levier",
+    bankHavreNav:"Havre · Trading",
     bankLoansNav:"Prêts USDT", bankLoansNavSub:"Échange tes points contre un prêt de 1 000 à 500 000 USDT",
     bankSpendNav:"Dépenser mes USDT", bankSpendNavSub:"Marketplace : commande, teste 30 jours, garde ou renvoie",
     bankSwapTitle:"Swap Haven", bankLoansTitle:"Prêts USDT",
@@ -14993,7 +15033,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
   en: {
     langTitle:"Choose your language", langSub:"Select the language you prefer to use on Theterbank.",
     continue:"Continue", back:"← Back", backHome:"← Home",
-    splashTitle:"Theterbank", splashSub:"Your path to Canada, one point at a time.<br>Play, subscribe, move forward together — every day.",
+    splashTitle:"Theterbank", splashSub:"Your path to Canada, one point at a time.<br>Play, earn, borrow USDT — move forward every day.",
     createAccount:"Create my account", haveAccount:"I already have an account", exploreGuest:"Explore without an account",
     reg2Title:"Your phone number", reg2Sub:"Choose your country, the dial code is added automatically.", phoneLabel:"Enter a valid phone number",
     passwordLabel:"Password", passwordConfirmLabel:"Confirm password",
@@ -15045,6 +15085,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     activateSub:"5 days of play for", debitedFromWallet:"The amount will be debited from your USDT wallet.",
     insufficientBalance:"Insufficient balance", depositToContinue:"Deposit USDT to activate your session.",
     networkBep20:"BEP20 network (USDT)", confirmSent:"I've sent it — Confirm",
+    depositBep20OnlyNote:"— only send BEP20 USDT to this address",
+    depositSupportTitle:"Need help?", depositSupportSub:"Deposit, withdrawal or an issue with your balance — chat live with support",
     sessionAlreadyActive:"A session is already active.", depositMoreUsdt:"Deposit more USDT",
     walletDepositTitle:"USDT deposit", walletDepositSub:"Send USDT to the address below, then confirm.",
     refreshBalance:"Refresh balance",
@@ -15104,6 +15146,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     linkCopied:"Referral link copied!",
     badgeNameFirstGain:"1st win", badgeNameFiveDays:"5 days", badgeNameTenDays:"10 days", badgeNameChallengeComplete:"30-day challenge done", badgeNamePrizeMaster:"3 prizes claimed",
     vipTier:"VIP Tier", vipDiscount:"activation discount", vipBonus:"win bonus",
+    vipTierBronze:"Bronze", vipTierSilver:"Silver", vipTierGold:"Gold", vipTierDiamond:"Diamond",
+    defaultPlayerName:"Player",
     recoveryCounter:"Recovery", totalSpent:"Spent", totalWon:"Won", luckyWonToday:"Step reached today!", claimLucky:"Step toward Canada", luckyNumberHit:(p)=>`Your lucky number ${p.number} was drawn!`, luckyBonusUnlockedToday:"Grand prize unlocked today!", luckySubtitle:"Take a step toward Canada every day, don't miss your streak",
     dailyLuckyNumber:"Step of the day", luckyCheckDraw:"Ready for today's step", luckyStreakLabel:"step(s) toward Canada / 30",
     luckyNextBonusIn:(p)=>`${p.days} more day(s) for the grand prize`, luckyComeBackTomorrow:"Come back tomorrow to keep going toward Canada!",
@@ -15385,6 +15429,27 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     lc_libelleCategorie:"Category label",
     lc_theterbank:"Theterbank",
     lc_voyage:"Trip",
+    lcModeVacances:"🏖️ Vacation", lcModeEmploi:"💼 Job Center",
+    lcRejectTitle:"Request declined",
+    lcRejectBody:(p)=>`The chosen departure date (${p.date}) is only ${p.days} day${p.days>1?'s':''} away, which is less than a month. At least ${p.prepDays} days before departure are required to prepare the visa, ticket and itinerary.`,
+    lcRejectNote:"Change your departure date to at least one month from now, then resend your request.",
+    lcEditRequestBtn:"Edit my request", lcBackHomeBtn:"Back to home",
+    lcCountTitle:"Your stay request has been recorded",
+    lcCountIntroWithDeadline:"You have limited time to reach the required number of points: use Savings, the Marketplace and other actions in the app to earn points and confirm your request before the deadline below.",
+    lcCountIntroNoDeadline:"Add a departure date to see your exact deadline, then use Savings, the Marketplace and other actions in the app to earn points and confirm your request.",
+    lcCountdownLabelWithDeadline:"Time left to finalize the conversion",
+    lcCountdownLabelNoDeadline:"Add a departure date to start the countdown",
+    lcCountdownDays:"days", lcCountdownHours:"hours", lcCountdownMins:"min", lcCountdownSecs:"sec",
+    lcDeadlineText:(p)=>`Deadline: ${p.deadline} (departure planned for ${p.departure}, minus ${p.prepDays} preparation days)`,
+    lcProgressLabel:"Points required for the conversion", lcProgressCurrentPoints:"current points", lcProgressRequiredPoints:"required",
+    lcNoteComplete:"Your balance already covers the required number of points — the conversion can be finalized as soon as availability is confirmed.",
+    lcNoteIncomplete:"Every action earns points: act before the deadline so you don't lose your spot.",
+    lcQuickEpargneSub:"Lock assets, earn points", lcQuickMarketSub:"Trade and earn points",
+    lcQuickOtherLbl:"Other actions", lcQuickOtherSub:"All the ways to earn",
+    lcCancelRequestBtn:"Cancel my request",
+    lcExpiredTitle:"Request expired",
+    lcExpiredBody:"The deadline to reach the required points has passed. This stay request is automatically cancelled — you can send a new one right away.",
+    retry:"Retry",
     lc_theterbankComplet:"Full Theterbank",
     lc_manhattanEtGrandsPanoramas:"Manhattan and grand panoramas",
     lc_margeGlobaleDesCotes:"Global odds margin (%)",
@@ -15546,6 +15611,17 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     mp_insufficientBalanceError:(p)=>`Insufficient balance for this purchase — you're missing ${p.amount} USDT.`,
     mp_buyInProgress:"Purchasing…",
     mp_purchaseFailed:"Purchase failed",
+    mpAdminSearchPlaceholder:"Search for a product…",
+    mpAdminAddProductTitle:"Add a product",
+    mpAdminEditProductTitle:"Edit product",
+    mpAdminLoadError:"Unable to load products.",
+    mpAdminActive:"🟢 Active",
+    mpAdminHidden:"⚪ Hidden",
+    mpAdminNoProducts:"No products.",
+    mpAdminConfirmDelete:"Remove this product from the Marketplace?",
+    mpAdminDeletedToast:"Product removed ✓",
+    mpAdminDeleteFailed:"Removal failed",
+    lc_marketplaceArrowBtn:"Marketplace →",
     homeNoProductAvailable:"No product available right now.",
     homeViewBtn:"View",
     homeOrderTrialBtn:"Order on trial",
@@ -15713,6 +15789,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     // ---- BANK / SWAP HAVEN / LOANS ----
     bankMyServices:"My space", bankHistoryTitle:"Transaction history",
     bankSwapNav:"Swap Haven", bankSwapNavSub:"Exchange your points for USDT (and vice versa), with leverage",
+    bankHavreNav:"Havre · Trading",
     bankLoansNav:"USDT Loans", bankLoansNavSub:"Exchange your points for a loan of 1,000 to 500,000 USDT",
     bankSpendNav:"Spend my USDT", bankSpendNavSub:"Marketplace: order, try for 30 days, keep or return",
     bankSwapTitle:"Swap Haven", bankLoansTitle:"Get Loans",
@@ -15834,7 +15911,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
   ar: {
     langTitle:"اختر لغتك", langSub:"اختر اللغة التي تفضل استخدامها في Theterbank.",
     continue:"متابعة", back:"→ رجوع", backHome:"→ الرئيسية",
-    splashTitle:"Theterbank", splashSub:"طريقك نحو كندا، خطوة بخطوة.<br>العب، اشترك، تقدّم معًا — كل يوم.",
+    splashTitle:"Theterbank", splashSub:"طريقك نحو كندا، خطوة بخطوة.<br>العب، اربح، اقترض USDT — تقدّم كل يوم.",
     createAccount:"إنشاء حسابي", haveAccount:"لدي حساب بالفعل", exploreGuest:"استكشاف بدون حساب",
     reg2Title:"رقم هاتفك", reg2Sub:"اختر بلدك، وسيُضاف رمز الاتصال تلقائيًا.", phoneLabel:"أدخل رقم هاتف صالح",
     passwordLabel:"كلمة المرور", passwordConfirmLabel:"تأكيد كلمة المرور",
@@ -15886,6 +15963,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     activateSub:"5 أيام لعب مقابل", debitedFromWallet:"سيُخصم المبلغ من محفظة USDT الخاصة بك.",
     insufficientBalance:"رصيد غير كافٍ", depositToContinue:"أودع USDT لتفعيل جلستك.",
     networkBep20:"شبكة BEP20 (USDT)", confirmSent:"لقد أرسلته — تأكيد",
+    depositBep20OnlyNote:"— أرسل فقط USDT عبر شبكة BEP20 إلى هذا العنوان",
+    depositSupportTitle:"تحتاج مساعدة؟", depositSupportSub:"إيداع أو سحب أو مشكلة في رصيدك — تحدث مباشرة مع الدعم",
     sessionAlreadyActive:"هناك جلسة نشطة بالفعل.", depositMoreUsdt:"إيداع المزيد من USDT",
     walletDepositTitle:"إيداع USDT", walletDepositSub:"أرسل USDT إلى العنوان أدناه، ثم أكّد.",
     refreshBalance:"تحديث الرصيد",
@@ -15945,6 +16024,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     linkCopied:"تم نسخ رابط الإحالة!",
     badgeNameFirstGain:"الفوز الأول", badgeNameFiveDays:"5 أيام", badgeNameTenDays:"10 أيام", badgeNameChallengeComplete:"إنجاز تحدي الثلاثين يومًا", badgeNamePrizeMaster:"استلام 3 جوائز",
     vipTier:"مستوى VIP", vipDiscount:"خصم التفعيل", vipBonus:"مكافأة الفوز",
+    vipTierBronze:"برونزي", vipTierSilver:"فضي", vipTierGold:"ذهبي", vipTierDiamond:"ماسي",
+    defaultPlayerName:"لاعب",
     recoveryCounter:"الاسترداد", totalSpent:"المصروف", totalWon:"المكسب", luckyWonToday:"تمت خطوة اليوم!", claimLucky:"خطوة نحو كندا", luckyNumberHit:(p)=>`تم سحب رقمك المحظوظ ${p.number}!`, luckyBonusUnlockedToday:"تم فتح الجائزة الكبرى اليوم!", luckySubtitle:"اخطُ خطوة نحو كندا كل يوم، لا تفوّت سلسلتك",
     dailyLuckyNumber:"خطوة اليوم", luckyCheckDraw:"جاهز لخطوة اليوم", luckyStreakLabel:"خطوة (خطوات) نحو كندا / 30",
     luckyNextBonusIn:(p)=>`${p.days} يوم (أيام) أخرى للجائزة الكبرى`, luckyComeBackTomorrow:"عد غدًا لمواصلة طريقك نحو كندا!",
@@ -16226,6 +16307,27 @@ lcDest_secureInfoSub:"and used only to process your request.",
     lc_libelleCategorie:"تسمية الفئة",
     lc_theterbank:"لونغكور",
     lc_voyage:"رحلة",
+    lcModeVacances:"🏖️ إجازة", lcModeEmploi:"💼 مركز التوظيف",
+    lcRejectTitle:"تم رفض الطلب",
+    lcRejectBody:(p)=>`تاريخ المغادرة المختار (${p.date}) بعد ${p.days} يوم فقط، أي أقل من شهر. يلزم على الأقل ${p.prepDays} يومًا قبل المغادرة لتجهيز التأشيرة والتذكرة وخط الرحلة.`,
+    lcRejectNote:"غيّر تاريخ مغادرتك ليكون بعد شهر على الأقل، ثم أعد إرسال طلبك.",
+    lcEditRequestBtn:"تعديل طلبي", lcBackHomeBtn:"العودة إلى الرئيسية",
+    lcCountTitle:"تم تسجيل طلب إقامتك",
+    lcCountIntroWithDeadline:"لديك وقت محدود للوصول إلى عدد النقاط المطلوب: استخدم الادخار والسوق والإجراءات الأخرى في التطبيق لجمع النقاط وتأكيد طلبك قبل الموعد النهائي أدناه.",
+    lcCountIntroNoDeadline:"أضف تاريخ مغادرة لمعرفة موعدك النهائي بدقة، ثم استخدم الادخار والسوق والإجراءات الأخرى في التطبيق لجمع النقاط وتأكيد طلبك.",
+    lcCountdownLabelWithDeadline:"الوقت المتبقي لإتمام التحويل",
+    lcCountdownLabelNoDeadline:"أضف تاريخ مغادرة لبدء العد التنازلي",
+    lcCountdownDays:"أيام", lcCountdownHours:"ساعات", lcCountdownMins:"د", lcCountdownSecs:"ث",
+    lcDeadlineText:(p)=>`الموعد النهائي: ${p.deadline} (المغادرة المقررة في ${p.departure}، ناقص ${p.prepDays} يومًا للتحضير)`,
+    lcProgressLabel:"النقاط المطلوبة للتحويل", lcProgressCurrentPoints:"النقاط الحالية", lcProgressRequiredPoints:"مطلوب",
+    lcNoteComplete:"رصيدك يغطي بالفعل عدد النقاط المطلوب — يمكن إتمام التحويل فور تأكيد التوفر.",
+    lcNoteIncomplete:"كل إجراء يمنحك نقاطًا: تصرف قبل الموعد النهائي حتى لا تفقد مكانك.",
+    lcQuickEpargneSub:"احجز أصولًا واكسب نقاطًا", lcQuickMarketSub:"بادل واجمع نقاطًا",
+    lcQuickOtherLbl:"إجراءات متنوعة", lcQuickOtherSub:"كل طرق كسب النقاط",
+    lcCancelRequestBtn:"إلغاء طلبي",
+    lcExpiredTitle:"انتهت صلاحية الطلب",
+    lcExpiredBody:"انتهى الموعد النهائي للوصول إلى النقاط المطلوبة. تم إلغاء طلب الإقامة هذا تلقائيًا — يمكنك إرسال طلب جديد الآن.",
+    retry:"إعادة المحاولة",
     lc_theterbankComplet:"لونغكور الكامل",
     lc_manhattanEtGrandsPanoramas:"مانهاتن وإطلالات بانورامية",
     lc_margeGlobaleDesCotes:"هامش الاحتمالات العام (%)",
@@ -16387,6 +16489,17 @@ lcDest_secureInfoSub:"and used only to process your request.",
     mp_insufficientBalanceError:(p)=>`رصيد غير كافٍ لهذا الشراء — ينقصك ${p.amount} USDT.`,
     mp_buyInProgress:"جارٍ الشراء…",
     mp_purchaseFailed:"تعذّر الشراء",
+    mpAdminSearchPlaceholder:"ابحث عن منتج…",
+    mpAdminAddProductTitle:"إضافة منتج",
+    mpAdminEditProductTitle:"تعديل المنتج",
+    mpAdminLoadError:"تعذّر تحميل المنتجات.",
+    mpAdminActive:"🟢 نشط",
+    mpAdminHidden:"⚪ مخفي",
+    mpAdminNoProducts:"لا يوجد أي منتج.",
+    mpAdminConfirmDelete:"هل تريد إزالة هذا المنتج من المتجر؟",
+    mpAdminDeletedToast:"تمت إزالة المنتج ✓",
+    mpAdminDeleteFailed:"تعذّرت الإزالة",
+    lc_marketplaceArrowBtn:"المتجر ←",
     homeNoProductAvailable:"لا يوجد منتج متاح حاليًا.",
     homeViewBtn:"عرض",
     homeOrderTrialBtn:"اطلب للتجربة",
@@ -16549,6 +16662,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
     // ---- البنك / التبديل / القروض ----
     bankMyServices:"مساحتي", bankHistoryTitle:"سجل المعاملات",
     bankSwapNav:"Swap Haven", bankSwapNavSub:"بادل نقاطك بعملة USDT (والعكس)، مع رافعة مالية",
+    bankHavreNav:"Havre · Trading",
     bankLoansNav:"قروض USDT", bankLoansNavSub:"بادل نقاطك بقرض من 1,000 إلى 500,000 USDT",
     bankSpendNav:"أنفق USDT الخاصة بي", bankSpendNavSub:"المتجر: اطلب، جرّب لمدة 30 يومًا، احتفظ أو أرجع",
     bankSwapTitle:"Swap Haven", bankLoansTitle:"قروض USDT",
@@ -17873,8 +17987,8 @@ function lcPopulateJobFilters(){
   const offers=Array.isArray(lcJobOffers)?lcJobOffers.filter(Boolean):[];
   const countries=[...new Set(offers.map(x=>String(x.country||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const sectors=[...new Set(offers.map(x=>String(x.sector||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  c.innerHTML='<option value="">🌍 Tous les pays</option>'+countries.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-  s.innerHTML='<option value="">🏢 Tous les secteurs</option>'+sectors.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  c.innerHTML=`<option value="">${t('lc_tousLesPays')}</option>`+countries.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  s.innerHTML=`<option value="">${t('lc_tousLesSecteurs')}</option>`+sectors.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
   c.value=cv;s.value=sv;
 }
 function lcFilterJobs(){
@@ -18079,6 +18193,90 @@ function lcShowJobSuccess(o,debited,remaining){
 .dm-bubble.dm-voice-bubble .dm-voice-progress{ height:3px; }
 .dm-bubble.dm-voice-bubble .dm-voice-times{ margin:3px 0 0 33px; font-size:8.5px; line-height:1; }
 .dm-bubble-wrap.voice{ max-width:min(78%, 190px); }
+</style>
+
+<style id="theterbank-real-pc-nav-shell">
+/* AJOUT (demande utilisateur, 2026-09-19) : sur un vrai onglet de navigateur
+   PC (large fenêtre, PAS l'application installée), on transforme la barre
+   de navigation du bas ("bottomNav") en menu latéral fixe façon site web
+   classique, au lieu de se contenter d'agrandir la carte "téléphone".
+   Aucune structure HTML ni logique JS modifiée : goTo()/navTo() et le
+   marquage .active des .screen restent strictement identiques, seul
+   l'habillage CSS change. La condition (display-mode: browser) exclut
+   explicitement le mode application installée (standalone/fullscreen),
+   qui doit garder l'apparence téléphone — voir le bloc juste en dessous,
+   #theterbank-force-mobile-when-installed, non touché. */
+@media (min-width:960px) and (display-mode: browser){
+  .phone{
+    display:flex;
+    flex-direction:row;
+    align-items:stretch;
+    background:var(--cream);
+  }
+  body.lang-rtl .phone{ flex-direction:row-reverse; }
+
+  #app{
+    flex:1 1 auto;
+    width:auto;
+    min-width:0;
+  }
+
+  /* Le nav id="bottomNav" a class="bottom-nav" : le sélecteur combiné
+     #bottomNav.bottom-nav a une spécificité plus forte que .bottom-nav
+     seul, donc ces règles l'emportent quel que soit l'ordre dans le
+     fichier, uniquement dans les conditions du @media ci-dessus. */
+  #bottomNav.bottom-nav{
+    position:static;
+    display:none;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:stretch;
+    left:auto;right:auto;bottom:auto;
+    width:248px;
+    min-width:248px;
+    height:100%;
+    gap:6px;
+    margin:0;
+    padding:26px 14px;
+    border-radius:0;
+    box-shadow:2px 0 24px rgba(43,24,16,0.12);
+    z-index:20;
+  }
+  #bottomNav.bottom-nav.visible{ display:flex; }
+  body.lang-rtl #bottomNav.bottom-nav{ box-shadow:-2px 0 24px rgba(43,24,16,0.12); }
+
+  #bottomNav.bottom-nav::before{
+    content:"Theterbank";
+    font-family:'Baloo 2',sans-serif;
+    color:var(--gold);
+    font-size:18px;
+    font-weight:800;
+    padding:6px 14px 22px;
+    letter-spacing:.02em;
+  }
+
+  #bottomNav .nav-item{
+    flex-direction:row;
+    justify-content:flex-start;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    padding:12px 14px;
+    border-radius:14px;
+    font-size:13.5px;
+    transition:background .15s;
+  }
+  #bottomNav .nav-item .ic{font-size:19px;}
+  #bottomNav .nav-item:hover{ background:rgba(245,185,66,0.10); }
+
+  /* Les écrans réservaient un grand espace vide en bas pour laisser passer
+     la barre flottante mobile : inutile une fois le menu passé sur le
+     côté, on repasse à un espacement normal de page web. */
+  .screen{
+    padding-bottom:40px !important;
+    scroll-padding-bottom:40px;
+  }
+}
 </style>
 
 <style id="theterbank-force-mobile-when-installed">
