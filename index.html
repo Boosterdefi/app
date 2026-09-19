@@ -4025,6 +4025,15 @@ button,input,textarea,select{max-width:100%;}
           </div>
 
           <div class="admin-panel" id="adminPanelTransactions">
+            <div class="admin-card" style="margin-bottom:14px;">
+              <div class="admin-card-head"><h3>⚙️ Frais &amp; minimum de retrait</h3><small>Appliqué à tous les retraits</small></div>
+              <div class="admin-grid two">
+                <div class="admin-field"><div class="admin-label">Frais de retrait (GBP)</div><input class="admin-input" id="wdFeeInput" type="number" min="0" step="0.01" inputmode="decimal"><button class="admin-btn dark" type="button" style="margin-top:6px;width:100%;" onclick="document.getElementById('wdFeeInput').value=0">Mettre à 0</button></div>
+                <div class="admin-field"><div class="admin-label">Minimum de retrait (GBP)</div><input class="admin-input" id="wdMinInput" type="number" min="0" step="0.01" inputmode="decimal"><button class="admin-btn dark" type="button" style="margin-top:6px;width:100%;" onclick="document.getElementById('wdMinInput').value=0">Mettre à 0</button></div>
+              </div>
+              <button class="admin-btn primary" type="button" style="width:100%;margin-top:8px" onclick="adminSaveWithdrawalSettings()">Enregistrer</button>
+              <div class="admin-note" style="margin-top:10px">0 = aucun frais / aucun minimum. Le changement s'applique aux nouvelles demandes ; les demandes déjà en attente gardent les frais enregistrés.</div>
+            </div>
             <div class="admin-card">
               <div class="admin-card-head"><h3 data-i18n="wtxTitle">💸 Dépôts & retraits</h3><small id="adminTxCount">—</small></div>
               <div class="admin-note" data-i18n="wtxNote">Toutes les demandes de dépôt et de retrait arrivent ici avec leurs détails. Le solde n'est crédité (dépôt) ou débité (retrait) qu'à la validation. Les numéros de carte et CVV ne sont jamais conservés.</div>
@@ -19457,8 +19466,38 @@ async function adminTxUpdateBadge(){
     badge.style.display = n > 0 ? 'inline-block' : 'none';
   }catch(e){}
 }
+async function adminLoadWithdrawalSettings(){
+  try{
+    const {data,error}=await sb.rpc('admin_get_settings_v2'); if(error) throw error;
+    const s=data?.[0]||data; if(!s) return;
+    const f=document.getElementById('wdFeeInput'), m=document.getElementById('wdMinInput');
+    if(f) f.value = s.withdrawal_fee ?? 0;
+    if(m) m.value = s.min_withdrawal ?? 0;
+  }catch(e){ adminToast('Réglages de retrait indisponibles'); }
+}
+async function adminSaveWithdrawalSettings(){
+  if(!isAdminUser()) return;
+  const fRaw=document.getElementById('wdFeeInput').value.trim(), mRaw=document.getElementById('wdMinInput').value.trim();
+  const fee=Number(fRaw), min=Number(mRaw);
+  if(fRaw===''||mRaw===''||!Number.isFinite(fee)||!Number.isFinite(min)||fee<0||min<0){ adminToast('Saisis des montants valides (0 ou plus)'); return; }
+  try{
+    // admin_update_settings_v2 exige tous les réglages : on renvoie les autres tels quels.
+    const {data,error:e1}=await sb.rpc('admin_get_settings_v2'); if(e1) throw e1;
+    const s=data?.[0]||data; if(!s) throw new Error('Réglages indisponibles');
+    const {error}=await sb.rpc('admin_update_settings_v2',{
+      p_activation:s.activation_cost??null, p_withdrawal_fee:fee, p_min_withdrawal:min,
+      p_odds_margin:s.odds_margin_extra_pp??null, p_streak_multiplier:s.streak_multiplier??null, p_gold_day_multiplier:s.gold_day_multiplier??null
+    });
+    if(error) throw error;
+    state.settings.withdrawalFee = fee; state.settings.minWithdrawal = min;
+    try{ memoCacheClear('appSettings'); }catch(_){}
+    try{ adminLoadSettings(); }catch(_){}
+    adminToast('Frais et minimum de retrait enregistrés ✓');
+  }catch(e){ adminToast(e.message||'Enregistrement impossible'); }
+}
 async function adminLoadTransactions(){
   if(!isAdminUser()) return;
+  adminLoadWithdrawalSettings();
   const box = document.getElementById('adminTxList');
   if(!box) return;
   box.innerHTML = '<div class="admin-empty">' + esc(t('wtxLoading')) + '</div>';
