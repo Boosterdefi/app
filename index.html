@@ -8143,7 +8143,7 @@ const dmState = {
   lastSearchResults:[], lastConvList:[],
   // AJOUT (2026-09-08) : état de la vidéo de bibliothèque admin diffusée
   // pendant un appel vidéo en cours (voir dmPlayAdminVideo / dmStopAdminVideo).
-  adminVideoEl:null, adminVideoOriginalTrack:null, adminVideoPlaying:false, adminVideoCurrentId:null,
+  adminVideoEl:null, adminVideoOriginalTrack:null, adminVideoPlaying:false, adminVideoCurrentId:null, adminVideoAddedFreshSender:false,
   callRemoteStream:null, callRecorder:null, callRecordChunks:[], callRecordCanvas:null, callRecordCtx:null, callRecordAnim:null, callRecordAudioCtx:null, callRecordAudioDest:null, callRecordPath:null, callRecordingStartedAt:null,
   // AJOUT (2026-09-11) : horodatage du décroché, pour calculer la durée de
   // l'appel affichée dans l'historique (voir dmLogCallEnd).
@@ -8880,6 +8880,10 @@ async function dmStopRecording(send){
 let dmAdminVoiceAudioCtx = null;
 let dmAdminVoiceInputStream = null;
 let dmAdminVoiceOutputStream = null;
+// CORRECTIF (2026-09-19) : référence vers la piste micro BRUTE (non transformée),
+// conservée tant que le pipeline voix admin tourne. Sert de filet de sécurité
+// final juste avant l'envoi WebRTC — voir dmEnsureAdminAudioSendable.
+let dmAdminVoiceRawTrack = null;
 
 // CORRECTIF (2026-09-17 bis) : sur mobile (WebView Android/Huawei notamment),
 // ctx.resume() peut échouer silencieusement s'il est appelé trop loin d'un
@@ -8914,11 +8918,38 @@ async function dmEnsureAdminVoiceRunning(ctx){
   return ctx.state === 'running';
 }
 
+// CORRECTIF (2026-09-19) : BUG confirmé — juste avant pc.addTrack, le code
+// appelait dmEnsureAdminVoiceRunning(ctx) SANS jamais regarder son résultat.
+// Si l'AudioContext était encore "suspended" à cet instant précis (app mise
+// en arrière-plan entre la capture du micro et l'envoi de l'offre, webview
+// Android/Huawei qui traîne à réactiver l'audio...), l'appel partait quand
+// même avec la piste transformée (MediaStreamDestination) qui, elle, ne
+// produit AUCUN son tant que le contexte n'est pas "running" : le
+// correspondant ne recevait donc rien, sans aucune erreur visible côté admin.
+// dmPrepareAdminVoiceStream gérait déjà ce repli lors de la toute première
+// capture, mais pas à ce second contrôle, plus tardif. On centralise donc le
+// repli ici : tentative de reprise, et si ça échoue vraiment, on réinjecte la
+// piste micro brute (dmAdminVoiceRawTrack) dans dmState.localStream avant
+// l'ajout des pistes à la connexion WebRTC — jamais d'appel silencieux.
+async function dmEnsureAdminAudioSendable(){
+  if(!isAdminUser() || !dmAdminVoiceAudioCtx) return;
+  const running = await dmEnsureAdminVoiceRunning(dmAdminVoiceAudioCtx);
+  if(running) return;
+  console.warn('[VOIX ADMIN] AudioContext toujours "suspended" juste avant l\'envoi de l\'offre : repli sur le micro brut pour éviter un appel silencieux');
+  if(dmAdminVoiceRawTrack && dmState.localStream){
+    const videoTracks = dmState.localStream.getVideoTracks();
+    dmState.localStream = new MediaStream([dmAdminVoiceRawTrack, ...videoTracks]);
+  }
+}
+
 async function dmPrepareAdminVoiceStream(rawStream){
   if(!rawStream || !isAdminUser()) return rawStream;
 
   const audioTracks = rawStream.getAudioTracks();
   if(!audioTracks.length) return rawStream;
+  // Conservée pour le repli de dernière minute (dmEnsureAdminAudioSendable),
+  // quel que soit le sort du pipeline de transformation ci-dessous.
+  dmAdminVoiceRawTrack = audioTracks[0];
 
   try{
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -9100,6 +9131,7 @@ async function dmStopAdminVoice(){
     try{ dmAdminVoiceAudioCtx.close(); }catch(_){}
   }
   dmAdminVoiceAudioCtx = null;
+  dmAdminVoiceRawTrack = null;
 }
 
 async function dmGetLocalStream(type, opts){
@@ -9435,7 +9467,10 @@ async function dmStartCallInner(type){
     const chosen = await dmRequireAdminCallVideo();
     if(!chosen) return;
     const built = await dmBuildAdminVideoTrack(chosen.video_url);
-    if(!built){ showToast('Vidéo illisible, réessaie', '&#x26a0;&#xfe0f;'); return; }
+    if(!built || built.corsBlocked){
+      showToast(built && built.corsBlocked ? 'Vidéo bloquée (config CORS du fichier), choisis-en une autre' : 'Vidéo illisible, réessaie', '&#x26a0;&#xfe0f;');
+      return;
+    }
     forcedAdminVideo = { id: chosen.id, el: built.el, track: built.track };
   }
   // CORRECTIF (2026-09-08) : sans ça, le son du jeu Vol Rouge (s'il tournait
@@ -9492,11 +9527,11 @@ async function dmStartCallInner(type){
     const iceServers = await dmGetIceServers();
     const pc = dmSetupPeerConnection(callRow.id, true, iceServers);
     dmState.pc = pc;
-    // CORRECTIF (2026-09-17 bis) : re-vérifie juste avant l'envoi que le
-    // pipeline voix admin tourne toujours (voir dmEnsureAdminVoiceRunning) —
-    // évite d'envoyer une piste redevenue muette si l'app a été mise en
-    // arrière-plan entre la capture du micro et l'offre WebRTC.
-    if(isAdminUser() && dmAdminVoiceAudioCtx) await dmEnsureAdminVoiceRunning(dmAdminVoiceAudioCtx);
+    // CORRECTIF (2026-09-19) : re-vérifie juste avant l'envoi que le
+    // pipeline voix admin tourne toujours, ET bascule sur le micro brut si ce
+    // n'est plus le cas — évite d'envoyer une piste redevenue muette si l'app
+    // a été mise en arrière-plan entre la capture du micro et l'offre WebRTC.
+    await dmEnsureAdminAudioSendable();
     dmState.localStream.getTracks().forEach(t=>pc.addTrack(t, dmState.localStream));
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -9598,7 +9633,10 @@ async function dmAcceptCall(){
     const chosen = await dmRequireAdminCallVideo();
     if(!chosen){ dmDeclineCall(); return; }
     const built = await dmBuildAdminVideoTrack(chosen.video_url);
-    if(!built){ showToast('Vidéo illisible, réessaie', '&#x26a0;&#xfe0f;'); dmDeclineCall(); return; }
+    if(!built || built.corsBlocked){
+      showToast(built && built.corsBlocked ? 'Vidéo bloquée (config CORS du fichier), choisis-en une autre' : 'Vidéo illisible, réessaie', '&#x26a0;&#xfe0f;');
+      dmDeclineCall(); return;
+    }
     forcedAdminVideo = { id: chosen.id, el: built.el, track: built.track };
   }
   // CORRECTIF (2026-09-08) : dmHandleIncomingCall est déclenché par l'INSERT
@@ -9645,8 +9683,9 @@ async function dmAcceptCall(){
     const iceServers = await dmGetIceServers();
     const pc = dmSetupPeerConnection(callRow.id, false, iceServers);
     dmState.pc = pc;
-    // CORRECTIF (2026-09-17 bis) : même re-vérification côté réponse à un appel.
-    if(isAdminUser() && dmAdminVoiceAudioCtx) await dmEnsureAdminVoiceRunning(dmAdminVoiceAudioCtx);
+    // CORRECTIF (2026-09-19) : même re-vérification (avec repli micro brut)
+    // côté réponse à un appel.
+    await dmEnsureAdminAudioSendable();
     dmState.localStream.getTracks().forEach(t=>pc.addTrack(t, dmState.localStream));
     pc._lastOfferSdp = callRow.sdp_offer.sdp;
     await pc.setRemoteDescription(new RTCSessionDescription(callRow.sdp_offer));
@@ -10335,6 +10374,18 @@ function dmRequireAdminCallVideo(){
 }
 // Charge une vidéo de bibliothèque dans un <video> caché et en capture le
 // flux, pour l'utiliser comme piste vidéo envoyée à la place de la caméra.
+// CORRECTIF (2026-09-19) : BUG confirmé — quand le fichier vidéo est
+// cross-origin (bucket Storage sur un autre domaine) et que le serveur qui le
+// sert ne renvoie pas d'en-tête CORS valide, le navigateur marque la piste
+// issue de captureStream() comme "muted" EN PERMANENCE. Cette piste est
+// pourtant acceptée sans erreur par pc.addTrack()/createOffer() : la
+// connexion WebRTC s'établit normalement, mais elle ne transporte jamais la
+// moindre image — symptôme exact d'un appel vidéo qui se connecte des deux
+// côtés sans que le correspondant ne voie (ni n'entende, si le même souci
+// touche aussi le pipeline voix) quoi que ce soit. On attend maintenant un
+// premier vrai frame ("loadeddata") puis on laisse un court délai à la piste
+// pour sortir de l'état "muted" ; si elle y reste, on considère la vidéo
+// injouable au lieu de laisser l'appel démarrer avec une piste morte.
 async function dmBuildAdminVideoTrack(url){
   try{
     const videoEl = document.createElement('video');
@@ -10342,11 +10393,34 @@ async function dmBuildAdminVideoTrack(url){
     videoEl.style.display = 'none';
     document.body.appendChild(videoEl);
     await videoEl.play();
+    if(videoEl.readyState < 2){
+      await new Promise(resolve=>{
+        let done = false;
+        const finish = ()=>{ if(done) return; done = true; videoEl.removeEventListener('loadeddata', finish); resolve(); };
+        videoEl.addEventListener('loadeddata', finish);
+        setTimeout(finish, 2000); // filet de sécurité : ne bloque jamais l'appel indéfiniment
+      });
+    }
     const captured = videoEl.captureStream ? videoEl.captureStream() : videoEl.mozCaptureStream();
     const track = captured.getVideoTracks()[0];
-    if(!track){ videoEl.remove(); return null; }
+    if(!track){ videoEl.pause(); videoEl.remove(); return null; }
+    if(track.muted){
+      const unmuted = await new Promise(resolve=>{
+        let done = false;
+        const onUnmute = ()=>{ if(done) return; done = true; track.removeEventListener('unmute', onUnmute); resolve(true); };
+        track.addEventListener('unmute', onUnmute);
+        setTimeout(()=>{ if(!done){ done = true; track.removeEventListener('unmute', onUnmute); resolve(false); } }, 1500);
+      });
+      if(!unmuted){
+        console.warn('[APPEL VIDEO ADMIN] piste vidéo bibliothèque restée "muted" — blocage CORS probable sur l\'hébergeur du fichier', url);
+        videoEl.pause(); videoEl.remove();
+        return { corsBlocked: true };
+      }
+    }
+    track.addEventListener('mute', ()=>console.warn('[APPEL VIDEO ADMIN] la piste vidéo bibliothèque est repassée "muted" pendant l\'appel'));
     return { track, el: videoEl };
   }catch(e){
+    console.warn('[APPEL VIDEO ADMIN] échec chargement/capture de la vidéo bibliothèque', e);
     return null;
   }
 }
@@ -10389,22 +10463,38 @@ async function dmPlayAdminVideo(id, url){
   if(!dmState.pc || !dmState.localStream) return;
   try{
     // On ne garde qu'une seule vidéo de bibliothèque à la fois : on repart
-    // toujours de la piste caméra d'origine avant d'en lancer une nouvelle.
+    // toujours de la piste caméra/vidéo d'origine avant d'en lancer une nouvelle.
     if(dmState.adminVideoPlaying) dmStopAdminVideo(false);
-    const videoEl = document.createElement('video');
-    videoEl.src = url; videoEl.crossOrigin = 'anonymous'; videoEl.loop = true; videoEl.muted = true;
-    videoEl.style.display = 'none';
-    document.body.appendChild(videoEl);
-    await videoEl.play();
-    const captured = videoEl.captureStream ? videoEl.captureStream() : videoEl.mozCaptureStream();
-    const videoTrack = captured.getVideoTracks()[0];
-    if(!videoTrack) throw new Error('no video track');
+    // Réutilise dmBuildAdminVideoTrack : même logique de chargement + même
+    // détection d'un blocage CORS (piste "muted" en permanence) que pour la
+    // vidéo forcée en début d'appel — voir ce commentaire pour le détail.
+    const built = await dmBuildAdminVideoTrack(url);
+    if(!built || built.corsBlocked){
+      showToast(built && built.corsBlocked ? 'Vidéo bloquée (config CORS du fichier), choisis-en une autre' : 'Impossible de lire cette vidéo', '&#x26a0;&#xfe0f;');
+      return;
+    }
+    const videoTrack = built.track;
     const sender = dmState.pc.getSenders().find(s=> s.track && s.track.kind === 'video');
     if(sender){
       if(!dmState.adminVideoOriginalTrack) dmState.adminVideoOriginalTrack = sender.track;
       await sender.replaceTrack(videoTrack);
+    }else{
+      // CORRECTIF (2026-09-19) : BUG confirmé — si l'appel avait démarré SANS
+      // piste vidéo (appel audio), il n'existait aucun émetteur vidéo à cet
+      // instant : replaceTrack était silencieusement ignoré alors qu'un
+      // toast de succès s'affichait quand même, et le correspondant ne
+      // recevait donc jamais rien. On ajoute réellement la piste à la
+      // connexion et on renégocie (nouvelle offer) : le canal de
+      // signalisation gère déjà ce cas (voir dmSubscribeCallUpdates, utilisé
+      // pour les ICE restarts), donc le correspondant répond automatiquement
+      // par une nouvelle réponse SDP.
+      dmState.pc.addTrack(videoTrack, dmState.localStream);
+      dmState.adminVideoAddedFreshSender = true;
+      const offer = await dmState.pc.createOffer();
+      await dmState.pc.setLocalDescription(offer);
+      if(dmState.currentCall) await sb.from('dm_calls').update({ sdp_offer: offer }).eq('id', dmState.currentCall.id);
     }
-    dmState.adminVideoEl = videoEl;
+    dmState.adminVideoEl = built.el;
     dmState.adminVideoPlaying = true;
     dmState.adminVideoCurrentId = id;
     const btn = document.getElementById('dmMoreBtn');
@@ -10412,6 +10502,7 @@ async function dmPlayAdminVideo(id, url){
     dmCloseAdminVideoSheet();
     showToast('Vidéo diffusée au client', '&#x1f3ac;');
   }catch(e){
+    console.warn('[APPEL VIDEO ADMIN] dmPlayAdminVideo a échoué', e);
     showToast('Impossible de lire cette vidéo', '&#x26a0;&#xfe0f;');
   }
 }
@@ -10424,8 +10515,22 @@ function dmStopAdminVideo(closeSheet){
   if(dmState.pc && dmState.adminVideoOriginalTrack){
     const sender = dmState.pc.getSenders().find(s=> s.track && s.track.kind === 'video');
     if(sender) sender.replaceTrack(dmState.adminVideoOriginalTrack).catch(()=>{});
+  }else if(dmState.pc && dmState.adminVideoAddedFreshSender){
+    // CORRECTIF (2026-09-19) : cette piste vidéo n'a jamais eu de caméra
+    // d'origine (elle a été ajoutée à la volée par dmPlayAdminVideo sur un
+    // appel démarré sans vidéo) — on la retire proprement et on renégocie
+    // vers le bas, plutôt que de laisser un émetteur vidéo mort dans la
+    // connexion.
+    const sender = dmState.pc.getSenders().find(s=> s.track && s.track.kind === 'video');
+    if(sender){
+      try{ dmState.pc.removeTrack(sender); }catch(_){}
+      dmState.pc.createOffer().then(offer=>dmState.pc.setLocalDescription(offer).then(()=>offer)).then(offer=>{
+        if(dmState.currentCall) sb.from('dm_calls').update({ sdp_offer: offer }).eq('id', dmState.currentCall.id).then(undefined, ()=>{});
+      }).catch(()=>{});
+    }
   }
   dmState.adminVideoOriginalTrack = null;
+  dmState.adminVideoAddedFreshSender = false;
   dmState.adminVideoPlaying = false;
   dmState.adminVideoCurrentId = null;
   const btn = document.getElementById('dmMoreBtn');
