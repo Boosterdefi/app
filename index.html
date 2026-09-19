@@ -5295,6 +5295,7 @@ async function sbSyncBalance(){
   const { data, error } = await sb.from('user_balances').select('balance').eq('user_id', sbUser.id).maybeSingle();
   if(error || !data) return null;
   state.wallet.usdtBalance = Number(data.balance) || 0;
+  window._balSrv = state.wallet.usdtBalance; // dernière valeur serveur connue (voir sbBalanceLivePoll)
   return state.wallet.usdtBalance;
 }
 
@@ -11447,6 +11448,31 @@ async function sbHeartbeat(){
   try{ await sb.rpc('touch_last_seen'); }catch(e){ /* best-effort */ }
 }
 setInterval(sbHeartbeat, 60000);
+
+/* Solde en direct : quand l'admin crédite/débite un compte (ou qu'un retrait est validé),
+   le solde affiché se met à jour sans reconnexion. On n'applique que la DIFFÉRENCE
+   côté serveur, pour ne pas écraser les mouvements locaux en cours. */
+async function sbBalanceLivePoll(){
+  if(!sbUser || document.hidden || typeof sb === 'undefined') return;
+  try{
+    const { data, error } = await sb.from('user_balances').select('balance').eq('user_id', sbUser.id).maybeSingle();
+    if(error || !data) return;
+    const v = Number(data.balance) || 0;
+    if(typeof window._balSrv !== 'number'){ window._balSrv = v; return; }   // première mesure = référence
+    if(v === window._balSrv) return;
+    const delta = v - window._balSrv;
+    window._balSrv = v;
+    state.wallet.usdtBalance = +(Number(state.wallet.usdtBalance || 0) + delta).toFixed(4);
+    try{ renderHomeWalletChip(); }catch(_){}
+    const el = document.getElementById('profileWalletAmt');
+    if(el) el.textContent = fmtAmt(state.wallet.usdtBalance) + ' GBP';
+    try{ sbLoadWalletTransactions(); }catch(_){}
+    if(delta > 0) showToast('Solde mis à jour : +' + fmtAmt(delta) + ' GBP', '💰');
+    else showToast('Solde mis à jour : ' + fmtAmt(delta) + ' GBP', '💳');
+  }catch(e){ /* best-effort */ }
+}
+setInterval(sbBalanceLivePoll, 15000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sbBalanceLivePoll(); });
 // Rafraîchit le texte "vu il y a…" dans le panneau admin (pas seulement au
 // moment d'une synchronisation de présence), pour que "il y a 2 min" ne
 // reste pas figé indéfiniment tant que le panneau admin reste ouvert.
