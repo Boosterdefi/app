@@ -21,14 +21,39 @@
     var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     document.documentElement.style.setProperty('--app-vh', h + 'px');
   }
-  try{
-    var coarse=window.matchMedia('(pointer:coarse)').matches;
-    var sw=Math.min(screen.width,screen.height);
-    if(coarse && sw>0 && sw<=600 && window.innerWidth>700){
-      var mv=document.querySelector('meta[name=viewport]');
-      if(mv) mv.setAttribute('content','width='+sw+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-    }
-  }catch(e){}
+  /* CORRECTIF (2026-09-19) : petit écran TACTILE dont le navigateur calcule la page sur
+     ~980 px (mode "Site pour ordinateur", WebView...). Dans ce cas la balise viewport est
+     ignorée. On tente d'abord de la forcer ; si la largeur reste > 700 px, on compense
+     avec un zoom CSS (largeur écran / largeur calculée) pour retrouver une mise en page
+     de ~400 px. Ne fait STRICTEMENT rien sur un vrai PC (souris) ni sur un mobile normal. */
+  function fitWide(){
+    try{
+      var root=document.documentElement;
+      var coarse=window.matchMedia('(pointer:coarse)').matches;
+      var sw=Math.min(screen.width,screen.height);
+      var iw=window.innerWidth;
+      if(coarse && sw>0 && sw<=600 && iw>700){
+        var mv=document.querySelector('meta[name=viewport]');
+        if(mv && !root.__tbMetaTried){
+          root.__tbMetaTried=true;
+          mv.setAttribute('content','width='+sw+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+        }
+        var z=iw/sw;
+        root.style.setProperty('--tb-z',String(z));
+        root.style.zoom=String(z);
+        root.classList.add('tb-fix-wide');
+      }else if(root.classList.contains('tb-fix-wide')){
+        root.style.zoom='';
+        root.style.removeProperty('--tb-z');
+        root.classList.remove('tb-fix-wide');
+      }
+    }catch(e){}
+  }
+  fitWide();
+  window.addEventListener('resize', fitWide);
+  window.addEventListener('orientationchange', fitWide);
+  setTimeout(fitWide,400);
+  setTimeout(fitWide,1500);
   setAppVh();
   window.addEventListener('resize', setAppVh);
   window.addEventListener('orientationchange', setAppVh);
@@ -18288,7 +18313,7 @@ function lcShowJobSuccess(o,debited,remaining){
    explicitement le mode application installée (standalone/fullscreen),
    qui doit garder l'apparence téléphone — voir le bloc juste en dessous,
    #theterbank-force-mobile-when-installed, non touché. */
-@media (min-width:960px) and (display-mode: browser){
+@media (min-width:960px) and (display-mode: browser) and (hover:hover) and (pointer:fine){
   .phone{
     display:flex;
     flex-direction:row;
@@ -18399,6 +18424,15 @@ function lcShowJobSuccess(o,debited,remaining){
     .lc-pro-support-card ul{grid-template-columns:1fr!important}
   }
 }
+</style>
+<style id="theterbank-fix-wide-touch">
+/* CORRECTIF (2026-09-19) : voir fitWide() dans le <head>. Actif uniquement quand le script a
+   détecté un petit écran tactile calculé sur ~980 px (classe html.tb-fix-wide). */
+html.tb-fix-wide body{padding:0 !important;min-height:0 !important;height:calc(var(--app-vh) / var(--tb-z)) !important;display:block !important;}
+html.tb-fix-wide .stage,
+html.tb-fix-wide .phone{width:100% !important;max-width:none !important;height:calc(var(--app-vh) / var(--tb-z)) !important;min-height:0 !important;max-height:none !important;border-radius:0 !important;padding:0 !important;box-shadow:none !important;}
+html.tb-fix-wide .phone-notch{display:none !important;}
+html.tb-fix-wide .app{width:100% !important;height:100% !important;border-radius:0 !important;}
 </style>
 <script id="theterbank-emploi-i18n-hardening">
 (function(){
