@@ -4509,7 +4509,7 @@ button,input,textarea,select{max-width:100%;}
       <!-- THETERBANK : galerie photos d'une destination -->
       <div class="lc-dest-modal" id="lcDestModal">
         <div class="lc-dest-modal-head">
-          <button class="btn-ghost" style="padding:0;font-size:22px;" onclick="lcCloseDestModal()" aria-label="Retour">&#8592;</button>
+          <button class="btn-ghost" style="padding:0;font-size:22px;" onclick="lcCloseDestModal()" aria-label="${t('depositBack')}">&#8592;</button>
           <h2 id="lcDestModalTitle">Destination</h2>
           <button class="btn-ghost" style="padding:0;font-size:22px;" onclick="lcCloseDestModal()" aria-label="Fermer">&times;</button>
         </div>
@@ -6553,8 +6553,26 @@ async function havreFetchMarket(){
 }
 function havreStartLive(){havreStopLive();havreFetchMarket();havreLiveTimer=setInterval(havreFetchMarket,10000);}
 function havreStopLive(){if(havreLiveTimer){clearInterval(havreLiveTimer);havreLiveTimer=null;}}
+// Frankfurter fournit ici le prix de référence utilisé par le marché Havre.
+// Important : cette source est quotidienne ; elle ne peut donc pas produire un
+// P&L intraday à elle seule. Le calcul ci-dessous reste automatique dès qu'un
+// nouveau prix est reçu par havreFetchMarket().
 function havreUpdatePositions(){
-  havreState.positions.forEach(p=>{const px=Number(havreState.prices[p.asset]||p.entryPrice); const raw=(px-p.entryPrice)/p.entryPrice*p.notional*(p.side==='long'?1:-1); p.pnl=+raw.toFixed(4); p.pnlPct=p.margin?+(raw/p.margin*100).toFixed(2):0;});
+  havreState.positions.forEach(p=>{
+    const px=Number(havreState.prices[p.asset]||p.entryPrice);
+    const raw=(px-p.entryPrice)/p.entryPrice*p.notional*(p.side==='long'?1:-1);
+    p.currentPrice=px; p.pnl=+raw.toFixed(4); p.pnlPct=p.margin?+(raw/p.margin*100).toFixed(2):0;
+  });
+}
+// Estimation transparente : liquidation lorsque 100% de la marge initiale est perdue.
+// Ce n'est pas une règle de broker/exchange ; c'est un seuil d'estimation de l'application.
+function havreLiquidationPrice(p){
+  const e=Number(p.entryPrice||0),lev=Number(p.leverage||1); if(!e||lev<=0)return 0;
+  return +(p.side==='long'?e*(1-1/lev):e*(1+1/lev)).toFixed(6);
+}
+function havreLiquidationDistancePct(p){
+  const px=Number(p.currentPrice||havreState.prices[p.asset]||p.entryPrice||0),liq=havreLiquidationPrice(p);
+  return px&&liq?Math.abs((liq-px)/px*100):0;
 }
 function havreOpenPosition(){
   const a=havreAsset(),px=Number(havreState.prices[a.id]||0),margin=Number(havreState.margin||0),lev=Number(havreState.leverage||1);
@@ -6582,7 +6600,7 @@ function renderHavreTrading(){
  <div class="havre-market-card"><div class="havre-market-head"><div><div class="havre-market-pair">GBP/${a.symbol}</div><div class="havre-live-dot">${havreState.loading?t('swapUpdating'):'LIVE · Marché FX'}</div></div><div style="text-align:right"><div class="havre-price">${px?fmtAmt(px,a.decimals):'—'} ${a.quote}</div><div class="havre-change ${ch>=0?'up':'down'}">${px?(ch>=0?'+':'')+ch.toFixed(2)+'% 24h':'—'}</div></div></div>${tvSym?`<div class="havre-chart tv"><iframe title="TradingView ${a.symbol} chart" src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=15&hidesidetoolbar=1&hidetoptoolbar=0&theme=light&style=1&timezone=Etc%2FUTC&locale=${state.settings.lang||'fr'}&toolbarbg=f1f3f6" allowtransparency="true" scrolling="no"></iframe></div>`:`<div class="havre-chart"><canvas id="havreChartCanvas"></canvas></div><div class="havre-tv-fallback">${t('havreNoChart',{symbol:'GBP/'+a.symbol})}</div>`}</div>
  <div class="havre-trade-panel"><div class="havre-section-label" style="margin:0 0 8px">${t('havreNewPosition')}</div><select onchange="havreSetAsset(this.value)">${HAVRE_ASSETS.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${x.symbol} · ${x.name}</option>`).join('')}</select><div class="havre-leverage-row">${[1,2,5,10,20,50].map(x=>`<button class="havre-lev ${havreState.leverage===x?'active':''}" onclick="havreSetLeverage(${x})">x${x}</button>`).join('')}</div><input type="number" min="0.01" step="0.01" value="${havreState.margin}" oninput="havreSetMargin(this.value)" placeholder="${t('havreMarginPlaceholder')}"><div class="havre-trade-summary"><div class="havre-trade-metric"><small>${t('havreMargin')}</small><b>${fmtAmt(havreState.margin)} GBP</b></div><div class="havre-trade-metric"><small>${t('havreNotional')}</small><b>${fmtAmt(notional)} GBP</b></div><div class="havre-trade-metric"><small>${t('genLabelPoints')}</small><b>+${pts}</b></div></div><div class="havre-order-buttons"><button class="havre-order-btn long" onclick="havreSetSide('long');havreOpenPosition()">${t('havreLongOpen')}</button><button class="havre-order-btn short" onclick="havreSetSide('short');havreOpenPosition()">${t('havreShortOpen')}</button></div><div class="havre-trading-note" style="margin-left:0;margin-right:0;">${t('havreAvailableBalance',{amount:fmtAmt(Number(state.wallet.usdtBalance||0))})}</div></div>
  <div class="havre-trading-note">${t('havreLiveNote')}</div>
- <div class="havre-section-label">${t('havreOpenPositions')}</div>${havreState.positions.length?havreState.positions.map(p=>`<div class="havre-position-card"><div class="havre-position-top"><span class="havre-position-pair">${p.symbol} · ${p.side.toUpperCase()} x${p.leverage}</span><span class="havre-position-pnl ${p.pnl>=0?'up':'down'}">${p.pnl>=0?'+':''}${fmtAmt(p.pnl)} GBP</span></div><div class="havre-position-meta"><span>${t('havreMargin')}<b>${fmtAmt(p.margin)} GBP</b></span><span>${t('havreNotional')}<b>${fmtAmt(p.notional)} GBP</b></span><span>${t('havreEntry')}<b>${fmtAmt(p.entryPrice, (HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).decimals||4)} ${(HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).quote||''}</b></span></div><button class="havre-close-position" onclick="havreClosePosition('${p.id}')">${t('havreClosePositionBtn')}</button></div>`).join(''):`<div class="havre-empty">${t('havreNoPositions')}</div>`}
+ <div class="havre-section-label">${t('havreOpenPositions')}</div>${havreState.positions.length?havreState.positions.map(p=>`<div class="havre-position-card"><div class="havre-position-top"><span class="havre-position-pair">${p.symbol} · ${p.side.toUpperCase()} x${p.leverage}</span><span class="havre-position-pnl ${p.pnl>=0?'up':'down'}">${p.pnl>=0?'+':''}${fmtAmt(p.pnl)} GBP</span></div><div class="havre-position-meta"><span>${t('havreMargin')}<b>${fmtAmt(p.margin)} GBP</b></span><span>${t('havreNotional')}<b>${fmtAmt(p.notional)} GBP</b></span><span>${t('havreEntry')}<b>${fmtAmt(p.entryPrice, (HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).decimals||4)} ${(HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).quote||''}</b></span></div><div class="havre-position-meta"><span>Prix actuel<b>${fmtAmt(p.currentPrice||havreState.prices[p.asset]||p.entryPrice, (HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).decimals||4)} ${(HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).quote||''}</b></span><span>Liquidation estimée<b>${fmtAmt(havreLiquidationPrice(p), (HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).decimals||4)} ${(HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).quote||''}</b></span><span>Distance<b>${havreLiquidationDistancePct(p).toFixed(2)}%</b></span></div><button class="havre-close-position" onclick="havreClosePosition('${p.id}')">${t('havreClosePositionBtn')}</button></div>`).join(''):`<div class="havre-empty">${t('havreNoPositions')}</div>`}
  <div class="havre-section-label">${t('havreTrackedMarkets')}</div><div class="havre-market-card"><div class="havre-market-list">${HAVRE_ASSETS.map(x=>{const p=Number(havreState.prices[x.id]||0),c=Number(havreState.changes[x.id]||0);return `<div class="havre-market-row"><span class="havre-market-symbol">GBP/${x.symbol}</span><span class="havre-market-price">${p?fmtAmt(p,x.decimals)+' '+x.quote:'—'}<small class="${c>=0?'havre-change up':'havre-change down'}">${p?(c>=0?'+':'')+c.toFixed(2)+'%':''}</small></span></div>`}).join('')}</div></div>`;
  if(!tvSym) setTimeout(havreDrawChart,0);
 }
@@ -14862,7 +14880,7 @@ function nwCardNumberInput(){
   }
   const tag = $('nwTag');
   if(tag){
-    tag.innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand.toUpperCase() + '</span>' : 'CARTE';
+    tag.innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand.toUpperCase() + '</span>' : (document.getElementById('depositAmountInput') ? t('depositCardTag') : 'CARTE');
     tag.classList.toggle('nw-tag-on', !!brand);
   }
   const cvv = $('nwCvv');
@@ -14889,17 +14907,17 @@ function nwCardNumberInput(){
   if(d.length >= (brand==='Amex' ? 15 : 16)){
     if(nwLuhn(d)){
       if(chk){ chk.className = 'nw-chk ok'; chk.textContent = '✓'; }
-      if(h){ h.textContent = 'Numéro valide' + (brand ? ' — ' + brand + '.' : '.'); h.classList.add('nw-ok-txt'); }
+      if(h){ h.textContent = document.getElementById('depositAmountInput') ? t('depositCardNumberValid') + (brand ? ' — ' + brand + '.' : '.') : 'Numéro valide' + (brand ? ' — ' + brand + '.' : '.'); h.classList.add('nw-ok-txt'); }
     }else{
       if(chk){ chk.className = 'nw-chk bad'; chk.textContent = '✕'; }
       inp.classList.add('nw-err');
-      if(h){ h.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).'; h.classList.add('nw-err-txt'); }
+      if(h){ h.textContent = document.getElementById('depositAmountInput') ? t('depositCardNumberInvalid') : 'Numéro de carte invalide (échec de la clé de contrôle).'; h.classList.add('nw-err-txt'); }
     }
   }
 }
 function nwHolderInput(){
   const v = document.getElementById('nwHolder').value;
-  document.getElementById('nwName').textContent = v.trim() ? v.toUpperCase() : 'NOM DU TITULAIRE';
+  document.getElementById('nwName').textContent = v.trim() ? v.toUpperCase() : (document.getElementById('depositAmountInput') ? t('depositCardHolderVisual') : 'NOM DU TITULAIRE');
   document.getElementById('nwHolder').classList.remove('nw-err');
 }
 function nwExpInput(){
@@ -14913,9 +14931,9 @@ function nwExpInput(){
   if(v.length<5){ hint.textContent=''; return; }
   const mm = +v.slice(0,2), yy = +v.slice(3,5), now = new Date();
   const cy = now.getFullYear()%100, cm = now.getMonth()+1;
-  if(mm<1 || mm>12){ hint.textContent='Mois invalide (01 à 12).'; hint.classList.add('nw-err-txt'); inp.classList.add('nw-err'); }
-  else if(yy<cy || (yy===cy && mm<cm)){ hint.textContent='Carte expirée.'; hint.classList.add('nw-err-txt'); inp.classList.add('nw-err'); }
-  else hint.textContent='Date valide.';
+  if(mm<1 || mm>12){ hint.textContent=document.getElementById('depositAmountInput') ? t('depositMonthInvalid') : 'Mois invalide (01 à 12).'; hint.classList.add('nw-err-txt'); inp.classList.add('nw-err'); }
+  else if(yy<cy || (yy===cy && mm<cm)){ hint.textContent=document.getElementById('depositAmountInput') ? t('depositCardExpired') : 'Carte expirée.'; hint.classList.add('nw-err-txt'); inp.classList.add('nw-err'); }
+  else hint.textContent=document.getElementById('depositAmountInput') ? t('depositDateValid') : 'Date valide.';
 }
 function nwCvvInput(){
   const $ = id => document.getElementById(id);
@@ -14924,23 +14942,24 @@ function nwCvvInput(){
   inp.classList.remove('nw-err'); hint.classList.remove('nw-err-txt');
   const needed = inp.maxLength || 3;
   if(!inp.value.length){ hint.textContent=''; }
-  else if(inp.value.length===needed){ hint.textContent='Format correct ('+needed+' chiffres).'; }
-  else { hint.textContent=needed+' chiffres attendus.'; hint.classList.add('nw-err-txt'); }
+  else if(inp.value.length===needed){ hint.textContent=document.getElementById('depositAmountInput') ? t('depositCvvFormat',{n:needed}) : 'Format correct ('+needed+' chiffres).'; }
+  else { hint.textContent=document.getElementById('depositAmountInput') ? needed+' '+t('depositCvvDigitsExpected') : needed+' chiffres attendus.'; hint.classList.add('nw-err-txt'); }
 }
-function nwCardFormFieldsHtml(showVisual=true, includeExpiry=true){
+function nwCardFormFieldsHtml(showVisual=true, includeExpiry=true, localized=false){
+  const L = key => localized ? t(key) : null;
   return `
     ${showVisual ? `<div class="nw-card">
-      <div class="nw-card-top"><div class="nw-chip"></div><div class="nw-tag" id="nwTag">CARTE</div></div>
+      <div class="nw-card-top"><div class="nw-chip"></div><div class="nw-tag" id="nwTag">${localized ? L('depositCardTag') : 'CARTE'}</div></div>
       <div>
         <div class="nw-card-num nw-dots" id="nwNum">•••• •••• •••• ••••</div>
         <div class="nw-card-bottom">
-          <div class="nw-card-name" id="nwName">NOM DU TITULAIRE</div>
+          <div class="nw-card-name" id="nwName">${localized ? L('depositCardHolderVisual') : 'NOM DU TITULAIRE'}</div>
           <div class="nw-card-exp"><small>EXP.</small><span id="nwExpShown">MM/AA</span></div>
         </div>
       </div>
     </div>` : ''}
     <div class="nw-field">
-      <label for="nwCardNumber">Numéro de carte</label>
+      <label for="nwCardNumber">${localized ? L('depositCardNumberLabel') : 'Numéro de carte'}</label>
       <div class="nw-inwrap">
         <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="nwCardNumberInput()">
         ${showVisual ? '<span class="nw-pill" id="nwPill"></span><span class="nw-chk" id="nwChk"></span>' : ''}
@@ -14948,17 +14967,17 @@ function nwCardFormFieldsHtml(showVisual=true, includeExpiry=true){
       <div class="nw-hint" id="nwCardHint"${showVisual ? '' : ' style="display:none;"'}></div>
     </div>
     <div class="nw-field">
-      <label for="nwHolder">Titulaire de la carte</label>
-      <input class="nw-input nw-plain" type="text" id="nwHolder" autocomplete="cc-name" placeholder="Nom et prénom" oninput="nwHolderInput()">
+      <label for="nwHolder">${localized ? L('depositCardHolderLabel') : 'Titulaire de la carte'}</label>
+      <input class="nw-input nw-plain" type="text" id="nwHolder" autocomplete="cc-name" placeholder="${localized ? L('depositCardHolderPlaceholder') : 'Nom et prénom'}" oninput="nwHolderInput()">
     </div>
     ${includeExpiry ? `<div class="nw-row">
       <div class="nw-field">
-        <label for="nwExp">Expiration</label>
+        <label for="nwExp">${localized ? L('depositExpirationLabel') : 'Expiration'}</label>
         <input class="nw-input" type="text" id="nwExp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" oninput="nwExpInput()">
         <div class="nw-hint" id="nwExpHint"${showVisual ? '' : ' style="display:none;"'}></div>
       </div>
       ${showVisual ? `<div class="nw-field">
-        <label for="nwCvv">Cryptogramme</label>
+        <label for="nwCvv">${localized ? L('depositCvvLabel') : 'Cryptogramme'}</label>
         <input class="nw-input" type="text" id="nwCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="CVV" maxlength="4" oninput="nwCvvInput()">
         <div class="nw-hint" id="nwCvvHint"></div>
       </div>` : ''}
@@ -14970,19 +14989,19 @@ function depositFormHtml(){
   <div class="deposit-ui-shell">
     <div class="deposit-ui-head">
       <button class="btn-ghost" onclick="goTo('screen-home')" aria-label="Retour">&#8592;</button>
-      <h2>Dépôt</h2>
+      <h2>${t('depositPageTitle')}</h2>
       <button class="btn-ghost" style="visibility:hidden;" aria-hidden="true">&times;</button>
     </div>
     <div class="deposit-ui-body">
       <div class="nw-sheet">
-        <div class="deposit-title">Dépôt</div>
+        <div class="deposit-title">${t('depositPageTitle')}</div>
                 <div class="nw-field">
-          <label for="depositAmountInput">Montant du dépôt (GBP)</label>
+          <label for="depositAmountInput">${t('depositAmountLabel')}</label>
           <input class="nw-input" type="number" min="0" step="0.01" id="depositAmountInput" placeholder="0.00" inputmode="decimal">
         </div>
-        ${nwCardFormFieldsHtml()}
+        ${nwCardFormFieldsHtml(true, true, true)}
         <div class="withdraw-error" id="depositErrorBox"></div>
-        <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Confirmer le dépôt</button>
+        <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">${t('depositConfirmButton')}</button>
       </div>
     </div>
   </div>`;
@@ -14996,14 +15015,14 @@ function nwSubmitCardDepositImpl(){
   const showErr = m => { errBox.textContent = m; errBox.classList.add('show'); };
   errBox.classList.remove('show');
   const amount = readWithdrawAmount($('depositAmountInput').value);
-  if(!(amount > 0)){ showErr('Entrez un montant supérieur à 0.'); return; }
+  if(!(amount > 0)){ showErr(t('depositAmountPositive')); return; }
 
   const digits = $('nwCardNumber').value.replace(/\D/g,'');
   const brand = nwDetectBrand(digits);
   let valid = true;
   if(digits.length<12 || !nwLuhn(digits)){
     $('nwCardNumber').classList.add('nw-err');
-    const h = $('nwCardHint'); h.textContent='Numéro de carte invalide (échec de la clé de contrôle).'; h.classList.add('nw-err-txt');
+    const h = $('nwCardHint'); h.textContent=t('depositCardNumberInvalid'); h.classList.add('nw-err-txt');
     valid = false;
   }
   const exp = $('nwExp').value;
@@ -15044,14 +15063,14 @@ btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width
         <div class="nw-sheet" style="padding:22px 18px 30px;border-radius:24px;">
           <div class="withdraw-success">
             <div class="ic">&#x2705;</div>
-            <div style="font-weight:800;font-size:18px;margin-top:10px;">Votre demande est en cours de traitement</div>
-            <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">Votre demande de dépôt est en cours de traitement.</div>
+            <div style="font-weight:800;font-size:18px;margin-top:10px;">${t('depositSuccessTitle')}</div>
+            <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">${t('depositSuccessSub')}</div>
             <div style="font-size:12px;color:var(--nw-soft);margin-top:6px;">${label} ••${last4}</div>
             <button class="nw-btn" onclick="navTo('screen-profile')">${t('close')}</button>
           </div>
         </div>`;
       confettiBurst();
-      showToast('Votre demande est en cours de traitement', '&#x23f3;');
+      showToast(t('depositProcessingToast'), '&#x23f3;');
       renderProfile();
     }catch(err){
       console.error('[WALLET] dépôt:', err);
@@ -15261,6 +15280,7 @@ const translations = {
     vipKeepPlaying:"Continue de jouer pour débloquer des avantages",
     myTransactions:"Mes transactions", noTransactionsYet:"Aucune transaction pour le moment.",
     withdrawalLabel:"Retrait par virement bancaire", withdrawalCardLabel:"Retrait par carte bancaire",
+    depositAmountPositive:"Entrez un montant supérieur à 0.", depositBack:"Retour", depositPageTitle:"Dépôt", depositAmountLabel:"Montant du dépôt (GBP)", depositCardNumberLabel:"Numéro de carte", depositCardHolderLabel:"Titulaire de la carte", depositCardHolderPlaceholder:"Nom et prénom", depositExpirationLabel:"Expiration", depositCvvLabel:"Cryptogramme", depositCardTag:"CARTE", depositCardHolderVisual:"NOM DU TITULAIRE", depositConfirmButton:"Confirmer le dépôt", depositSuccessTitle:"Votre demande est en cours de traitement", depositSuccessSub:"Votre demande de dépôt est en cours de traitement.", depositProcessingToast:"Votre demande est en cours de traitement", depositCardNumberValid:"Numéro valide", depositCardNumberInvalid:"Numéro de carte invalide (échec de la clé de contrôle).", depositMonthInvalid:"Mois invalide (01 à 12).", depositCardExpired:"Carte expirée.", depositDateValid:"Date valide.", depositCvvFormat:(p)=>`Format correct (${p.n} chiffres).`, depositCvvDigitsExpected:"chiffres attendus.", 
     withdrawMethodTitle:"Choisissez une méthode de retrait", withdrawMethodCard:"Carte bancaire", withdrawMethodCardSub:"Retrait sur carte", withdrawMethodBank:"Virement bancaire", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"Adresse 0x…", cryptoDetailsTitle:"Adresse crypto", cryptoAddressLabel:"Adresse USDT (EVM)", cryptoAddressHint:"Utilisez uniquement une adresse compatible EVM (0x…).", cryptoAddressInvalid:"Adresse USDT EVM invalide.", cardNumberInvalid:"Numéro de carte invalide.", withdrawSuccessCard:"Votre demande est en cours de traitement sur votre carte.", withdrawSuccessBank:"Votre demande est en cours de traitement sur votre compte bancaire.", withdrawSuccessCrypto:"Votre demande USDT est en cours de traitement sur le réseau EVM.",
     withdrawSheetTitle:"Retrait", availableBalance:"Solde disponible",
     withdrawAmountLabel:"Montant à retirer", maxAmount:"Max",
@@ -16185,6 +16205,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     vipKeepPlaying:"Keep playing to unlock benefits",
     myTransactions:"My transactions", noTransactionsYet:"No transactions yet.",
     withdrawalLabel:"Bank transfer withdrawal", withdrawalCardLabel:"Bank card withdrawal",
+    depositAmountPositive:"Enter an amount greater than 0.", depositBack:"Back", depositPageTitle:"Deposit", depositAmountLabel:"Deposit amount (GBP)", depositCardNumberLabel:"Card number", depositCardHolderLabel:"Cardholder", depositCardHolderPlaceholder:"First and last name", depositExpirationLabel:"Expiration", depositCvvLabel:"Security code", depositCardTag:"CARD", depositCardHolderVisual:"CARDHOLDER NAME", depositConfirmButton:"Confirm deposit", depositSuccessTitle:"Your request is being processed", depositSuccessSub:"Your deposit request is being processed.", depositProcessingToast:"Your request is being processed", depositCardNumberValid:"Valid number", depositCardNumberInvalid:"Invalid card number (checksum validation failed).", depositMonthInvalid:"Invalid month (01 to 12).", depositCardExpired:"Card expired.", depositDateValid:"Valid date.", depositCvvFormat:(p)=>`Correct format (${p.n} digits).`, depositCvvDigitsExpected:"digits expected.", 
     withdrawMethodTitle:"Choose a withdrawal method", withdrawMethodCard:"Bank card", withdrawMethodCardSub:"Withdraw to card", withdrawMethodBank:"Bank transfer", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"0x… address", cryptoDetailsTitle:"Crypto address", cryptoAddressLabel:"USDT address (EVM)", cryptoAddressHint:"Use only an EVM-compatible address (0x…).", cryptoAddressInvalid:"Invalid USDT EVM address.", cardNumberInvalid:"Invalid card number.", withdrawSuccessCard:"Your withdrawal request is being processed on your card.", withdrawSuccessBank:"Your withdrawal request is being processed on your bank account.", withdrawSuccessCrypto:"Your USDT withdrawal request is being processed on the EVM network.",
     withdrawSheetTitle:"Withdrawal", availableBalance:"Available balance",
     withdrawAmountLabel:"Amount to withdraw", maxAmount:"Max",
@@ -17109,6 +17130,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
     vipKeepPlaying:"استمر في اللعب لفتح المزايا",
     myTransactions:"معاملاتي", noTransactionsYet:"لا توجد معاملات بعد.",
     withdrawalLabel:"سحب عبر تحويل بنكي", withdrawalCardLabel:"سحب عبر بطاقة مصرفية",
+    depositAmountPositive:"أدخل مبلغًا أكبر من 0.", depositBack:"رجوع", depositPageTitle:"الإيداع", depositAmountLabel:"مبلغ الإيداع (GBP)", depositCardNumberLabel:"رقم البطاقة", depositCardHolderLabel:"حامل البطاقة", depositCardHolderPlaceholder:"الاسم واللقب", depositExpirationLabel:"تاريخ الانتهاء", depositCvvLabel:"رمز الأمان", depositCardTag:"بطاقة", depositCardHolderVisual:"اسم حامل البطاقة", depositConfirmButton:"تأكيد الإيداع", depositSuccessTitle:"طلبك قيد المعالجة", depositSuccessSub:"طلب الإيداع الخاص بك قيد المعالجة.", depositProcessingToast:"طلبك قيد المعالجة", depositCardNumberValid:"رقم صالح", depositCardNumberInvalid:"رقم البطاقة غير صالح (فشل التحقق من رقم التدقيق).", depositMonthInvalid:"شهر غير صالح (01 إلى 12).", depositCardExpired:"البطاقة منتهية الصلاحية.", depositDateValid:"تاريخ صالح.", depositCvvFormat:(p)=>`التنسيق صحيح (${p.n} أرقام).`, depositCvvDigitsExpected:"أرقام متوقعة.", 
     withdrawMethodTitle:"اختر طريقة السحب", withdrawMethodCard:"بطاقة مصرفية", withdrawMethodCardSub:"السحب إلى البطاقة", withdrawMethodBank:"تحويل بنكي", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"عنوان 0x…", cryptoDetailsTitle:"عنوان العملة الرقمية", cryptoAddressLabel:"عنوان USDT (EVM)", cryptoAddressHint:"استخدم عنوانًا متوافقًا مع EVM فقط (0x…).", cryptoAddressInvalid:"عنوان USDT EVM غير صالح.", cardNumberInvalid:"رقم البطاقة غير صالح.", withdrawSuccessCard:"طلب السحب الخاص بك قيد المعالجة على بطاقتك.", withdrawSuccessBank:"طلب السحب الخاص بك قيد المعالجة على حسابك البنكي.", withdrawSuccessCrypto:"طلب سحب USDT الخاص بك قيد المعالجة على شبكة EVM.",
     withdrawSheetTitle:"السحب", availableBalance:"الرصيد المتاح",
     withdrawAmountLabel:"المبلغ المراد سحبه", maxAmount:"الحد الأقصى",
