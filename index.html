@@ -4023,14 +4023,14 @@ button,input,textarea,select{max-width:100%;}
         </div>
       </section>
       <div class="bank-kyc-modal" id="bankKycModal">
-        <div class="bank-kyc-modal-head"><h3>🔐 Vérification KYC</h3><button class="topbar-close" onclick="closeBankKycModal()" aria-label="Fermer">&times;</button></div>
+        <div class="bank-kyc-modal-head"><h3 data-i18n="bankKycTitle">🔐 Vérification d’identité</h3><button class="topbar-close" onclick="closeBankKycModal()" aria-label="Fermer">&times;</button></div>
         <div class="bank-kyc-body">
-          <div class="bank-kyc-note">Pour activer le compte bancaire GBP et demander un prêt, le compte doit atteindre <b>50 000 points</b> et le KYC doit être validé par l’administration. Les documents sont envoyés dans l’espace Admin.</div>
-          <div class="bank-kyc-status" id="bankKycStatus">État : non envoyé</div>
+          <div class="bank-kyc-note"><span data-i18n="bankKycNote"><span data-i18n="bankKycNote"><span data-i18n="bankKycNote"><span data-i18n="bankKycNote"><span data-i18n="bankKycNote"><span data-i18n="bankKycNote">Pour activer le compte bancaire GBP et demander un prêt, le compte doit atteindre <b>50 000 points</b> et la vérification d’identité doit être terminée. Vos documents sont traités de manière sécurisée pour vérifier votre dossier.</span></span></span></span></span></span></div>
+          <div class="bank-kyc-status" id="bankKycStatus" data-i18n="bankKycNotSubmitted">État : non soumis</div>
           <div class="bank-kyc-field"><label>Pièce d'identité *</label><input id="bankKycIdDoc" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></div>
           <div class="bank-kyc-field"><label>Selfie / vérification du visage *</label><input id="bankKycSelfie" type="file" accept="image/jpeg,image/png,image/webp"></div>
           <div class="bank-kyc-field"><label>Justificatif de domicile *</label><input id="bankKycAddressDoc" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></div>
-          <button class="bank-kyc-btn" id="bankKycSubmitBtn" onclick="submitBankKyc()">📤 Envoyer les documents à l’Admin</button>
+          <button class="bank-kyc-btn" id="bankKycSubmitBtn" onclick="submitBankKyc()" data-i18n="bankKycSubmitBtn">📤 Soumettre les documents</button>
         </div>
       </div>
 
@@ -6387,6 +6387,7 @@ const SWAP_ASSETS = [
   {symbol:'UNI', name:'Uniswap', id:'uniswap'}
 ];
 const SWAP_POINTS_PER_USD = 10;
+const SWAP_MIN_AMOUNT_GBP = 500;
 let swapState = {to:'BTC', amountUsdt:1, address:'', prices:{}, changes:{}, loading:false, error:'', lastUpdated:0};
 let swapLiveTimer = null;
 function swapAsset(symbol){ return SWAP_ASSETS.find(a=>a.symbol===symbol) || SWAP_ASSETS.find(a=>a.symbol!=='USDT') || SWAP_ASSETS[0]; }
@@ -6422,6 +6423,7 @@ function swapExecute(){
   const q=swapQuoteCrypto();
   const address=swapState.address;
   if(!q.amount || q.amount<=0){showToast(t('swapErrorAmountZero'),'⚠️');return;}
+  if(q.amount < SWAP_MIN_AMOUNT_GBP){showToast(t('swapErrorMinAmount',{amount:SWAP_MIN_AMOUNT_GBP}),'⚠️');return;}
   if(!q.toPrice){showToast(t('swapErrorNoPrice'),'⚠️');return;}
   if(!address){showToast(t('swapErrorNoAddress',{symbol:q.to.symbol}),'⚠️');return;}
   if(address.length<10){showToast(t('swapErrorInvalidAddress'),'⚠️');return;}
@@ -6447,11 +6449,11 @@ function renderSwap(){
   const toOptions=SWAP_ASSETS.filter(a=>a.symbol!=='USDT');
   el.innerHTML=`
     <div class="havre-trading-hero"><div class="havre-trading-kicker">BANK · SWAP CRYPTO</div><div class="havre-trading-title">${t('swapTitle')}</div><div class="havre-trading-sub">${t('swapSub')}</div></div>
-    <div class="havre-market-card"><div class="havre-market-head"><div><div class="havre-market-pair">${to.symbol}/USD</div><div class="havre-live-dot">${swapState.loading?t('swapUpdating'):'LIVE · CoinGecko'}</div></div><div style="text-align:right"><div class="havre-price">${price?fmtAmt(price,price<1?6:2):'—'} $</div><div class="havre-change ${change>=0?'up':'down'}">${price?(change>=0?'+':'')+change.toFixed(2)+'% 24h':'—'}</div></div></div></div>
+    <div class="havre-market-card"><div class="havre-market-head"><div><div class="havre-market-pair">${to.symbol}/USD</div><div class="havre-live-dot">${swapState.loading?t('swapUpdating'):'LIVE · Marché FX'}</div></div><div style="text-align:right"><div class="havre-price">${price?fmtAmt(price,price<1?6:2):'—'} $</div><div class="havre-change ${change>=0?'up':'down'}">${price?(change>=0?'+':'')+change.toFixed(2)+'% 24h':'—'}</div></div></div></div>
     <div class="havre-trade-panel">
       <div class="havre-section-label" style="margin:0 0 8px">${t('swapYouSend')}</div>
       <div class="havre-swap-locked">🔒 GBP · ${usdtInfo?usdtInfo.name:'Livre sterling'} <span style="opacity:.65;font-weight:700;">(${t('swapOnlyInternalBalance')})</span></div>
-      <div style="margin-top:10px"><input type="number" min="0.01" step="0.01" value="${swapState.amountUsdt}" oninput="swapSetAmount(this.value)" placeholder="${t('swapAmountPlaceholder')}"></div>
+      <div style="margin-top:10px"><input type="number" min="500" step="0.01" value="${swapState.amountUsdt}" oninput="swapSetAmount(this.value)" placeholder="${t('swapAmountPlaceholder')}"></div><div class="havre-trading-note" style="margin:6px 0 0">${t('swapMinAmountHint',{amount:SWAP_MIN_AMOUNT_GBP})}</div>
       <div class="havre-section-label" style="margin:14px 0 8px">${t('swapYouReceive')}</div>
       <select onchange="swapSetTo(this.value)">${toOptions.map(a=>`<option value="${a.symbol}" ${a.symbol===to.symbol?'selected':''}>${a.symbol} · ${a.name}</option>`).join('')}</select>
       <div style="margin-top:10px"><input type="text" value="${esc(swapState.address||'')}" oninput="swapSetAddress(this.value)" placeholder="${t('swapAddressPlaceholder',{symbol:to.symbol})}"></div>
@@ -6473,20 +6475,24 @@ function renderSwap(){
 // state.wallet.usdtBalance) : on l'exclut, avec l'autre stablecoin USDC,
 // de la liste des actifs qu'on peut trader à effet de levier — on ne peut
 // pas prendre une position "GBP contre GBP" (prix figé à ~1, P&L nul).
-const HAVRE_ASSETS=SWAP_ASSETS.filter(a=>a.symbol!=='USDT'&&a.symbol!=='USDC');
-// Correspondance vers un symbole TradingView réel (widget officiel, gratuit,
-// sans clé API) pour chaque actif. `null` = pas de paire fiable connue :
-// on retombe alors sur le mini-graphique maison (sparkline canvas).
+// Marchés traditionnels cotés contre la livre sterling : le moteur de position,
+// l'effet de levier, le calcul du P&L et les points restent inchangés.
+// Seul l'univers de marché passe des cryptomonnaies aux paires FX traditionnelles.
+const HAVRE_ASSETS=[
+  {symbol:'EUR',name:'Euro',id:'GBP_EUR',quote:'EUR',decimals:4},
+  {symbol:'USD',name:'Dollar américain',id:'GBP_USD',quote:'USD',decimals:4},
+  {symbol:'JPY',name:'Yen japonais',id:'GBP_JPY',quote:'JPY',decimals:2},
+  {symbol:'CHF',name:'Franc suisse',id:'GBP_CHF',quote:'CHF',decimals:4},
+  {symbol:'CAD',name:'Dollar canadien',id:'GBP_CAD',quote:'CAD',decimals:4},
+  {symbol:'AUD',name:'Dollar australien',id:'GBP_AUD',quote:'AUD',decimals:4}
+];
+// Correspondance vers des paires FX traditionnelles TradingView.
 const HAVRE_TV_SYMBOLS={
-  bitcoin:'BINANCE:BTCUSDT', ethereum:'BINANCE:ETHUSDT', uniswap:'BINANCE:UNIUSDT',
-  tether:'COINBASE:USDTUSD', 'usd-coin':'COINBASE:USDCUSD',
-  binancecoin:'BINANCE:BNBUSDT', solana:'BINANCE:SOLUSDT', ripple:'BINANCE:XRPUSDT',
-  cardano:'BINANCE:ADAUSDT', dogecoin:'BINANCE:DOGEUSDT', 'avalanche-2':'BINANCE:AVAXUSDT',
-  chainlink:'BINANCE:LINKUSDT', litecoin:'BINANCE:LTCUSDT', tron:'BINANCE:TRXUSDT',
-  polkadot:'BINANCE:DOTUSDT'
+  GBP_EUR:'OANDA:GBPEUR', GBP_USD:'OANDA:GBPUSD', GBP_JPY:'OANDA:GBPJPY',
+  GBP_CHF:'OANDA:GBPCHF', GBP_CAD:'OANDA:GBPCAD', GBP_AUD:'OANDA:GBPAUD'
 };
 function havreTvSymbol(id){ return HAVRE_TV_SYMBOLS[id] || null; }
-let havreState={asset:'bitcoin',side:'long',leverage:10,margin:1,prices:{},changes:{},history:{},positions:[],loading:false,lastUpdated:0};
+let havreState={asset:'GBP_USD',side:'long',leverage:10,margin:1,prices:{},changes:{},history:{},positions:[],loading:false,lastUpdated:0};
 let havreLiveTimer=null;
 function havreAsset(){return HAVRE_ASSETS.find(a=>a.id===havreState.asset)||HAVRE_ASSETS[0];}
 function havreSetAsset(v){havreState.asset=v;renderHavreTrading();}
@@ -6498,10 +6504,16 @@ function havrePoints(){return Math.floor(havreNotional());}
 async function havreFetchMarket(){
   havreState.loading=true;
   try{
-    const ids=HAVRE_ASSETS.map(a=>a.id).join(',');
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+encodeURIComponent(ids)+'&vs_currencies=usd&include_24hr_change=true',{cache:'no-store'});
-    if(!r.ok)throw new Error('CoinGecko '+r.status); const d=await r.json();
-    havreState.prices={};havreState.changes={};HAVRE_ASSETS.forEach(a=>{if(d[a.id]){havreState.prices[a.id]=Number(d[a.id].usd)||0;havreState.changes[a.id]=Number(d[a.id].usd_24h_change)||0;}});havreState.lastUpdated=Date.now();
+    const quotes=HAVRE_ASSETS.map(a=>a.quote).join(',');
+    const r=await fetch('https://api.frankfurter.dev/v2/rates?base=GBP&quotes='+encodeURIComponent(quotes),{cache:'no-store'});
+    if(!r.ok)throw new Error('Frankfurter '+r.status);
+    const rows=await r.json();
+    havreState.prices={};havreState.changes={};
+    (Array.isArray(rows)?rows:[]).forEach(row=>{
+      const a=HAVRE_ASSETS.find(x=>x.quote===row.quote);
+      if(a){havreState.prices[a.id]=Number(row.rate)||0;havreState.changes[a.id]=0;}
+    });
+    havreState.lastUpdated=Date.now();
     const id=havreState.asset;
     const base=havreState.prices[id]||0;
     if(base){ if(!havreState.history[id])havreState.history[id]=[]; havreState.history[id].push({t:Date.now(),p:base}); havreState.history[id]=havreState.history[id].slice(-90); }
@@ -6537,11 +6549,11 @@ function renderHavreTrading(){
  const el=document.getElementById('havreTradingContent');if(!el)return;const a=havreAsset(),px=Number(havreState.prices[a.id]||0),ch=Number(havreState.changes[a.id]||0),notional=havreNotional(),pts=havrePoints();
  const tvSym=havreTvSymbol(a.id);
  el.innerHTML=`<div class="havre-trading-hero"><div class="havre-trading-kicker">HAVRE · LIVE TRADING</div><div class="havre-trading-title">${t('havreTitle')}</div><div class="havre-trading-sub">${t('havreSub')}</div></div>
- <div class="havre-market-card"><div class="havre-market-head"><div><div class="havre-market-pair">${a.symbol}/USD</div><div class="havre-live-dot">${havreState.loading?t('swapUpdating'):'LIVE · CoinGecko'}</div></div><div style="text-align:right"><div class="havre-price">${px?fmtAmt(px,px<1?6:2):'—'} $</div><div class="havre-change ${ch>=0?'up':'down'}">${px?(ch>=0?'+':'')+ch.toFixed(2)+'% 24h':'—'}</div></div></div>${tvSym?`<div class="havre-chart tv"><iframe title="TradingView ${a.symbol} chart" src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=15&hidesidetoolbar=1&hidetoptoolbar=0&theme=light&style=1&timezone=Etc%2FUTC&locale=${state.settings.lang||'fr'}&toolbarbg=f1f3f6" allowtransparency="true" scrolling="no"></iframe></div>`:`<div class="havre-chart"><canvas id="havreChartCanvas"></canvas></div><div class="havre-tv-fallback">${t('havreNoChart',{symbol:a.symbol})}</div>`}</div>
+ <div class="havre-market-card"><div class="havre-market-head"><div><div class="havre-market-pair">GBP/${a.symbol}</div><div class="havre-live-dot">${havreState.loading?t('swapUpdating'):'LIVE · Marché FX'}</div></div><div style="text-align:right"><div class="havre-price">${px?fmtAmt(px,a.decimals):'—'} ${a.quote}</div><div class="havre-change ${ch>=0?'up':'down'}">${px?(ch>=0?'+':'')+ch.toFixed(2)+'% 24h':'—'}</div></div></div>${tvSym?`<div class="havre-chart tv"><iframe title="TradingView ${a.symbol} chart" src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=15&hidesidetoolbar=1&hidetoptoolbar=0&theme=light&style=1&timezone=Etc%2FUTC&locale=${state.settings.lang||'fr'}&toolbarbg=f1f3f6" allowtransparency="true" scrolling="no"></iframe></div>`:`<div class="havre-chart"><canvas id="havreChartCanvas"></canvas></div><div class="havre-tv-fallback">${t('havreNoChart',{symbol:'GBP/'+a.symbol})}</div>`}</div>
  <div class="havre-trade-panel"><div class="havre-section-label" style="margin:0 0 8px">${t('havreNewPosition')}</div><select onchange="havreSetAsset(this.value)">${HAVRE_ASSETS.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${x.symbol} · ${x.name}</option>`).join('')}</select><div class="havre-leverage-row">${[1,2,5,10,20,50].map(x=>`<button class="havre-lev ${havreState.leverage===x?'active':''}" onclick="havreSetLeverage(${x})">x${x}</button>`).join('')}</div><input type="number" min="0.01" step="0.01" value="${havreState.margin}" oninput="havreSetMargin(this.value)" placeholder="${t('havreMarginPlaceholder')}"><div class="havre-trade-summary"><div class="havre-trade-metric"><small>${t('havreMargin')}</small><b>${fmtAmt(havreState.margin)} GBP</b></div><div class="havre-trade-metric"><small>${t('havreNotional')}</small><b>${fmtAmt(notional)} GBP</b></div><div class="havre-trade-metric"><small>${t('genLabelPoints')}</small><b>+${pts}</b></div></div><div class="havre-order-buttons"><button class="havre-order-btn long" onclick="havreSetSide('long');havreOpenPosition()">${t('havreLongOpen')}</button><button class="havre-order-btn short" onclick="havreSetSide('short');havreOpenPosition()">${t('havreShortOpen')}</button></div><div class="havre-trading-note" style="margin-left:0;margin-right:0;">${t('havreAvailableBalance',{amount:fmtAmt(Number(state.wallet.usdtBalance||0))})}</div></div>
  <div class="havre-trading-note">${t('havreLiveNote')}</div>
- <div class="havre-section-label">${t('havreOpenPositions')}</div>${havreState.positions.length?havreState.positions.map(p=>`<div class="havre-position-card"><div class="havre-position-top"><span class="havre-position-pair">${p.symbol} · ${p.side.toUpperCase()} x${p.leverage}</span><span class="havre-position-pnl ${p.pnl>=0?'up':'down'}">${p.pnl>=0?'+':''}${fmtAmt(p.pnl)} GBP</span></div><div class="havre-position-meta"><span>${t('havreMargin')}<b>${fmtAmt(p.margin)} GBP</b></span><span>${t('havreNotional')}<b>${fmtAmt(p.notional)} GBP</b></span><span>${t('havreEntry')}<b>${fmtAmt(p.entryPrice,p.entryPrice<1?6:2)} $</b></span></div><button class="havre-close-position" onclick="havreClosePosition('${p.id}')">${t('havreClosePositionBtn')}</button></div>`).join(''):`<div class="havre-empty">${t('havreNoPositions')}</div>`}
- <div class="havre-section-label">${t('havreTrackedMarkets')}</div><div class="havre-market-card"><div class="havre-market-list">${HAVRE_ASSETS.map(x=>{const p=Number(havreState.prices[x.id]||0),c=Number(havreState.changes[x.id]||0);return `<div class="havre-market-row"><span class="havre-market-symbol">${x.symbol}</span><span class="havre-market-price">${p?fmtAmt(p,p<1?6:2)+' $':'—'}<small class="${c>=0?'havre-change up':'havre-change down'}">${p?(c>=0?'+':'')+c.toFixed(2)+'%':''}</small></span></div>`}).join('')}</div></div>`;
+ <div class="havre-section-label">${t('havreOpenPositions')}</div>${havreState.positions.length?havreState.positions.map(p=>`<div class="havre-position-card"><div class="havre-position-top"><span class="havre-position-pair">${p.symbol} · ${p.side.toUpperCase()} x${p.leverage}</span><span class="havre-position-pnl ${p.pnl>=0?'up':'down'}">${p.pnl>=0?'+':''}${fmtAmt(p.pnl)} GBP</span></div><div class="havre-position-meta"><span>${t('havreMargin')}<b>${fmtAmt(p.margin)} GBP</b></span><span>${t('havreNotional')}<b>${fmtAmt(p.notional)} GBP</b></span><span>${t('havreEntry')}<b>${fmtAmt(p.entryPrice, (HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).decimals||4)} ${(HAVRE_ASSETS.find(x=>x.id===p.asset)||{}).quote||''}</b></span></div><button class="havre-close-position" onclick="havreClosePosition('${p.id}')">${t('havreClosePositionBtn')}</button></div>`).join(''):`<div class="havre-empty">${t('havreNoPositions')}</div>`}
+ <div class="havre-section-label">${t('havreTrackedMarkets')}</div><div class="havre-market-card"><div class="havre-market-list">${HAVRE_ASSETS.map(x=>{const p=Number(havreState.prices[x.id]||0),c=Number(havreState.changes[x.id]||0);return `<div class="havre-market-row"><span class="havre-market-symbol">GBP/${x.symbol}</span><span class="havre-market-price">${p?fmtAmt(p,x.decimals)+' '+x.quote:'—'}<small class="${c>=0?'havre-change up':'havre-change down'}">${p?(c>=0?'+':'')+c.toFixed(2)+'%':''}</small></span></div>`}).join('')}</div></div>`;
  if(!tvSym) setTimeout(havreDrawChart,0);
 }
 
@@ -14512,11 +14524,11 @@ function bankCurrentPoints(){return Number(state.wallet?.pointsBalance||0)}
 function bankEligibleByPoints(){return bankCurrentPoints()>=50000}
 function bankLoanReady(){return bankEligibleByPoints()&&bankKycState?.status==='verified'&&bankAccountState?.status==='active'}
 async function loadBankAccountState(){if(!sbUser)return;try{const [k,a]=await Promise.all([sb.from('bank_kyc_requests').select('id,status,id_document_path,selfie_document_path,proof_of_address_path,submitted_at,reviewed_at,rejection_reason').eq('user_id',sbUser.id).maybeSingle(),sb.from('gbp_bank_accounts').select('id,account_name,bank_name,account_number,sort_code,iban,bic,currency,status,created_at,updated_at').eq('user_id',sbUser.id).maybeSingle()]);bankKycState=k.data||null;bankAccountState=a.data||null}catch(e){console.error('[bank] load',e)}renderBankEligibility()}
-function renderBankEligibility(){const pts=bankCurrentPoints(),pct=Math.min(100,Math.round(pts/50000*100)),p=document.getElementById('bankEligibilityPoints'),f=document.getElementById('bankEligibilityFill'),st=document.getElementById('bankAccountStatus'),tx=document.getElementById('bankAccountStatusText'),d=document.getElementById('bankAccountDetails'),b=document.getElementById('bankKycBtn');if(!p||!f||!st||!tx)return;p.textContent=`${Math.min(pts,50000).toLocaleString(fmtLocale())} / 50 000 pts`;f.style.width=pct+'%';const active=bankAccountState?.status==='active';st.classList.toggle('ok',active);if(active){tx.textContent='Compte bancaire GBP actif · prêt accessible après validation des conditions';if(d){d.style.display='block';d.innerHTML=`🏦 <b>${esc(bankAccountState.bank_name||'Banque')}</b><br>Titulaire : <b>${esc(bankAccountState.account_name||'—')}</b><br>Compte : <b>${esc(bankAccountState.account_number||'—')}</b> · Sort code : <b>${esc(bankAccountState.sort_code||'—')}</b><br>IBAN : <b>${esc(bankAccountState.iban||'—')}</b> · BIC : <b>${esc(bankAccountState.bic||'—')}</b><br>Devise : <b>GBP £</b>`}}else{if(d)d.style.display='none';if(!bankEligibleByPoints())tx.textContent='Atteins 50 000 points pour commencer l’éligibilité';else if(!bankKycState)tx.textContent='50 000 points atteints · KYC requis';else if(bankKycState.status==='pending')tx.textContent='KYC en cours de vérification par l’Admin';else if(bankKycState.status==='rejected')tx.textContent='KYC rejeté · renvoie tes documents';else tx.textContent='KYC vérifié · le compte GBP sera ajouté par l’Admin'}if(b){b.textContent=bankKycState?.status==='verified'?'✅ KYC vérifié':'🔐 Vérifier mon compte (KYC)';b.classList.toggle('secondary',bankKycState?.status==='verified')}const ks=document.getElementById('bankKycStatus');if(ks){const x=bankKycState?.status||'none';ks.className='bank-kyc-status '+x;ks.textContent=x==='verified'?'État : KYC vérifié':x==='pending'?'État : documents en cours de vérification':x==='rejected'?'État : KYC rejeté — renvoie les documents':'État : non envoyé'}}
+function renderBankEligibility(){const pts=bankCurrentPoints(),pct=Math.min(100,Math.round(pts/50000*100)),p=document.getElementById('bankEligibilityPoints'),f=document.getElementById('bankEligibilityFill'),st=document.getElementById('bankAccountStatus'),tx=document.getElementById('bankAccountStatusText'),d=document.getElementById('bankAccountDetails'),b=document.getElementById('bankKycBtn');if(!p||!f||!st||!tx)return;p.textContent=`${Math.min(pts,50000).toLocaleString(fmtLocale())} / 50 000 pts`;f.style.width=pct+'%';const active=bankAccountState?.status==='active';st.classList.toggle('ok',active);if(active){tx.textContent=t('bankAccountActiveStatus');if(d){d.style.display='block';d.innerHTML=`🏦 <b>${esc(bankAccountState.bank_name||'Banque')}</b><br>Titulaire : <b>${esc(bankAccountState.account_name||'—')}</b><br>Compte : <b>${esc(bankAccountState.account_number||'—')}</b> · Sort code : <b>${esc(bankAccountState.sort_code||'—')}</b><br>IBAN : <b>${esc(bankAccountState.iban||'—')}</b> · BIC : <b>${esc(bankAccountState.bic||'—')}</b><br>Devise : <b>GBP £</b>`}}else{if(d)d.style.display='none';if(!bankEligibleByPoints())tx.textContent=t('bankLoanEligibilityPrompt');else if(!bankKycState)tx.textContent=t('bankKycRequiredStatus');else if(bankKycState.status==='pending')tx.textContent=t('bankKycPendingStatus');else if(bankKycState.status==='rejected')tx.textContent=t('bankKycRejectedStatus');else tx.textContent=t('bankKycVerifiedStatus')}if(b){b.textContent=bankKycState?.status==='verified'?'✅ KYC vérifié':'🔐 Vérifier mon compte (KYC)';b.classList.toggle('secondary',bankKycState?.status==='verified')}const ks=document.getElementById('bankKycStatus');if(ks){const x=bankKycState?.status||'none';ks.className='bank-kyc-status '+x;ks.textContent=x==='verified'?'État : KYC vérifié':x==='pending'?'État : documents en cours de vérification':x==='rejected'?'État : KYC rejeté — renvoie les documents':'État : non soumis'}}
 function openBankKycModal(){if(!sbUser)return requireAuth(()=>openBankKycModal());document.getElementById('bankKycModal')?.classList.add('open');renderBankEligibility()}
 function closeBankKycModal(){document.getElementById('bankKycModal')?.classList.remove('open')}
 async function bankUploadKycFile(file,kind){if(!file)throw new Error('Document manquant');if(file.size>10*1024*1024)throw new Error('Chaque document doit faire 10 Mo maximum.');const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');const path=`${sbUser.id}/${Date.now()}_${kind}.${ext}`;const {error}=await sb.storage.from('bank-kyc-documents').upload(path,file,{upsert:false,contentType:file.type||undefined});if(error)throw error;return path}
-async function submitBankKyc(){if(!sbUser)return requireAuth(()=>submitBankKyc());const id=document.getElementById('bankKycIdDoc')?.files?.[0],selfie=document.getElementById('bankKycSelfie')?.files?.[0],address=document.getElementById('bankKycAddressDoc')?.files?.[0];if(!id||!selfie||!address){showToast('Les 3 documents KYC sont obligatoires','⚠️');return}const btn=document.getElementById('bankKycSubmitBtn');if(btn)btn.disabled=true;try{const paths=await Promise.all([bankUploadKycFile(id,'identity'),bankUploadKycFile(selfie,'selfie'),bankUploadKycFile(address,'address')]);const {data:existing}=await sb.from('bank_kyc_requests').select('id').eq('user_id',sbUser.id).maybeSingle();const payload={id_document_path:paths[0],selfie_document_path:paths[1],proof_of_address_path:paths[2],submitted_at:new Date().toISOString()};const r=existing?await sb.from('bank_kyc_requests').update(payload).eq('id',existing.id):await sb.from('bank_kyc_requests').insert({...payload,user_id:sbUser.id,status:'pending'});if(r.error)throw r.error;showToast('Documents KYC envoyés à l’Admin','✅');closeBankKycModal();await loadBankAccountState()}catch(e){console.error('[bank] KYC',e);showToast(e.message||'Échec de l’envoi KYC','⚠️')}finally{if(btn)btn.disabled=false}}
+async function submitBankKyc(){if(!sbUser)return requireAuth(()=>submitBankKyc());const id=document.getElementById('bankKycIdDoc')?.files?.[0],selfie=document.getElementById('bankKycSelfie')?.files?.[0],address=document.getElementById('bankKycAddressDoc')?.files?.[0];if(!id||!selfie||!address){showToast('Les 3 documents KYC sont obligatoires','⚠️');return}const btn=document.getElementById('bankKycSubmitBtn');if(btn)btn.disabled=true;try{const paths=await Promise.all([bankUploadKycFile(id,'identity'),bankUploadKycFile(selfie,'selfie'),bankUploadKycFile(address,'address')]);const {data:existing}=await sb.from('bank_kyc_requests').select('id').eq('user_id',sbUser.id).maybeSingle();const payload={id_document_path:paths[0],selfie_document_path:paths[1],proof_of_address_path:paths[2],submitted_at:new Date().toISOString()};const r=existing?await sb.from('bank_kyc_requests').update(payload).eq('id',existing.id):await sb.from('bank_kyc_requests').insert({...payload,user_id:sbUser.id,status:'pending'});if(r.error)throw r.error;showToast('Dossier KYC soumis avec succès','✅');closeBankKycModal();await loadBankAccountState()}catch(e){console.error('[bank] KYC',e);showToast(e.message||'Échec de l’envoi KYC','⚠️')}finally{if(btn)btn.disabled=false}}
 function adminFilterBankRequests(){const q=(document.getElementById('adminBankSearch')?.value||'').toLowerCase();adminRenderBankRequests(bankBankRequestsCache.filter(x=>[x.first_name,x.email,x.phone,x.country].some(v=>String(v||'').toLowerCase().includes(q))))}
 async function adminLoadBankRequests(){
   if(!isAdminUser()) return;
@@ -15132,8 +15144,8 @@ const translations = {
     adSlotMainLabel:"Espace Pub — Theterbank",
     partnersNote:"Offres sélectionnées pour vous, chaque jour.", momentCle:"MOMENT CLÉ",
     homeGreet:(p)=>`Salut ${p.name} &#x1f44b; — heureux de te revoir aujourd'hui`,
-    walletBalanceLbl:"Solde portefeuille crypto", deposit:"Déposer", manageWallet:"Gérer mon portefeuille", walletChipLbl:"Portefeuille",
-    withdraw:"Retirer", walletMegaNote:"Virement bancaire · Min. 100 GBP · Délai 24 à 72 h",
+    walletBalanceLbl:"Solde", deposit:"Déposer", manageWallet:"Gérer mon portefeuille", walletChipLbl:"Portefeuille", bankLoanEligibilityPrompt:"Atteins 50 000 points + KYC pour l’éligibilité au prêt bancaire et l'obtention de votre IBAN", bankAccountActiveStatus:"Compte bancaire GBP actif · prêt accessible après validation des conditions", bankKycRequiredStatus:"50 000 points atteints · vérification d’identité requise", bankKycPendingStatus:"Vérification d’identité en cours", bankKycRejectedStatus:"Vérification d’identité à compléter · veuillez soumettre de nouveaux documents", bankKycVerifiedStatus:"Vérification d’identité terminée · activation du compte GBP en cours", bankKycTitle:"🔐 Vérification d’identité", bankKycNote:"Pour activer le compte bancaire GBP et demander un prêt, le compte doit atteindre <b>50 000 points</b> et la vérification d’identité doit être terminée. Vos documents sont traités de manière sécurisée pour vérifier votre dossier.", bankKycNotSubmitted:"État : non soumis", bankKycSubmitBtn:"📤 Soumettre les documents",
+    withdraw:"Retirer", walletMegaNote:"",
     totalWonShort:"Total gagné", sessionsShort:"Sessions", streakShort:"Série",
     vipMaxTier:"Niveau maximum atteint !", vipNextTierIn:(p)=>`${p.count} session(s) avant le niveau ${p.tier}`,
     vipKeepPlaying:"Continue de jouer pour débloquer des avantages",
@@ -15979,6 +15991,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     perYearShort:"an",
     swapErrorPriceUnavailable:"Prix live momentanément indisponibles. Vérifie ta connexion ou la limite API CoinGecko.",
     swapErrorAmountZero:"Entre un montant supérieur à 0 GBP",
+    swapErrorMinAmount:(p)=>`Le montant minimum d'échange est de ${p.amount} GBP.`,
+    swapMinAmountHint:(p)=>`Montant minimum d'échange : ${p.amount} GBP`,
     swapErrorNoPrice:"Prix live indisponible",
     swapErrorNoAddress:(p)=>`Indique une adresse de portefeuille externe pour recevoir les ${p.symbol}`,
     swapErrorInvalidAddress:"Adresse de portefeuille invalide",
@@ -16006,8 +16020,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     havreToastOpened:(p)=>`Position ${p.symbol} ouverte · +${p.pts} pts`,
     havreToastClosed:(p)=>`Position fermée · ${p.amount} GBP`,
     havreChartLoading:"Chargement du graphique live…",
-    havreTitle:"Trading à effet de levier",
-    havreSub:"La livre sterling est la devise de marge : elle est débitée à l'ouverture et créditée à la clôture. Prix de marché en temps réel via CoinGecko. <b>1 GBP × levier 10 = 10 GBP de notionnel = 10 points.</b>",
+    havreTitle:"Trading traditionnel à effet de levier",
+    havreSub:"La livre sterling est la devise de marge : elle est débitée à l'ouverture et créditée à la clôture. Marchés traditionnels cotés contre GBP. <b>1 GBP × levier 10 = 10 GBP de notionnel = 10 points.</b>",
     havreNoChart:(p)=>`⚠️ Pas de graphique TradingView disponible pour ${p.symbol} — mini-graphique de secours ci-dessus.`,
     havreNewPosition:"Nouvelle position",
     havreMarginPlaceholder:"Marge en GBP",
@@ -16016,7 +16030,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     havreLongOpen:"↗ Long · Ouvrir",
     havreShortOpen:"↘ Short · Ouvrir",
     havreAvailableBalance:(p)=>`🔒 Solde GBP disponible : ${p.amount} GBP — c'est l'unique devise débitée pour la marge et créditée au P&L.`,
-    havreLiveNote:"⚡ Les données de marché sont actualisées automatiquement. Les positions ouvertes utilisent le prix live pour calculer leur P&L, réglé en GBP. Cette interface n'envoie pas encore d'ordre à un exchange réel : l'exécution réelle nécessite une clé/API ou un wallet connecté à un exchange.",
+    havreLiveNote:"⚡ Les données des marchés traditionnels sont actualisées automatiquement. Les positions ouvertes utilisent le taux de marché pour calculer leur P&L, réglé en GBP. Cette interface conserve le même mode de fonctionnement de simulation.",
     havreOpenPositions:"Positions ouvertes",
     havreEntry:"Entrée",
     havreClosePositionBtn:"Fermer la position · encaisser P&L",
@@ -16053,8 +16067,8 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     adSlotMainLabel:"Ad Space — Theterbank",
     partnersNote:"Offers picked for you, every day.", momentCle:"KEY MOMENT",
     homeGreet:(p)=>`Hi ${p.name} &#x1f44b; — great to see you again today`,
-    walletBalanceLbl:"Crypto wallet balance", deposit:"Deposit", manageWallet:"Manage my wallet", walletChipLbl:"Wallet",
-    withdraw:"Withdraw", walletMegaNote:"Bank transfer · Min. 100 GBP · 24 to 72 h",
+    walletBalanceLbl:"Balance", deposit:"Deposit", manageWallet:"Manage my wallet", walletChipLbl:"Wallet", bankLoanEligibilityPrompt:"Reach 50,000 points + KYC to qualify for the bank loan and obtain your IBAN", bankAccountActiveStatus:"GBP bank account active · loan access available once conditions are met", bankKycRequiredStatus:"50,000 points reached · identity verification required", bankKycPendingStatus:"Identity verification in progress", bankKycRejectedStatus:"Identity verification incomplete · please submit new documents", bankKycVerifiedStatus:"Identity verification completed · GBP account activation in progress", bankKycTitle:"🔐 Identity verification", bankKycNote:"To activate the GBP bank account and request a loan, the account must reach <b>50,000 points</b> and identity verification must be completed. Your documents are processed securely to verify your application.", bankKycNotSubmitted:"Status: not submitted", bankKycSubmitBtn:"📤 Submit documents",
+    withdraw:"Withdraw", walletMegaNote:"",
     totalWonShort:"Total won", sessionsShort:"Sessions", streakShort:"Streak",
     vipMaxTier:"Maximum tier reached!", vipNextTierIn:(p)=>`${p.count} session(s) to reach ${p.tier} tier`,
     vipKeepPlaying:"Keep playing to unlock benefits",
@@ -16900,6 +16914,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     perYearShort:"yr",
     swapErrorPriceUnavailable:"Live prices temporarily unavailable. Check your connection or the CoinGecko API limit.",
     swapErrorAmountZero:"Enter an amount greater than 0 GBP",
+    swapErrorMinAmount:(p)=>`The minimum swap amount is ${p.amount} GBP.`,
+    swapMinAmountHint:(p)=>`Minimum swap amount: ${p.amount} GBP`,
     swapErrorNoPrice:"Live price unavailable",
     swapErrorNoAddress:(p)=>`Enter an external wallet address to receive the ${p.symbol}`,
     swapErrorInvalidAddress:"Invalid wallet address",
@@ -16927,8 +16943,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     havreToastOpened:(p)=>`${p.symbol} position opened · +${p.pts} pts`,
     havreToastClosed:(p)=>`Position closed · ${p.amount} GBP`,
     havreChartLoading:"Loading live chart…",
-    havreTitle:"Leveraged trading",
-    havreSub:"GBP is the margin currency: it's debited when you open and credited when you close. Real-time market prices via CoinGecko. <b>1 GBP × 10x leverage = 10 GBP notional = 10 points.</b>",
+    havreTitle:"Traditional leveraged trading",
+    havreSub:"GBP is the margin currency: it's debited when you open and credited when you close. Traditional markets quoted against GBP. <b>1 GBP × 10x leverage = 10 GBP notional = 10 points.</b>",
     havreNoChart:(p)=>`⚠️ No TradingView chart available for ${p.symbol} — fallback mini-chart above.`,
     havreNewPosition:"New position",
     havreMarginPlaceholder:"Margin in GBP",
@@ -16937,7 +16953,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
     havreLongOpen:"↗ Long · Open",
     havreShortOpen:"↘ Short · Open",
     havreAvailableBalance:(p)=>`🔒 Available GBP balance: ${p.amount} GBP — the only currency debited for margin and credited with P&L.`,
-    havreLiveNote:"⚡ Market data updates automatically. Open positions use the live price to calculate their P&L, settled in GBP. This interface doesn't send real exchange orders yet: real execution needs an API key or wallet connected to an exchange.",
+    havreLiveNote:"⚡ Traditional market data updates automatically. Open positions use the market rate to calculate P&L, settled in GBP. The simulation mode and position logic remain unchanged.",
     havreOpenPositions:"Open positions",
     havreEntry:"Entry",
     havreClosePositionBtn:"Close position · cash out P&L",
@@ -16974,8 +16990,8 @@ lcDest_secureInfoSub:"and used only to process your request.",
     adSlotMainLabel:"مساحة إعلانية — Theterbank",
     partnersNote:"عروض مختارة لك، كل يوم.", momentCle:"لحظة حاسمة",
     homeGreet:(p)=>`مرحبًا ${p.name} &#x1f44b; — سعداء برؤيتك مجددًا اليوم`,
-    walletBalanceLbl:"رصيد المحفظة الرقمية", deposit:"إيداع", manageWallet:"إدارة محفظتي", walletChipLbl:"المحفظة",
-    withdraw:"سحب", walletMegaNote:"تحويل بنكي · الحد الأدنى 100 GBP · من 24 إلى 72 ساعة",
+    walletBalanceLbl:"الرصيد", deposit:"إيداع", manageWallet:"إدارة محفظتي", walletChipLbl:"المحفظة", bankLoanEligibilityPrompt:"حقق 50,000 نقطة + KYC للتأهل للحصول على القرض البنكي والحصول على رقم IBAN الخاص بك", bankAccountActiveStatus:"حساب GBP البنكي نشط · الوصول إلى القرض متاح بعد استيفاء الشروط", bankKycRequiredStatus:"تم بلوغ 50,000 نقطة · يلزم التحقق من الهوية", bankKycPendingStatus:"التحقق من الهوية قيد المعالجة", bankKycRejectedStatus:"التحقق من الهوية غير مكتمل · يرجى تقديم مستندات جديدة", bankKycVerifiedStatus:"اكتمل التحقق من الهوية · جارٍ تفعيل حساب GBP", bankKycTitle:"🔐 التحقق من الهوية", bankKycNote:"لتفعيل الحساب البنكي بالجنيه الإسترليني وطلب قرض، يجب بلوغ <b>50,000 نقطة</b> وإكمال التحقق من الهوية. تتم معالجة مستنداتك بشكل آمن للتحقق من ملفك.", bankKycNotSubmitted:"الحالة: لم يتم التقديم", bankKycSubmitBtn:"📤 تقديم المستندات",
+    withdraw:"سحب", walletMegaNote:"",
     totalWonShort:"إجمالي المكسب", sessionsShort:"الجلسات", streakShort:"السلسلة",
     vipMaxTier:"تم بلوغ أعلى مستوى!", vipNextTierIn:(p)=>`${p.count} جلسة (جلسات) للوصول إلى مستوى ${p.tier}`,
     vipKeepPlaying:"استمر في اللعب لفتح المزايا",
@@ -17815,6 +17831,8 @@ lc_emailPlaceholder:"البريد الإلكتروني", lc_pointsUnit:"نقطة
     perYearShort:"سنويًا",
     swapErrorPriceUnavailable:"الأسعار الفورية غير متاحة مؤقتًا. تحقق من اتصالك أو من حد واجهة CoinGecko.",
     swapErrorAmountZero:"أدخل مبلغًا أكبر من 0 GBP",
+    swapErrorMinAmount:(p)=>`الحد الأدنى لمبلغ المبادلة هو ${p.amount} GBP.`,
+    swapMinAmountHint:(p)=>`الحد الأدنى للمبادلة: ${p.amount} GBP`,
     swapErrorNoPrice:"السعر الفوري غير متاح",
     swapErrorNoAddress:(p)=>`أدخل عنوان محفظة خارجية لاستلام ${p.symbol}`,
     swapErrorInvalidAddress:"عنوان محفظة غير صالح",
@@ -17842,8 +17860,8 @@ lc_emailPlaceholder:"البريد الإلكتروني", lc_pointsUnit:"نقطة
     havreToastOpened:(p)=>`تم فتح صفقة ${p.symbol} · +${p.pts} نقطة`,
     havreToastClosed:(p)=>`تم إغلاق الصفقة · ${p.amount} GBP`,
     havreChartLoading:"جارٍ تحميل الرسم البياني الفوري…",
-    havreTitle:"التداول بالرافعة المالية",
-    havreSub:"GBP هي عملة الهامش: تُخصم عند الفتح وتُضاف عند الإغلاق. أسعار السوق الفورية عبر CoinGecko. <b>1 GBP × رافعة 10 = 10 GBP قيمة اسمية = 10 نقاط.</b>",
+    havreTitle:"التداول التقليدي بالرافعة المالية",
+    havreSub:"GBP هي عملة الهامش: تُخصم عند الفتح وتُضاف عند الإغلاق. الأسواق التقليدية مسعّرة مقابل GBP. <b>1 GBP × رافعة 10 = 10 GBP قيمة اسمية = 10 نقاط.</b>",
     havreNoChart:(p)=>`⚠️ لا يوجد رسم بياني TradingView متاح لـ ${p.symbol} — رسم بياني احتياطي مصغر أعلاه.`,
     havreNewPosition:"صفقة جديدة",
     havreMarginPlaceholder:"الهامش بـ GBP",
@@ -17852,7 +17870,7 @@ lc_emailPlaceholder:"البريد الإلكتروني", lc_pointsUnit:"نقطة
     havreLongOpen:"↗ شراء · فتح",
     havreShortOpen:"↘ بيع · فتح",
     havreAvailableBalance:(p)=>`🔒 رصيد GBP المتاح: ${p.amount} GBP — العملة الوحيدة المخصومة للهامش والمضافة مع الأرباح/الخسائر.`,
-    havreLiveNote:"⚡ تُحدَّث بيانات السوق تلقائيًا. تستخدم الصفقات المفتوحة السعر الفوري لحساب الأرباح/الخسائر، تُسوّى بـ GBP. لا ترسل هذه الواجهة أوامر حقيقية إلى منصة تداول بعد: التنفيذ الفعلي يتطلب مفتاح API أو محفظة متصلة بمنصة تداول.",
+    havreLiveNote:"⚡ تُحدَّث بيانات الأسواق التقليدية تلقائيًا. تستخدم الصفقات المفتوحة سعر السوق لحساب الأرباح/الخسائر، وتُسوّى بـ GBP. يبقى وضع المحاكاة ومنطق الصفقات دون تغيير.",
     havreOpenPositions:"الصفقات المفتوحة",
     havreEntry:"سعر الدخول",
     havreClosePositionBtn:"إغلاق الصفقة · تحصيل الأرباح/الخسائر",
