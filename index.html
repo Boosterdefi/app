@@ -11245,7 +11245,14 @@ async function finishRegistrationAsync(){
   // mais l'UI wallet affichera clairement l'indisponibilité (pas de fallback
   // fictif) et pourra réessayer via refreshWalletFromServer().
   // PERF (2026-08-20) : parallélisation, comme pour la connexion.
+  // CORRECTIF (2026-09-20) : sans cet appel, le solde local (state.wallet.pointsBalance,
+  // initialisé à 0) n'était jamais synchronisé avec la base après l'inscription — les
+  // 10 000 points étaient bien crédités côté serveur (trigger handle_new_user), mais
+  // restaient invisibles tant que l'utilisateur ne se déconnectait/reconnectait pas
+  // (seul sbLogin() appelait déjà sbLoadPlayerData()).
+  window.dmPlayerDataPromise = sbLoadPlayerData().catch(err=>console.error('[PLAYER] chargement échoué:', err));
   await Promise.allSettled([
+    window.dmPlayerDataPromise,
     sbEnsureDepositAddress().catch(err=>console.error('[WALLET] génération adresse échouée:', err)),
     sbLoadAppSettings().catch(err=>console.warn('[SETTINGS] chargement échoué:', err)),
     sbLoadPredictionsWindow().catch(err=>console.warn('[PREDICTIONS] chargement échoué:', err))
