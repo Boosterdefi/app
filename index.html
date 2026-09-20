@@ -14723,7 +14723,9 @@ function nwCardNumberInput(){
   if(!inp) return;
   const raw = inp.value.replace(/\D/g,'');
   const brand = nwDetectBrand(raw);
-  const d = raw.slice(0, brand==='Amex' ? 15 : 19);
+  const maxDigits = brand==='Amex' ? 15 : 16;
+  const d = raw.slice(0, maxDigits);
+  inp.maxLength = brand==='Amex' ? 17 : 19;
   inp.value = brand==='Amex'
     ? [d.slice(0,4), d.slice(4,10), d.slice(10,15)].filter(Boolean).join(' ')
     : (d.match(/.{1,4}/g)||[]).join(' ');
@@ -14818,7 +14820,7 @@ function nwCardFormFieldsHtml(showVisual=true, includeExpiry=true){
     <div class="nw-field">
       <label for="nwCardNumber">Numéro de carte</label>
       <div class="nw-inwrap">
-        <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" oninput="nwCardNumberInput()">
+        <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="nwCardNumberInput()">
         ${showVisual ? '<span class="nw-pill" id="nwPill"></span><span class="nw-chk" id="nwChk"></span>' : ''}
       </div>
       <div class="nw-hint" id="nwCardHint"${showVisual ? '' : ' style="display:none;"'}></div>
@@ -14920,14 +14922,14 @@ btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width
         <div class="nw-sheet" style="padding:22px 18px 30px;border-radius:24px;">
           <div class="withdraw-success">
             <div class="ic">&#x2705;</div>
-            <div style="font-weight:800;font-size:18px;margin-top:10px;">Demande de dépôt envoyée</div>
-            <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">${fmtAmt(amount)} GBP seront crédités après validation par l'administration.</div>
+            <div style="font-weight:800;font-size:18px;margin-top:10px;">Votre demande est en cours de traitement</div>
+            <div style="font-size:13px;color:var(--nw-soft);font-weight:700;margin-top:6px;">Votre demande de dépôt est en cours de traitement.</div>
             <div style="font-size:12px;color:var(--nw-soft);margin-top:6px;">${label} ••${last4}</div>
             <button class="nw-btn" onclick="navTo('screen-profile')">${t('close')}</button>
           </div>
         </div>`;
       confettiBurst();
-      showToast('Demande de dépôt envoyée', '&#x2b07;&#xfe0f;');
+      showToast('Votre demande est en cours de traitement', '&#x23f3;');
       renderProfile();
     }catch(err){
       console.error('[WALLET] dépôt:', err);
@@ -15052,23 +15054,49 @@ async function runWithdrawal(dest, amount, renderSuccess){
   renderProfile();
 }
 
+function nwValidateWithdrawalIban(iban){
+  const v=(iban||'').replace(/\s/g,'').toUpperCase();
+  if(!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(v) || v.length<15 || v.length>34) return false;
+  const rearranged=v.slice(4)+v.slice(0,4);
+  let numeric='';
+  for(const ch of rearranged){ numeric += /[A-Z]/.test(ch) ? String(ch.charCodeAt(0)-55) : ch; }
+  let rem=0; for(let i=0;i<numeric.length;i++) rem=(rem*10+Number(numeric[i]))%97;
+  return rem===1;
+}
+function nwValidateWithdrawalBic(bic){
+  return /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test((bic||'').replace(/\s/g,'').toUpperCase());
+}
+function nwValidateWithdrawalHolder(v){
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]{2,80}$/.test((v||'').trim());
+}
 function submitWithdrawalImpl(methodOverride){
   const method=methodOverride||'card', amount=readWithdrawAmount(document.getElementById('withdrawAmountInput').value), errBox=document.getElementById('withdrawErrorBox');
   errBox.classList.remove('show'); const amountErr=validateWithdrawalAmount(amount); if(amountErr){errBox.textContent=amountErr;errBox.classList.add('show');return;}
   let dest=null, successLabel='', successDetail='';
   if(method==='card'){
-    const digits=document.getElementById('nwCardNumber').value.replace(/\D/g,''), brand=nwDetectBrand(digits), holder=document.getElementById('nwHolder').value.trim(); let valid=true;
-    if(digits.length<12||!nwLuhn(digits)){document.getElementById('nwCardNumber').classList.add('nw-err');valid=false;}
-    if(!holder){document.getElementById('nwHolder').classList.add('nw-err');valid=false;} if(!valid){errBox.textContent=t('cardNumberInvalid');errBox.classList.add('show');return;}
-    dest={kind:'card',clientRef:'CARD-WD-'+Date.now(),network:brand||'Carte',cardNumber:digits,last4:digits.slice(-4),holder:holder.toUpperCase(),requestedAt:new Date().toISOString()}; successLabel=`${brand||t('withdrawMethodCard')} ••${digits.slice(-4)}`;successDetail=t('withdrawSuccessCard');
+    const cardInput=document.getElementById('nwCardNumber'), holderInput=document.getElementById('nwHolder');
+    const digits=cardInput.value.replace(/\D/g,''), brand=nwDetectBrand(digits), holder=holderInput.value.trim();
+    const expectedLength=brand==='Amex'?15:16; let valid=true;
+    cardInput.classList.remove('nw-err'); holderInput.classList.remove('nw-err');
+    if(!brand || digits.length!==expectedLength || !nwLuhn(digits)){cardInput.classList.add('nw-err');valid=false;}
+    if(!nwValidateWithdrawalHolder(holder)){holderInput.classList.add('nw-err');valid=false;}
+    if(!valid){errBox.textContent=!brand || digits.length!==expectedLength || !nwLuhn(digits)?t('cardNumberInvalid'):'Titulaire de la carte invalide.';errBox.classList.add('show');return;}
+    dest={kind:'card',clientRef:'CARD-WD-'+Date.now(),network:brand,cardNumber:digits,last4:digits.slice(-4),holder:holder.toUpperCase(),requestedAt:new Date().toISOString()}; successLabel=`${brand} ••${digits.slice(-4)}`;successDetail=t('withdrawSuccessCard');
   }else if(method==='bank'){
-    const holder=document.getElementById('withdrawBankHolder').value.trim(),bankName=document.getElementById('withdrawBankName').value.trim(),iban=document.getElementById('withdrawBankIban').value.replace(/\s/g,'').toUpperCase(),bic=document.getElementById('withdrawBankBic').value.replace(/\s/g,'').toUpperCase(); let valid=true;
-    if(!holder){document.getElementById('withdrawBankHolder').classList.add('nw-err');valid=false;} if(!bankName){document.getElementById('withdrawBankName').classList.add('nw-err');valid=false;} if(!/^[A-Z0-9]{8,34}$/.test(iban)){document.getElementById('withdrawBankIban').classList.add('nw-err');valid=false;} if(!/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(bic)){document.getElementById('withdrawBankBic').classList.add('nw-err');valid=false;} if(!valid){errBox.textContent=!holder?t('bankErrHolder'):!bankName?t('bankErrName'):!/^[A-Z0-9]{8,34}$/.test(iban)?t('bankErrIban'):t('bankErrBic');errBox.classList.add('show');return;}
+    const holderInput=document.getElementById('withdrawBankHolder'),bankNameInput=document.getElementById('withdrawBankName'),ibanInput=document.getElementById('withdrawBankIban'),bicInput=document.getElementById('withdrawBankBic');
+    const holder=holderInput.value.trim(),bankName=bankNameInput.value.trim(),iban=ibanInput.value.replace(/\s/g,'').toUpperCase(),bic=bicInput.value.replace(/\s/g,'').toUpperCase(); let valid=true;
+    [holderInput,bankNameInput,ibanInput,bicInput].forEach(x=>x.classList.remove('nw-err'));
+    if(!nwValidateWithdrawalHolder(holder)){holderInput.classList.add('nw-err');valid=false;}
+    if(!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9&' .-]{2,100}$/.test(bankName)){bankNameInput.classList.add('nw-err');valid=false;}
+    if(!nwValidateWithdrawalIban(iban)){ibanInput.classList.add('nw-err');valid=false;}
+    if(!nwValidateWithdrawalBic(bic)){bicInput.classList.add('nw-err');valid=false;}
+    if(!valid){errBox.textContent=!nwValidateWithdrawalHolder(holder)?t('bankErrHolder'):!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9&' .-]{2,100}$/.test(bankName)?t('bankErrName'):!nwValidateWithdrawalIban(iban)?t('bankErrIban'):t('bankErrBic');errBox.classList.add('show');return;}
     dest={kind:'bank',clientRef:'BANK-WD-'+Date.now(),holder,bankName,iban,bic,requestedAt:new Date().toISOString()};successLabel=bankName;successDetail=t('withdrawSuccessBank');
   }else if(method==='crypto_usdt_evm'){
-    const address=document.getElementById('withdrawUsdtAddress').value.trim(); if(!/^0x[a-fA-F0-9]{40}$/.test(address)){document.getElementById('withdrawUsdtAddress').classList.add('nw-err');errBox.textContent=t('cryptoAddressInvalid');errBox.classList.add('show');return;}
+    const addressInput=document.getElementById('withdrawUsdtAddress'),address=addressInput.value.trim(); addressInput.classList.remove('nw-err');
+    if(!/^0x[a-fA-F0-9]{40}$/.test(address)){addressInput.classList.add('nw-err');errBox.textContent=t('cryptoAddressInvalid');errBox.classList.add('show');return;}
     if(!(withdrawUsdtGbpRate>0)){errBox.textContent=t('usdtRateRequired');errBox.classList.add('show');loadWithdrawUsdtRate();return;}
-    dest={kind:'crypto_usdt_evm',clientRef:'USDT-EVM-WD-'+Date.now(),address,requestedAt:new Date().toISOString(),usdtRate:withdrawUsdtGbpRate>0?withdrawUsdtGbpRate:null,usdtAmount:withdrawUsdtGbpRate>0?+(withdrawalNet(amount)/withdrawUsdtGbpRate).toFixed(4):null};successLabel='USDT · EVM';successDetail=t('withdrawSuccessCrypto');
+    dest={kind:'crypto_usdt_evm',clientRef:'USDT-EVM-WD-'+Date.now(),address,requestedAt:new Date().toISOString(),usdtRate:withdrawUsdtGbpRate,usdtAmount:+(withdrawalNet(amount)/withdrawUsdtGbpRate).toFixed(4)};successLabel='USDT · EVM';successDetail=t('withdrawSuccessCrypto');
   }else return;
   const btn=document.getElementById('withdrawConfirmBtn');btn.disabled=true;btn.innerHTML=`<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0"></div> ${t('withdrawalProcessing')}`;
   runWithdrawal(dest,amount,({net})=>{document.getElementById('withdrawSheetBody').innerHTML=`<div class="withdraw-success"><div class="ic">✅</div><div style="font-family:'Baloo 2';font-weight:800;font-size:18px;margin-top:10px">${t('withdrawalSuccessTitle')}</div><div style="font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:6px">${fmtAmt(net)} GBP</div><div style="font-size:12px;color:var(--ink-soft);font-weight:700;margin-top:6px">${successDetail}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:6px">${successLabel}</div><button class="btn btn-primary" style="margin-top:20px" onclick="closeWithdrawSheet()">${t('close')}</button></div>`;}).catch(err=>{errBox.textContent=withdrawalErrorMessage(err);errBox.classList.add('show');btn.disabled=false;btn.innerHTML=`💸 ${t('confirmWithdrawal')}`;});
