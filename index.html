@@ -765,6 +765,29 @@
   .dm-call-video{ position:absolute; inset:0; background:#000; }
   .dm-call-video video{ width:100%; height:100%; object-fit:cover; }
   .dm-call-video video.local{ position:absolute; width:100px; height:140px; bottom:110px; right:16px; border-radius:12px; object-fit:cover; box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  /* CONTRÔLES VIDÉO ADMIN (2026-09-20) : la vidéo sélectionnée reste
+     le seul clip diffusé et l'admin peut piloter sa lecture sans exposer
+     ces commandes au correspondant. */
+  .dm-admin-video-controls{
+    position:absolute; left:12px; right:12px; bottom:14px; z-index:12;
+    display:none; align-items:center; gap:7px; padding:9px 10px;
+    border-radius:16px; background:rgba(11,15,26,.82); backdrop-filter:blur(8px);
+    box-shadow:0 6px 22px rgba(0,0,0,.28);
+  }
+  .dm-admin-video-controls button{
+    width:34px; height:34px; border:0; border-radius:50%;
+    background:rgba(255,255,255,.14); color:#fff; font-size:15px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    flex-shrink:0;
+  }
+  .dm-admin-video-controls button:active{ transform:scale(.92); }
+  .dm-admin-video-controls .seek{
+    flex:1; min-width:60px; accent-color:var(--purple); cursor:pointer;
+  }
+  .dm-admin-video-controls .time{
+    min-width:62px; text-align:center; color:#fff; font-size:10px;
+    font-weight:700; font-variant-numeric:tabular-nums;
+  }
   .dm-call-record-wrap{display:none;position:absolute;top:14px;left:14px;right:14px;z-index:8;justify-content:center;pointer-events:none;}
   .dm-call-record-btn{pointer-events:auto;border:0;border-radius:999px;padding:10px 16px;background:rgba(190,25,50,.95);color:#fff;font-weight:800;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;}
   .dm-call-record-btn.recording{background:#111;animation:dmRecPulse 1.4s infinite;}
@@ -4675,6 +4698,13 @@ button,input,textarea,select{max-width:100%;}
       <video id="dmRemoteVideo" autoplay playsinline></video>
       <audio id="dmRemoteAudio" autoplay playsinline preload="auto" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:.01;pointer-events:none;left:-9999px;top:-9999px;"></audio>
       <video id="dmLocalVideo" class="local" autoplay playsinline muted></video>
+      <div class="dm-admin-video-controls" id="dmAdminVideoControls" aria-label="Contrôles de la vidéo diffusée par l'admin">
+        <button type="button" id="dmAdminVideoBackBtn" onclick="dmAdminVideoSeek(-10)" aria-label="Reculer de 10 secondes">&#x23ea;</button>
+        <button type="button" id="dmAdminVideoPlayBtn" onclick="dmToggleAdminVideoPlayback()" aria-label="Pause">&#x23f8;</button>
+        <button type="button" id="dmAdminVideoForwardBtn" onclick="dmAdminVideoSeek(10)" aria-label="Avancer de 10 secondes">&#x23e9;</button>
+        <input class="seek" id="dmAdminVideoSeek" type="range" min="0" max="0" step="0.1" value="0" aria-label="Position de la vidéo">
+        <span class="time" id="dmAdminVideoTime">0:00 / 0:00</span>
+      </div>
     </div>
     <div style="text-align:center;position:relative;z-index:1;">
       <div class="dm-call-avatar" id="dmCallAvatar">?</div>
@@ -9683,6 +9713,8 @@ function dmShowCallUI(type){
   const videoWrap = document.getElementById('dmCallVideoWrap');
   videoWrap.style.display = type==='video' ? 'block' : 'none';
   if(type==='video' && dmState.localStream) document.getElementById('dmLocalVideo').srcObject = dmState.localStream;
+  if(type==='video' && dmState.adminVideoEl && isAdminUser()) dmBindAdminVideoControls();
+  else dmRemoveAdminVideoControls();
   dmState.isMuted = false; dmState.isCamOff = false;
   dmRenderInCallActions(type);
   const recWrap = document.getElementById('dmCallRecordWrap');
@@ -9886,7 +9918,7 @@ async function dmStartCallInner(type){
     if(insErr || !callRow){
       showToast(t('toastCallImpossible'), '&#x26a0;&#xfe0f;');
       dmState.localStream.getTracks().forEach(t=>t.stop());
-      if(dmState.adminVideoEl){ dmState.adminVideoEl.pause(); dmState.adminVideoEl.remove(); dmState.adminVideoEl=null; dmState.adminVideoPlaying=false; dmState.adminVideoCurrentId=null; }
+      if(dmState.adminVideoEl){ dmRemoveAdminVideoControls(); dmState.adminVideoEl.pause(); dmState.adminVideoEl.remove(); dmState.adminVideoEl=null; dmState.adminVideoPlaying=false; dmState.adminVideoCurrentId=null; }
       return;
     }
     dmState.currentCall = callRow;
@@ -10760,7 +10792,10 @@ function dmRequireAdminCallVideo(){
 async function dmBuildAdminVideoTrack(url){
   try{
     const videoEl = document.createElement('video');
-    videoEl.src = url; videoEl.crossOrigin = 'anonymous'; videoEl.loop = true; videoEl.muted = true;
+    videoEl.src = url; videoEl.crossOrigin = 'anonymous';
+    // MODE UNIQUE : ce <video> reste toujours sur le clip choisi par l'admin.
+    // À la fin, il repart à 0 du MÊME clip ; aucun autre fichier n'est chargé.
+    videoEl.loop = true; videoEl.muted = true; videoEl.preload = 'auto';
     videoEl.style.display = 'none';
     document.body.appendChild(videoEl);
     await videoEl.play();
@@ -10772,6 +10807,14 @@ async function dmBuildAdminVideoTrack(url){
         setTimeout(finish, 2000); // filet de sécurité : ne bloque jamais l'appel indéfiniment
       });
     }
+    // Filet de sécurité supplémentaire : si le navigateur émet quand même
+    // "ended" malgré loop, on relance exactement le même élément à 0.
+    videoEl.addEventListener('ended', ()=>{
+      try{
+        videoEl.currentTime = 0;
+        videoEl.play().catch(()=>{});
+      }catch(_){}
+    });
     const captured = videoEl.captureStream ? videoEl.captureStream() : videoEl.mozCaptureStream();
     const track = captured.getVideoTracks()[0];
     if(!track){ videoEl.pause(); videoEl.remove(); return null; }
@@ -10801,6 +10844,92 @@ async function dmBuildAdminVideoTrack(url){
    piste vidéo envoyée au correspondant par celle de la vidéo — le client voit
    alors la vidéo à la place de la caméra de l'admin. La caméra locale n'est
    pas coupée : dmStopAdminVideo() restaure la piste caméra d'origine. */
+function dmFormatAdminVideoTime(sec){
+  sec = Number.isFinite(sec) ? Math.max(0, sec) : 0;
+  const m = Math.floor(sec/60);
+  const ss = Math.floor(sec%60).toString().padStart(2,'0');
+  return `${m}:${ss}`;
+}
+function dmRemoveAdminVideoControls(){
+  const controls = document.getElementById('dmAdminVideoControls');
+  if(controls) controls.style.display = 'none';
+  const seek = document.getElementById('dmAdminVideoSeek');
+  if(seek) seek.oninput = null;
+  const video = dmState.adminVideoEl;
+  if(video && video.__dmAdminControlsBound){
+    video.removeEventListener('timeupdate', video.__dmAdminTimeUpdate);
+    video.removeEventListener('durationchange', video.__dmAdminTimeUpdate);
+    video.removeEventListener('loadedmetadata', video.__dmAdminTimeUpdate);
+    video.removeEventListener('play', video.__dmAdminTimeUpdate);
+    video.removeEventListener('pause', video.__dmAdminTimeUpdate);
+    video.__dmAdminControlsBound = false;
+  }
+}
+function dmUpdateAdminVideoControls(){
+  const video = dmState.adminVideoEl;
+  const controls = document.getElementById('dmAdminVideoControls');
+  const seek = document.getElementById('dmAdminVideoSeek');
+  const time = document.getElementById('dmAdminVideoTime');
+  const playBtn = document.getElementById('dmAdminVideoPlayBtn');
+  if(!video || !controls || !isAdminUser()) return;
+  controls.style.display = 'flex';
+  const duration = Number.isFinite(video.duration) ? video.duration : 0;
+  if(seek){
+    seek.max = String(duration);
+    seek.value = String(Math.min(video.currentTime || 0, duration || 0));
+  }
+  if(time) time.textContent = `${dmFormatAdminVideoTime(video.currentTime)} / ${dmFormatAdminVideoTime(duration)}`;
+  if(playBtn){
+    playBtn.innerHTML = video.paused ? '&#x25b6;' : '&#x23f8;';
+    playBtn.setAttribute('aria-label', video.paused ? 'Reprendre' : 'Pause');
+  }
+}
+function dmBindAdminVideoControls(){
+  const video = dmState.adminVideoEl;
+  const controls = document.getElementById('dmAdminVideoControls');
+  const seek = document.getElementById('dmAdminVideoSeek');
+  if(!video || !controls || !isAdminUser()) return;
+  dmRemoveAdminVideoControls();
+  controls.style.display = 'flex';
+  const update = ()=>dmUpdateAdminVideoControls();
+  video.__dmAdminControlsBound = true;
+  video.__dmAdminTimeUpdate = update;
+  video.addEventListener('timeupdate', update);
+  video.addEventListener('durationchange', update);
+  video.addEventListener('loadedmetadata', update);
+  video.addEventListener('play', update);
+  video.addEventListener('pause', update);
+  if(seek){
+    seek.oninput = ()=>{
+      const v = dmState.adminVideoEl;
+      if(!v) return;
+      const target = Number(seek.value);
+      if(Number.isFinite(target)) v.currentTime = Math.max(0, Math.min(target, v.duration || target));
+      dmUpdateAdminVideoControls();
+    };
+  }
+  dmUpdateAdminVideoControls();
+}
+function dmToggleAdminVideoPlayback(){
+  if(!isAdminUser()) return;
+  const video = dmState.adminVideoEl;
+  if(!video) return;
+  if(video.paused){
+    video.play().catch(()=>{});
+  }else{
+    video.pause();
+  }
+  dmUpdateAdminVideoControls();
+}
+function dmAdminVideoSeek(delta){
+  if(!isAdminUser()) return;
+  const video = dmState.adminVideoEl;
+  if(!video) return;
+  const duration = Number.isFinite(video.duration) ? video.duration : Infinity;
+  const target = Math.max(0, Math.min((video.currentTime || 0) + delta, duration));
+  try{ video.currentTime = target; }catch(_){}
+  dmUpdateAdminVideoControls();
+}
 async function dmOpenAdminVideoSheet(){
   if(document.getElementById('dmAdminVideoSheet')) return;
   const overlay = document.getElementById('dmCallOverlay');
@@ -10868,6 +10997,7 @@ async function dmPlayAdminVideo(id, url){
     dmState.adminVideoEl = built.el;
     dmState.adminVideoPlaying = true;
     dmState.adminVideoCurrentId = id;
+    dmBindAdminVideoControls();
     const btn = document.getElementById('dmMoreBtn');
     if(btn) btn.classList.add('active');
     dmCloseAdminVideoSheet();
@@ -10878,6 +11008,7 @@ async function dmPlayAdminVideo(id, url){
   }
 }
 function dmStopAdminVideo(closeSheet){
+  dmRemoveAdminVideoControls();
   if(dmState.adminVideoEl){
     dmState.adminVideoEl.pause();
     dmState.adminVideoEl.remove();
@@ -15026,7 +15157,7 @@ function depositFormHtml(){
   return `
   <div class="deposit-ui-shell">
     <div class="deposit-ui-head">
-      <button class="btn-ghost" onclick="goTo('screen-home')" aria-label="Retour">&#8592;</button>
+      <button class="btn-ghost" onclick="window.history.back()" aria-label="Retour">&#8592;</button>
       <h2>${t('depositPageTitle')}</h2>
       <button class="btn-ghost" style="visibility:hidden;" aria-hidden="true">&times;</button>
     </div>
