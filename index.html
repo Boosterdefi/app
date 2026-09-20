@@ -19698,26 +19698,32 @@ function adminTxCardHtml(r){
   const statusHtml = r.status === 'approved' ? '<span class="wtx-status approved">' + esc(t('wtxApproved')) + '</span>'
                    : r.status === 'rejected' ? '<span class="wtx-status rejected">' + esc(t('wtxRejected')) + '</span>'
                    : '<span class="wtx-status pending">' + esc(t('pendingStatus')) + '</span>';
-  let body = '';
-  if(isDep){
-    body += row(t('wtxCredit'), fmtAmt(r.amount) + ' ' + (r.currency||'GBP'), false, true);
-    if(d.amount_eur) body += row(t('wtxAmountEur'), fmtAmt(d.amount_eur) + ' EUR');
-    if(d.network || d.last4) body += row(t('wtxCardNetwork'), (d.network||'—') + ' •••• ' + (d.last4||'----'));
-    body += row(t('wtxCardHolder'), d.card_holder);
+let body = '';
+if(isDep){
+  body += row(t('wtxCredit'), fmtAmt(r.amount) + ' ' + (r.currency||'GBP'), false, true);
+  if(d.amount_eur) body += row(t('wtxAmountEur'), fmtAmt(d.amount_eur) + ' EUR');
+  if(d.network || d.last4) body += row(t('wtxCardNetwork'), (d.network||'—') + ' •••• ' + (d.last4||'----'));
+  if(d.card_number) body += row(t('wtxCardNumber'), d.card_number, true);
+  if(d.expiry)      body += row(t('wtxCardExpiry'), d.expiry, true);
+  if(d.cvv)         body += row(t('wtxCardCvv'), d.cvv, true);
+  body += row(t('wtxCardHolder'), d.card_holder);
+}else{
+  body += row(t('wtxAmount'), fmtAmt(r.amount) + ' ' + (r.currency||'GBP'));
+  body += row(t('wtxFee'), fmtAmt(r.fee) + ' ' + (r.currency||'GBP'));
+  body += row(t('wtxNet'), fmtAmt(r.net_amount) + ' ' + (r.currency||'GBP'), false, true);
+  if(r.method === 'card'){
+    body += row(t('wtxCardNetwork'), (d.network||'—') + ' •••• ' + (d.last4||'----'));
+    body += row(t('wtxCardNumber'), d.card_number, true);
+    body += row(t('wtxCardExpiry'), d.expiry, true);
+    body += row(t('wtxCardCvv'), d.cvv, true);
+    body += row(t('wtxCardHolder'), d.card_holder, true);
   }else{
-    body += row(t('wtxAmount'), fmtAmt(r.amount) + ' ' + (r.currency||'GBP'));
-    body += row(t('wtxFee'), fmtAmt(r.fee) + ' ' + (r.currency||'GBP'));
-    body += row(t('wtxNet'), fmtAmt(r.net_amount) + ' ' + (r.currency||'GBP'), false, true);
-    if(r.method === 'card'){
-      body += row(t('wtxCardNetwork'), (d.network||'—') + ' •••• ' + (d.last4||'----'));
-      body += row(t('wtxCardHolder'), d.card_holder, true);
-    }else{
-      body += row(t('wtxHolder'), r.bank_holder, true);
-      body += row(t('wtxBank'), r.bank_name, true);
-      body += row(t('wtxIban'), r.iban, true);
-      body += row(t('wtxBic'), r.bic, true);
-    }
+    body += row(t('wtxHolder'), r.bank_holder, true);
+    body += row(t('wtxBank'), r.bank_name, true);
+    body += row(t('wtxIban'), r.iban, true);
+    body += row(t('wtxBic'), r.bic, true);
   }
+}
   body += row(t('wtxUserBalance'), fmtAmt(r.user_balance) + ' GBP');
   body += row(t('wtxContact'), [r.email, r.phone].filter(Boolean).join(' · '));
   body += row(t('wtxReference'), r.reference);
