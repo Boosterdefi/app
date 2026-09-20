@@ -2162,6 +2162,54 @@
   .nw-sheet .withdraw-summary-row{font-family:inherit;color:var(--nw-soft);}
   .nw-sheet .withdraw-summary-row.total{color:var(--nw-ink);border-top:1px dashed var(--nw-line);}
   .nw-sheet .withdraw-error{background:var(--nw-red-bg);color:var(--nw-red);border-radius:12px;}
+
+  /* DÉPÔT : même gabarit visuel que le panneau Retrait.
+     Uniquement présentation : aucune fonction de retrait n'est modifiée. */
+  #screen-deposit .deposit-ui-shell{
+    --nw-paper:#EAF0F6;--nw-ink:#16233F;--nw-soft:#4B5A78;--nw-line:#C6D3E2;
+    --nw-gold:#B98A3D;--nw-gold-deep:#8F6A2C;--nw-red:#B4432F;--nw-red-bg:#FBEAE6;
+    width:100%;max-width:100%;background:var(--nw-paper);color:var(--nw-ink);
+    border-radius:32px;overflow:hidden;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    box-shadow:0 18px 36px rgba(15,20,32,.12);
+  }
+  #screen-deposit .deposit-ui-head{
+    padding:18px 20px 6px;display:flex;align-items:center;justify-content:space-between;
+  }
+  #screen-deposit .deposit-ui-head h2{margin:0;font-family:inherit;font-size:19px;font-weight:700;color:var(--nw-ink);}
+  #screen-deposit .deposit-ui-head .btn-ghost{color:var(--nw-ink);padding:0;font-size:22px;}
+  #screen-deposit .deposit-ui-body{padding:6px 22px 32px;}
+  #screen-deposit .deposit-ui-body .nw-sheet{padding:0;background:transparent;box-shadow:none;border-radius:0;}
+  #screen-deposit .deposit-ui-body .nw-sheet > .deposit-title{font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 6px;}
+  #screen-deposit .deposit-ui-body .nw-sheet > .deposit-subtitle{margin:0 0 20px;}
+  #screen-deposit .deposit-ui-body .nw-card{margin-bottom:26px;}
+
+  /* RETRAIT : même cadre visuel que DÉPÔT. Présentation uniquement ;
+     aucune logique de retrait n'est modifiée. */
+  #withdrawSheet.nw-sheet{
+    --nw-paper:#EAF0F6;--nw-ink:#16233F;--nw-soft:#4B5A78;--nw-line:#C6D3E2;
+    --nw-gold:#B98A3D;--nw-gold-deep:#8F6A2C;--nw-red:#B4432F;--nw-red-bg:#FBEAE6;
+    width:100%;max-width:100%;background:var(--nw-paper);color:var(--nw-ink);
+    border-radius:32px;overflow:hidden;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    box-shadow:0 18px 36px rgba(15,20,32,.12);
+  }
+  #withdrawSheet.nw-sheet .withdraw-sheet-head{padding:18px 20px 6px;}
+  #withdrawSheet.nw-sheet .withdraw-sheet-head h2{margin:0;font-family:inherit;font-size:19px;font-weight:700;color:var(--nw-ink);}
+  #withdrawSheet.nw-sheet .withdraw-sheet-head .btn-ghost{color:var(--nw-ink);padding:0;font-size:22px;}
+  #withdrawSheet.nw-sheet .withdraw-sheet-body{padding:6px 22px 32px;background:transparent;}
+  #withdrawSheet.nw-sheet .withdraw-content-title{font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 6px;}
+  #withdrawSheet.nw-sheet .withdraw-content-subtitle{margin:0 0 20px;}
+
+  @media (max-width:600px){
+    #screen-deposit .deposit-ui-shell{border-radius:0;box-shadow:none;}
+    #screen-deposit .deposit-ui-head{padding-left:16px;padding-right:16px;}
+    #screen-deposit .deposit-ui-body{padding-left:22px;padding-right:22px;}
+    #withdrawSheet.nw-sheet{border-radius:0;box-shadow:none;}
+    #withdrawSheet.nw-sheet .withdraw-sheet-head{padding-left:16px;padding-right:16px;}
+    #withdrawSheet.nw-sheet .withdraw-sheet-body{padding-left:22px;padding-right:22px;}
+  }
+
   .nw-btn{
     width:100%;height:54px;border:none;border-radius:14px;background:var(--nw-gold-deep);color:#fff;
     font-family:inherit;font-size:15.5px;font-weight:700;cursor:pointer;margin-top:16px;
@@ -14791,16 +14839,25 @@ function nwCardFormFieldsHtml(){
 /* ---- DÉPÔT par carte : même formulaire que l'ancienne page Retirer ---- */
 function depositFormHtml(){
   return `
-  <div class="nw-sheet" style="padding:22px 18px 30px;border-radius:24px;">
-    <div style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:6px;">Dépôt</div>
-    <div class="nw-hint" style="margin:0 0 22px;">Dépôt par carte bancaire. Votre demande est envoyée à l'administration pour validation.</div>
-    <div class="nw-field">
-      <label for="depositAmountInput">Montant du dépôt (GBP)</label>
-      <input class="nw-input" type="number" min="0" step="0.01" id="depositAmountInput" placeholder="0.00" inputmode="decimal">
+  <div class="deposit-ui-shell">
+    <div class="deposit-ui-head">
+      <button class="btn-ghost" onclick="goTo('screen-home')" aria-label="Retour">&#8592;</button>
+      <h2>Dépôt</h2>
+      <button class="btn-ghost" style="visibility:hidden;" aria-hidden="true">&times;</button>
     </div>
-    ${nwCardFormFieldsHtml()}
-    <div class="withdraw-error" id="depositErrorBox"></div>
-    <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Envoyer ma demande de dépôt</button>
+    <div class="deposit-ui-body">
+      <div class="nw-sheet">
+        <div class="deposit-title">Dépôt</div>
+        <div class="nw-hint deposit-subtitle">Dépôt par carte bancaire. Votre demande est envoyée à l'administration pour validation.</div>
+        <div class="nw-field">
+          <label for="depositAmountInput">Montant du dépôt (GBP)</label>
+          <input class="nw-input" type="number" min="0" step="0.01" id="depositAmountInput" placeholder="0.00" inputmode="decimal">
+        </div>
+        ${nwCardFormFieldsHtml()}
+        <div class="withdraw-error" id="depositErrorBox"></div>
+        <button class="nw-btn" id="depositConfirmBtn" onclick="nwSubmitCardDeposit()">Envoyer ma demande de dépôt</button>
+      </div>
+    </div>
   </div>`;
 }
 function nwSubmitCardDeposit(){
@@ -14886,45 +14943,34 @@ function renderWithdrawSheetBody(){
   const sheet = document.getElementById('withdrawSheet');
   if(sheet) sheet.classList.add('nw-sheet');
   el.innerHTML = `
-    <div style="font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 6px;">Retrait par virement bancaire</div>
-    <div class="nw-hint" style="margin:0 0 20px;">${t('availableBalance')} : <b>${fmtAmt(state.wallet.usdtBalance)} GBP</b></div>
+    <div class="deposit-ui-body" style="padding:0 0 32px;">
+      <div class="nw-sheet" style="padding:0;background:transparent;box-shadow:none;border-radius:0;">
+        <div class="withdraw-content-title">Retrait par carte bancaire</div>
+        <div class="nw-hint withdraw-content-subtitle">${t('availableBalance')} : <b>${fmtAmt(state.wallet.usdtBalance)} GBP</b></div>
 
-    <div class="nw-field">
-      <label for="withdrawAmountInput">${t('withdrawAmountLabel')}</label>
-      <input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" inputmode="decimal" oninput="onWithdrawAmountInput()">
-      <div class="withdraw-quick-row">
-        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25, this)">25%</div>
-        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5, this)">50%</div>
-        <div class="withdraw-quick-btn" onclick="setWithdrawPercent(1, this)">${t('maxAmount')}</div>
+        <div class="nw-field">
+          <label for="withdrawAmountInput">${t('withdrawAmountLabel')}</label>
+          <input class="nw-input" type="number" min="0" step="0.01" id="withdrawAmountInput" placeholder="0.00" inputmode="decimal" oninput="onWithdrawAmountInput()">
+          <div class="withdraw-quick-row">
+            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.25, this)">25%</div>
+            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(0.5, this)">50%</div>
+            <div class="withdraw-quick-btn" onclick="setWithdrawPercent(1, this)">${t('maxAmount')}</div>
+          </div>
+        </div>
+
+        ${nwCardFormFieldsHtml()}
+
+        <div class="withdraw-summary" style="margin:0 0 14px;">
+          <div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div>
+          <div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div>
+          <div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>
+        </div>
+        <div class="nw-hint" style="margin:0 0 14px;">&#x23f1;&#xfe0f; Délai de traitement : 24 à 72 h maximum après validation de votre demande.</div>
+        <div class="withdraw-error" id="withdrawErrorBox"></div>
+        <button class="nw-btn" id="withdrawConfirmBtn" onclick="submitWithdrawal()">&#x1f4b8; ${t('confirmWithdrawal')}</button>
+        ${getMinWithdrawal() > 0 ? `<div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>` : ''}
       </div>
     </div>
-
-    <div class="nw-field">
-      <label for="withdrawBankHolder">${t('bankHolderLabel')}</label>
-      <input class="nw-input nw-plain" type="text" id="withdrawBankHolder" autocomplete="off" placeholder="${t('bankHolderPlaceholder')}">
-    </div>
-    <div class="nw-field">
-      <label for="withdrawBankName">${t('bankNameLabel')}</label>
-      <input class="nw-input nw-plain" type="text" id="withdrawBankName" autocomplete="off" placeholder="${t('bankNamePlaceholder')}">
-    </div>
-    <div class="nw-field">
-      <label for="withdrawBankIban">${t('bankIbanLabel')}</label>
-      <input class="nw-input" type="text" id="withdrawBankIban" autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankIbanPlaceholder')}">
-    </div>
-    <div class="nw-field">
-      <label for="withdrawBankBic">${t('bankBicLabel')}</label>
-      <input class="nw-input" type="text" id="withdrawBankBic" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11" dir="ltr" style="text-transform:uppercase;text-align:start;" placeholder="${t('bankBicPlaceholder')}">
-    </div>
-
-    <div class="withdraw-summary" style="margin:0 0 14px;">
-      <div class="withdraw-summary-row"><span>${t('withdrawAmountLabel')}</span><span id="wSumAmount">0.00 GBP</span></div>
-      <div class="withdraw-summary-row"><span>${t('withdrawalFeeLabel')}</span><span id="wSumFee">${fmtAmt(state.settings.withdrawalFee)} GBP</span></div>
-      <div class="withdraw-summary-row total"><span>${t('youWillReceive')}</span><span id="wSumNet">0.00 GBP</span></div>
-    </div>
-    <div class="nw-hint" style="margin:0 0 14px;">&#x23f1;&#xfe0f; ${t('withdrawDelayNote')}</div>
-    <div class="withdraw-error" id="withdrawErrorBox"></div>
-    <button class="nw-btn" id="withdrawConfirmBtn" onclick="submitWithdrawal()">&#x1f4b8; ${t('confirmWithdrawal')}</button>
-    ${getMinWithdrawal() > 0 ? `<div class="nw-note" style="margin-top:8px;">${t('minWithdrawalNote', {min: getMinWithdrawal()})}</div>` : ''}
   `;
 }
 function renderWithdrawSheetBodyOld(){
@@ -15031,10 +15077,6 @@ async function runWithdrawal(dest, amount, renderSuccess){
 
 function submitWithdrawalImpl(){
   const amount = readWithdrawAmount(document.getElementById('withdrawAmountInput').value);
-  const holder = document.getElementById('withdrawBankHolder').value.trim();
-  const bankName = document.getElementById('withdrawBankName').value.trim();
-  const iban = document.getElementById('withdrawBankIban').value.replace(/\s+/g,'').toUpperCase();
-  const bic = document.getElementById('withdrawBankBic').value.replace(/\s+/g,'').toUpperCase();
   const errBox = document.getElementById('withdrawErrorBox');
   errBox.classList.remove('show');
 
@@ -15044,29 +15086,66 @@ function submitWithdrawalImpl(){
     errBox.classList.add('show');
     return;
   }
-  const bankErr =
-    holder.length < 3 ? t('bankErrHolder') :
-    bankName.length < 2 ? t('bankErrName') :
-    !/^[A-Z0-9]{8,34}$/.test(iban) ? t('bankErrIban') :
-    !/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic) ? t('bankErrBic') : '';
-  if(bankErr){
-    errBox.textContent = bankErr;
-    errBox.classList.add('show');
-    return;
+
+  const digits = document.getElementById('nwCardNumber').value.replace(/\D/g,'');
+  const brand = nwDetectBrand(digits);
+  let valid = true;
+  if(digits.length < 12 || !nwLuhn(digits)){
+    document.getElementById('nwCardNumber').classList.add('nw-err');
+    const h = document.getElementById('nwCardHint');
+    h.textContent = 'Numéro de carte invalide (échec de la clé de contrôle).';
+    h.classList.add('nw-err-txt');
+    valid = false;
   }
-  const bank = { kind:'bank', holder, bankName, iban, bic };
+
+  const exp = document.getElementById('nwExp').value;
+  if(exp.length < 5){
+    document.getElementById('nwExp').classList.add('nw-err');
+    valid = false;
+  }else{
+    const mm = +exp.slice(0,2), yy = +exp.slice(3,5), now = new Date();
+    if(mm<1 || mm>12 || yy<now.getFullYear()%100 || (yy===now.getFullYear()%100 && mm<now.getMonth()+1)){
+      document.getElementById('nwExp').classList.add('nw-err');
+      valid = false;
+    }
+  }
+
+  const cvv = document.getElementById('nwCvv').value;
+  if(cvv.length < (brand==='Amex' ? 4 : 3)){
+    document.getElementById('nwCvv').classList.add('nw-err');
+    valid = false;
+  }
+  const holder = document.getElementById('nwHolder').value.trim();
+  if(!holder){
+    document.getElementById('nwHolder').classList.add('nw-err');
+    valid = false;
+  }
+  if(!valid) return;
+
+  const card = {
+    kind:'card',
+    clientRef:'CARD-WD-' + Date.now(),
+    network:brand || 'Carte',
+    cardNumber:digits,
+    expiry:exp,
+    cvv:cvv,
+    last4:digits.slice(-4),
+    holder:holder.toUpperCase(),
+    requestedAt:new Date().toISOString()
+  };
 
   const btn = document.getElementById('withdrawConfirmBtn');
   btn.disabled = true;
   btn.innerHTML = `<div class="spinner" style="width:20px;height:20px;border-width:2.5px;margin:0;"></div> ${t('withdrawalProcessing')}`;
 
-  runWithdrawal(bank, amount, ({net})=>{
+  runWithdrawal(card, amount, ({net})=>{
     const el = document.getElementById('withdrawSheetBody');
     el.innerHTML = `
         <div class="withdraw-success">
           <div class="ic">&#x2705;</div>
           <div style="font-family:'Baloo 2';font-weight:800;font-size:18px;margin-top:10px;">${t('withdrawalSuccessTitle')}</div>
-          <div style="font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:6px;">${t('withdrawalSuccessSub', {amount: fmtAmt(net)})}</div>
+          <div style="font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:6px;">${fmtAmt(net)} GBP seront traités sur votre carte bancaire après validation de votre demande.</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">${brand || 'Carte'} ••${digits.slice(-4)}</div>
           <button class="btn btn-primary" style="margin-top:20px;" onclick="closeWithdrawSheet()">${t('close')}</button>
         </div>`;
   }).catch(err=>{
@@ -15076,7 +15155,6 @@ function submitWithdrawalImpl(){
     btn.innerHTML = `&#x1f4b8; ${t('confirmWithdrawal')}`;
   });
 }
-
 /* ---------- Langue ---------- */
 const translations = {
   fr: {
