@@ -2051,6 +2051,7 @@
   .ewb-service-tile.market .ic{background:linear-gradient(135deg,#EC4899,#BE185D);}
   .ewb-service-tile.history .ic{background:linear-gradient(135deg,#8B5CF6,#5B21B6);}
   .ewb-service-tile.admin .ic{background:linear-gradient(135deg,#6B7280,#374151);}
+  .ewb-service-tile.support .ic{background:linear-gradient(135deg,#22C55E,#15803D);}
 
   /* Historique */
   .ewb-history-card{
@@ -3992,8 +3993,8 @@ button,input,textarea,select{max-width:100%;}
             <button class="ewb-action-btn withdraw" onclick="openWithdrawSheet()">
               <span class="ic">&#x1f4b8;</span><span class="lbl" data-i18n="withdraw">Retirer</span>
             </button>
-            <button class="ewb-action-btn save" onclick="navTo('screen-epargne')">
-              <span class="ic">&#x1f341;</span><span class="lbl" data-i18n="lc_epargne">Épargne</span>
+            <button class="ewb-action-btn save" onclick="navTo('screen-loans')">
+              <span class="ic">&#x1f3e6;</span><span class="lbl" data-i18n="bankLoansNav">Prêts GBP</span>
             </button>
           </div>
         </div>
@@ -4011,9 +4012,9 @@ button,input,textarea,select{max-width:100%;}
             <span class="ic">&#x1f4c8;</span>
             <span class="lbl" data-i18n="bankHavreNav">Havre · Trading</span>
           </button>
-          <button class="ewb-service-tile loans" onclick="navTo('screen-loans')">
-            <span class="ic">&#x1f3e6;</span>
-            <span class="lbl" data-i18n="bankLoansNav">Prêts GBP</span>
+          <button class="ewb-service-tile loans" onclick="navTo('screen-epargne')">
+            <span class="ic">&#x1f341;</span>
+            <span class="lbl" data-i18n="lc_epargne">Épargne</span>
           </button>
           <button class="ewb-service-tile market" onclick="navTo('screen-results')">
             <span class="ic">&#x1f6cd;&#xfe0f;</span>
@@ -4022,6 +4023,13 @@ button,input,textarea,select{max-width:100%;}
           <button class="ewb-service-tile history" onclick="navTo('screen-my-results')">
             <span class="ic">&#x1f4dc;</span>
             <span class="lbl" data-i18n="lc_mesResultatsNav">Mes résultats</span>
+          </button>
+          <!-- AJOUT : chat support déplacé dans "Mon espace" et renommé
+               "Parler avec un conseiller" (ouvre le même overlay que
+               openSupportChat()). -->
+          <button class="ewb-service-tile support" onclick="openSupportChat()">
+            <span class="ic">&#x1f4ac;</span>
+            <span class="lbl" data-i18n="lc_parlerConseiller">Parler avec un conseiller</span>
           </button>
           <!-- AJOUT (2026-09-08) : accès Espace Admin — caché par défaut,
                affiché uniquement pour les emails listés dans ADMIN_EMAILS
@@ -4838,12 +4846,14 @@ applyEmbeddedLogos();
    ========================================================= */
 
 // ---------------------------------------------------------------------
-// DEBUG TEMPORAIRE — à retirer une fois le problème de connexion résolu.
-// Affiche directement à l'écran (alert) toute erreur JS ou promesse
-// rejetée non gérée, pour pouvoir déboguer sans PC / DevTools.
+// Gestion globale des erreurs JS / promesses rejetées : journalisées en
+// console pour le débogage, mais JAMAIS affichées à l'écran (pas d'alert()).
+// Cela évite qu'une erreur réseau (ex : app ouverte hors connexion) ne
+// bloque l'interface avec une popup visible — l'app reste toujours en
+// mode "vue" silencieux, quelle que soit la page.
 // ---------------------------------------------------------------------
 window.addEventListener('error', function(e){
-  alert('[ERREUR JS] ' + e.message + '\n' + (e.filename||'') + ':' + (e.lineno||'') + ':' + (e.colno||''));
+  console.error('[ERREUR JS]', e.message, (e.filename||'')+':'+(e.lineno||'')+':'+(e.colno||''));
 });
 window.addEventListener('unhandledrejection', function(e){
   const reason = e.reason;
@@ -4856,7 +4866,8 @@ window.addEventListener('unhandledrejection', function(e){
     console.warn('[RÉSEAU] opération interrompue:', msg);
     return;
   }
-  alert('[PROMESSE REJETÉE] ' + msg);
+  console.error('[PROMESSE REJETÉE]', msg);
+  e.preventDefault();
 });
 // ---------------------------------------------------------------------
 
@@ -6322,7 +6333,7 @@ function epargneCreate(){
   const maturesAt = epargneMaturityDate(startedAt, epargne.months).toISOString();
   state.wallet.usdtBalance = +(state.wallet.usdtBalance - amount).toFixed(4);
   state.wallet.pointsBalance = +(Number(state.wallet.pointsBalance||0) + points).toFixed(2);
-  epargne.plans.unshift({ id: 'ep_'+Date.now(), amount, months, points, interest, startedAt, maturesAt, status:'active' });
+  epargne.plans.unshift({ id: 'ep_'+Date.now(), amount, months: epargne.months, points, interest, startedAt, maturesAt, status:'active' });
   epargne.error = '';
   showToast(t('toastSavingsCreated', {points: points.toLocaleString(fmtLocale()), amount, months: epargne.months}), '&#x1f4b0;');
   const pillNum = document.getElementById('homeStreakNum');
@@ -6666,15 +6677,30 @@ function renderHavreTrading(){
    ========================================================= */
 const THETERBANK_ELIGIBILITY_POINTS = 50000;
 const LOAN_PRINCIPALS = [1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
-// Tous les prêts utilisent désormais le même seuil d'éligibilité Theterbank :
-// 50 000 points minimum, quel que soit le montant ou la durée.
+// Les points requis démarrent à 50 000 (palier le plus bas : 1 000 GBP /
+// 6 mois) et augmentent progressivement avec le montant emprunté et la
+// durée choisie, jusqu'à 20 000 000 pts au palier maximum (500 000 GBP /
+// 36 mois) — voir loanPointsFor ci-dessous.
 const LOAN_TERMS = [
   { months:6,  mult:1.0, apr:0.12 },
   { months:12, mult:1.9, apr:0.10 },
   { months:24, mult:2.7, apr:0.09 },
   { months:36, mult:3.6, apr:0.08 }
 ];
-function loanPointsFor(principal, term){ return THETERBANK_ELIGIBILITY_POINTS; }
+const LOAN_POINTS_MIN = 50000;
+const LOAN_POINTS_MAX = 20000000;
+function loanPointsFor(principal, term){
+  const pIndex = Math.max(0, LOAN_PRINCIPALS.indexOf(principal));
+  const tIndex = Math.max(0, LOAN_TERMS.indexOf(term));
+  const totalSteps = LOAN_PRINCIPALS.length*LOAN_TERMS.length - 1; // 35
+  const rank = pIndex*LOAN_TERMS.length + tIndex; // 0..35
+  // Progression géométrique : chaque palier (montant + durée) multiplie
+  // les points requis par un même ratio, de 50 000 à 20 000 000.
+  const ratio = Math.pow(LOAN_POINTS_MAX/LOAN_POINTS_MIN, 1/totalSteps);
+  const raw = LOAN_POINTS_MIN * Math.pow(ratio, rank);
+  const step = raw < 100000 ? 1000 : (raw < 1000000 ? 10000 : 50000);
+  return Math.round(raw/step)*step;
+}
 function loanTotalRepayable(principal, term){ return +(principal * (1 + term.apr * term.months/12)).toFixed(2); }
 function loanMonthlyPayment(principal, term){ return +(loanTotalRepayable(principal,term) / term.months).toFixed(2); }
 
@@ -6691,6 +6717,7 @@ function loanNextPaymentDate(from){
   d.setMonth(d.getMonth() + 1);
   return d;
 }
+const LOAN_DISBURSEMENT_DELAY_MS = 24*60*60*1000; // décaissement 24h après la demande
 async function loanBorrow(principal, termMonths){
   if(!sbUser){ requireAuth(()=>navTo('screen-loans')); return; }
   await loadBankAccountState();
@@ -6704,18 +6731,53 @@ async function loanBorrow(principal, termMonths){
   if(pointsRequired > Number(state.wallet.pointsBalance||0)){ showToast(t('toastLoanInsufficientPoints'), '&#x26a0;&#xfe0f;'); return; }
   const totalRepayable = loanTotalRepayable(principal, term);
   const monthlyPayment = loanMonthlyPayment(principal, term);
-  const startedAt = new Date().toISOString();
-  state.wallet.usdtBalance = +(Number(state.wallet.usdtBalance||0) + principal).toFixed(4);
+  const requestedAt = new Date();
+  const disbursesAt = new Date(requestedAt.getTime() + LOAN_DISBURSEMENT_DELAY_MS);
+  // Toutes les conditions d'éligibilité (points + KYC + compte GBP actif)
+  // sont réunies : le prêt est accessible mais les fonds ne sont crédités
+  // qu'automatiquement 24h après la demande — voir loanProcessPendingDisbursements().
   loanState.loans.unshift({
     id:'ln_'+Date.now(), principal, months:term.months, apr:term.apr, pointsRequired,
     totalRepayable, monthlyPayment, remainingBalance:totalRepayable,
-    paymentsMade:0, startedAt, maturesAt: loanMaturityDate(startedAt, term.months).toISOString(),
-    nextPaymentAt: loanNextPaymentDate(startedAt).toISOString(), status:'active'
+    paymentsMade:0, requestedAt: requestedAt.toISOString(), disbursesAt: disbursesAt.toISOString(),
+    startedAt:null, maturesAt:null, nextPaymentAt:null, status:'pending'
   });
-  showToast(t('toastLoanDisbursed', {amount: fmtAmt(principal,0)}), '&#x1f3e6;');
+  showToast(t('toastLoanRequested', {amount: fmtAmt(principal,0)}), '&#x23f3;');
   if(typeof confettiBurst==='function') confettiBurst();
   renderLoans();
   syncVolRougeBalance();
+}
+// Décaisse automatiquement (crédite le solde GBP) tout prêt "pending" dont
+// le délai de 24h après la demande est écoulé. Appelé à chaque rendu de
+// l'écran des prêts, et périodiquement tant que l'écran reste ouvert.
+function loanProcessPendingDisbursements(){
+  const now = Date.now();
+  let changed = false;
+  loanState.loans.forEach(loan=>{
+    if(loan.status==='pending' && new Date(loan.disbursesAt).getTime() <= now){
+      state.wallet.usdtBalance = +(Number(state.wallet.usdtBalance||0) + loan.principal).toFixed(4);
+      loan.status = 'active';
+      loan.startedAt = loan.disbursesAt;
+      loan.maturesAt = loanMaturityDate(loan.disbursesAt, loan.months).toISOString();
+      loan.nextPaymentAt = loanNextPaymentDate(loan.disbursesAt).toISOString();
+      changed = true;
+      showToast(t('toastLoanDisbursed', {amount: fmtAmt(loan.principal,0)}), '&#x1f3e6;');
+    }
+  });
+  if(changed){ syncVolRougeBalance(); }
+  return changed;
+}
+let loanLiveTimer = null;
+function loanStartLiveTimer(){
+  loanStopLiveTimer();
+  loanLiveTimer = setInterval(()=>{
+    if(loanState.loans.some(l=>l.status==='pending')){
+      if(loanProcessPendingDisbursements()) renderLoans();
+    }
+  }, 30000);
+}
+function loanStopLiveTimer(){
+  if(loanLiveTimer){ clearInterval(loanLiveTimer); loanLiveTimer = null; }
 }
 function loanPayInstallment(id){
   const loan = loanState.loans.find(l=>l.id===id);
@@ -6738,6 +6800,7 @@ function loanProgressPct(loan){
 function renderLoans(){
   const el = document.getElementById('loansContent');
   if(!el) return;
+  loanProcessPendingDisbursements();
   const principal = loanState.principal;
   const activeLoans = loanState.loans.filter(l=>l.status==='active');
   el.innerHTML = `
@@ -6794,14 +6857,21 @@ function renderLoans(){
     ${loanState.loans.length ? `
     <div class="havre-section-label">${t('bankLoansYourLoans')}</div>
     ${loanState.loans.map(loan=>{
-      const pct = loanProgressPct(loan);
-      const nextLbl = new Date(loan.nextPaymentAt).toLocaleDateString(fmtLocale(),{day:'2-digit',month:'short',year:'numeric'});
+      const pct = loan.status==='pending' ? 0 : loanProgressPct(loan);
+      const nextLbl = loan.nextPaymentAt ? new Date(loan.nextPaymentAt).toLocaleDateString(fmtLocale(),{day:'2-digit',month:'short',year:'numeric'}) : '';
+      const disbursesLbl = loan.disbursesAt ? new Date(loan.disbursesAt).toLocaleString(fmtLocale(),{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
       return `
       <div class="havre-pos-card">
         <div class="havre-pos-top">
-          <span class="havre-pill ${loan.status==='repaid'?'mint':'coral'}">&#x1f3e6; ${fmtAmt(loan.principal,0)} GBP · ${loan.months} ${t('bankLoansMonthsWord')}</span>
+          <span class="havre-pill ${loan.status==='repaid'?'mint':(loan.status==='pending'?'gold':'coral')}">&#x1f3e6; ${fmtAmt(loan.principal,0)} GBP · ${loan.months} ${t('bankLoansMonthsWord')}</span>
           <span class="havre-pos-mise">&#x1fa99; ${loan.pointsRequired.toLocaleString(fmtLocale())} pts</span>
         </div>
+        ${loan.status==='pending' ? `
+        <div class="epargne-live-value" style="color:var(--ink-soft);">&#x23f3; ${t('bankLoansPendingLabel')}</div>
+        <div class="havre-pos-bottom">
+          <div class="havre-pos-meta">${t('bankLoansDisbursesOn', {date:disbursesLbl})}</div>
+        </div>
+        ` : `
         <div class="epargne-progress-track"><div class="epargne-progress-fill" style="width:${pct.toFixed(2)}%;"></div></div>
         ${loan.status==='active' ? `
         <div class="epargne-live-value">${t('bankLoansRemaining', {amount: fmtAmt(loan.remainingBalance)})}</div>
@@ -6812,12 +6882,30 @@ function renderLoans(){
         ` : `
         <div class="epargne-live-value" style="color:var(--ink-soft);">${t('bankLoansFullyRepaidLabel')}</div>
         `}
+        `}
       </div>`;
     }).join('')}
     ` : ''}
 
+    <div class="havre-section-label">${t('bankLoansMechanismTitle')}</div>
+    <div class="havre-panel" style="font-size:12px;line-height:1.65;color:var(--ink-soft);">
+      <p style="margin:0 0 10px;">${t('bankLoansMechanismText1')}</p>
+      <p style="margin:0 0 10px;">${t('bankLoansMechanismText2')}</p>
+      <p style="margin:0;">${t('bankLoansMechanismText3')}</p>
+    </div>
+
+    <div class="havre-section-label">${t('bankLoansFaqTitle')}</div>
+    <div class="havre-panel">
+      ${[1,2,3,4,5,6,7,8,9].map(i=>`
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:800;font-size:12.5px;color:var(--ink);">${t('bankLoansFaqQ'+i)}</div>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;line-height:1.5;">${t('bankLoansFaqA'+i)}</div>
+      </div>`).join('')}
+    </div>
+
     <div class="havre-disclaimer">&#x1f3e6; ${t('bankLoansDisclaimer')}</div>
   `;
+  loanStartLiveTimer();
 }
 
 /* =========================================================
@@ -7384,6 +7472,7 @@ function navTo(id){
   if(id!=='screen-play' && predictionsCountdownTimer){ clearInterval(predictionsCountdownTimer); predictionsCountdownTimer = null; }
   if(id!=='screen-play' && matchesLiveTimer){ clearInterval(matchesLiveTimer); matchesLiveTimer = null; }
   if(id!=='screen-epargne') epargneStopLiveTimer();
+  if(id!=='screen-loans') loanStopLiveTimer();
   if(id!=='screen-swap') swapStopLive();
   // CORRECTIF (2026-09-08) : le jeu Vol Rouge tourne dans un <iframe> qui
   // n'est JAMAIS détruit (juste caché en CSS) une fois créé, pour ne pas
@@ -12053,7 +12142,6 @@ function renderHomeJobsCarousel(){
           <div class="home-mini-job-card-actions">
             <button type="button" class="hm-view-btn" onclick="openHomeJob(${o.id})">👁️ ${t('homeViewBtn')}</button>
             <button type="button" class="hm-apply-btn" onclick="openHomeJobApply(${o.id})" ${places<=0?'disabled':''}>📩 ${t('homeApplyBtn')}</button>
-            <button type="button" class="hm-interview-btn" onclick="openHomeJobInterview(${o.id})">📅 ${t('lc_prendreUnRendezVous')}</button>
           </div>
         </div>
       </div>`;
@@ -15691,6 +15779,7 @@ const translations = {
     pvpShareMessage:(p)=>`Rejoins mon défi sur Theterbank et tente de remporter la cagnotte 🏆 ${p.url}`,
     lc_commandezTestezSub:"Commandez, testez le produit chez vous pendant 30 jours. S'il vous convient, l'achat est validé automatiquement. Sinon, vous le retournez et vous êtes remboursé.",
     lc_mesResultatsNav:"Mes résultats",
+    lc_parlerConseiller:"Parler avec un conseiller",
     lc_espaceAdminNav:"Espace Admin",
     lc_securiseBadge:"Sécurisé",
     lc_ajouterUneVideoStatic:"＋ Ajouter une vidéo",
@@ -16260,8 +16349,34 @@ lc_emailPlaceholder:"E-mail", lc_pointsUnit:"points", lc_back:"Retour", lc_close
     bankLoansRemaining:(p)=>`Reste à rembourser : ${p.amount} GBP`,
     bankLoansNextPayment:(p)=>`Prochaine mensualité : ${p.amount} GBP le ${p.date}`,
     bankLoansPayBtn:"Rembourser", bankLoansFullyRepaidLabel:"Prêt intégralement remboursé ✓",
-    bankLoansDisclaimer:"Les points ouvrent l'éligibilité à chaque palier de prêt mais ne sont jamais débités : les GBP empruntés sont crédités immédiatement, et le remboursement se fait uniquement par mensualités depuis ton solde GBP jusqu'au remboursement intégral.",
-    toastLoanDisbursed:(p)=>`Prêt accordé : +${p.amount} GBP crédités`,
+    bankLoansDisclaimer:"Les points ouvrent l'éligibilité à chaque palier de prêt mais ne sont jamais débités : une fois les points, le KYC et le compte GBP réunis, les GBP empruntés sont crédités automatiquement 24h après la demande, et le remboursement se fait uniquement par mensualités depuis ton solde GBP jusqu'au remboursement intégral.",
+    toastLoanDisbursed:(p)=>`Prêt décaissé : +${p.amount} GBP crédités`,
+    toastLoanRequested:(p)=>`Demande de prêt enregistrée : ${p.amount} GBP seront crédités dans 24h`,
+    bankLoansPendingLabel:"Demande enregistrée · décaissement en cours",
+    bankLoansDisbursesOn:(p)=>`Décaissement automatique le ${p.date}`,
+    bankLoansMechanismTitle:"Comment fonctionnent les points, le KYC et l'IBAN",
+    bankLoansMechanismText1:"Les points ne sont pas juste un score : ils reflètent ton engagement et ton activité sur Theterbank (épargne, trading, swap, résultats…). Plus tu es actif, plus ton solde de points augmente.",
+    bankLoansMechanismText2:"Chaque prêt a un seuil de points minimum, qui évolue de 50 000 à 20 000 000 selon le montant emprunté et la durée choisie : plus le montant est élevé et la durée longue, plus le seuil requis augmente, car l'engagement demandé est plus important.",
+    bankLoansMechanismText3:"Pour un décaissement instantané, trois conditions doivent être réunies : le solde de points requis, une vérification d'identité (KYC) validée, et l'obtention d'un compte bancaire GBP (IBAN) actif. Une fois ces trois conditions réunies, le prêt devient accessible et les fonds sont débloqués automatiquement 24h après la demande.",
+    bankLoansFaqTitle:"Foire aux questions",
+    bankLoansFaqQ1:"Pourquoi le nombre de points requis augmente-t-il avec le montant et la durée ?",
+    bankLoansFaqA1:"Un prêt plus important ou plus long représente un engagement plus grand. Le seuil de points progresse donc de façon régulière entre 50 000 pts (1 000 GBP sur 6 mois) et 20 000 000 pts (500 000 GBP sur 36 mois), pour refléter ce niveau d'engagement.",
+    bankLoansFaqQ2:"Comment gagner des points ?",
+    bankLoansFaqA2:"Les points s'accumulent grâce à ton activité sur l'app : épargne, swap, trading Havre, jeux, résultats, etc. Plus tu utilises Theterbank régulièrement, plus ton solde de points progresse.",
+    bankLoansFaqQ3:"Les points sont-ils débités quand je prends un prêt ?",
+    bankLoansFaqA3:"Non. Les points servent uniquement de seuil d'éligibilité : il faut en avoir au moins autant que le palier choisi, mais ils ne sont jamais consommés par le prêt. Seul le remboursement en GBP est débité de ton solde.",
+    bankLoansFaqQ4:"Quelles sont les conditions pour être éligible à un prêt ?",
+    bankLoansFaqA4:"Trois conditions cumulatives : avoir le solde de points requis pour le palier choisi, une vérification d'identité (KYC) validée, et un compte bancaire GBP actif (avec IBAN). Sans ces trois éléments réunis, la demande de prêt reste bloquée.",
+    bankLoansFaqQ5:"Qu'est-ce que le KYC et pourquoi est-il nécessaire ?",
+    bankLoansFaqA5:"Le KYC (« Know Your Customer ») est la vérification d'identité : pièce d'identité, selfie et justificatif de domicile. Elle est indispensable pour activer ton compte bancaire GBP et accéder aux prêts, comme dans une vraie banque.",
+    bankLoansFaqQ6:"Pourquoi ai-je besoin d'un compte GBP / IBAN ?",
+    bankLoansFaqA6:"Le compte bancaire GBP (avec IBAN) est l'endroit où les fonds empruntés sont crédités et d'où les mensualités sont prélevées. Il est activé automatiquement une fois les 50 000 points atteints et le KYC validé.",
+    bankLoansFaqQ7:"Combien de temps faut-il pour recevoir les fonds ?",
+    bankLoansFaqA7:"Dès que les trois conditions d'éligibilité sont réunies (points + KYC + compte GBP actif), le prêt devient accessible. Il est ensuite débloqué automatiquement 24 heures après la demande.",
+    bankLoansFaqQ8:"Comment se déroule le remboursement ?",
+    bankLoansFaqA8:"Le remboursement se fait par mensualités égales, prélevées sur ton solde GBP jusqu'au remboursement intégral du capital et des intérêts (APR affiché pour chaque durée).",
+    bankLoansFaqQ9:"Puis-je rembourser un prêt en avance, ou que se passe-t-il si un paiement échoue ?",
+    bankLoansFaqA9:"Si ton solde GBP est insuffisant au moment d'une mensualité, le paiement ne passe pas et tu peux réessayer dès que ton solde le permet. Il n'y a pas de pénalité de remboursement anticipé dans cette simulation.",
     toastLoanInsufficientPoints:"Solde de points insuffisant pour ce prêt",
     toastLoanInsufficientBalance:"Solde GBP insuffisant pour cette mensualité",
     toastLoanInstallmentPaid:(p)=>`Mensualité payée : -${p.amount} GBP`,
@@ -16616,6 +16731,7 @@ lcDest_secureInfoSub:"et utilisées uniquement pour le traitement de votre deman
     pvpShareMessage:(p)=>`Join my challenge on Theterbank and try to win the pot 🏆 ${p.url}`,
     lc_commandezTestezSub:"Order, try the product at home for 30 days. If you're happy with it, the purchase is validated automatically. Otherwise, return it and get a refund.",
     lc_mesResultatsNav:"My results",
+    lc_parlerConseiller:"Talk to an advisor",
     lc_espaceAdminNav:"Admin space",
     lc_securiseBadge:"Secure",
     lc_ajouterUneVideoStatic:"＋ Add a video",
@@ -17185,8 +17301,34 @@ lc_emailPlaceholder:"Email", lc_pointsUnit:"points", lc_back:"Back", lc_close:"C
     bankLoansRemaining:(p)=>`Remaining balance: ${p.amount} GBP`,
     bankLoansNextPayment:(p)=>`Next payment: ${p.amount} GBP on ${p.date}`,
     bankLoansPayBtn:"Repay", bankLoansFullyRepaidLabel:"Loan fully repaid ✓",
-    bankLoansDisclaimer:"Points unlock eligibility for each loan tier but are never deducted: borrowed GBP is credited immediately, and repayment is made only in monthly installments from your GBP balance until fully repaid.",
-    toastLoanDisbursed:(p)=>`Loan approved: +${p.amount} GBP credited`,
+    bankLoansDisclaimer:"Points unlock eligibility for each loan tier but are never deducted: once points, KYC and your GBP account are all in place, borrowed GBP is credited automatically 24h after the request, and repayment is made only in monthly installments from your GBP balance until fully repaid.",
+    toastLoanDisbursed:(p)=>`Loan disbursed: +${p.amount} GBP credited`,
+    toastLoanRequested:(p)=>`Loan request received: ${p.amount} GBP will be credited within 24h`,
+    bankLoansPendingLabel:"Request received · disbursement in progress",
+    bankLoansDisbursesOn:(p)=>`Automatic disbursement on ${p.date}`,
+    bankLoansMechanismTitle:"How points, KYC and your IBAN work together",
+    bankLoansMechanismText1:"Points aren't just a score: they reflect your engagement and activity on Theterbank (savings, trading, swap, results…). The more active you are, the higher your points balance grows.",
+    bankLoansMechanismText2:"Each loan has a minimum points threshold that scales from 50,000 to 20,000,000 depending on the amount borrowed and the chosen duration: the higher the amount and the longer the term, the higher the required threshold, since more commitment is being asked of you.",
+    bankLoansMechanismText3:"For instant disbursement, three conditions must all be met: the required points balance, a validated identity check (KYC), and an active GBP bank account (IBAN). Once all three conditions are met, the loan becomes accessible and the funds are automatically released 24 hours after the request.",
+    bankLoansFaqTitle:"Frequently asked questions",
+    bankLoansFaqQ1:"Why does the number of points required increase with the amount and duration?",
+    bankLoansFaqA1:"A larger or longer loan represents a bigger commitment. The points threshold therefore scales smoothly from 50,000 pts (1,000 GBP over 6 months) to 20,000,000 pts (500,000 GBP over 36 months) to reflect that level of commitment.",
+    bankLoansFaqQ2:"How do I earn points?",
+    bankLoansFaqA2:"Points build up through your activity on the app: savings, swap, Havre trading, games, results, etc. The more regularly you use Theterbank, the faster your points balance grows.",
+    bankLoansFaqQ3:"Are points deducted when I take out a loan?",
+    bankLoansFaqA3:"No. Points only act as an eligibility threshold: you need at least as many as the chosen tier requires, but they're never consumed by the loan. Only the GBP repayments are deducted from your balance.",
+    bankLoansFaqQ4:"What are the conditions to be eligible for a loan?",
+    bankLoansFaqA4:"Three conditions must all be met: the points balance required for the chosen tier, a validated identity check (KYC), and an active GBP bank account (with an IBAN). Without all three, the loan request stays blocked.",
+    bankLoansFaqQ5:"What is KYC and why is it required?",
+    bankLoansFaqA5:"KYC ('Know Your Customer') is the identity verification step: ID document, selfie and proof of address. It's required to activate your GBP bank account and access loans, just like a real bank.",
+    bankLoansFaqQ6:"Why do I need a GBP account / IBAN?",
+    bankLoansFaqA6:"The GBP bank account (with an IBAN) is where borrowed funds are credited and where monthly payments are taken from. It's activated automatically once you reach 50,000 points and your KYC is validated.",
+    bankLoansFaqQ7:"How long does it take to receive the funds?",
+    bankLoansFaqA7:"As soon as all three eligibility conditions are met (points + KYC + active GBP account), the loan becomes accessible. It is then automatically unlocked 24 hours after the request.",
+    bankLoansFaqQ8:"How does repayment work?",
+    bankLoansFaqA8:"Repayment happens through equal monthly installments, taken from your GBP balance until the principal and interest (APR shown for each term) are fully repaid.",
+    bankLoansFaqQ9:"Can I repay early, or what happens if a payment fails?",
+    bankLoansFaqA9:"If your GBP balance is insufficient at payment time, the installment simply won't go through and you can try again once your balance allows it. There's no early-repayment penalty in this simulation.",
     toastLoanInsufficientPoints:"Insufficient points balance for this loan",
     toastLoanInsufficientBalance:"Insufficient GBP balance for this installment",
     toastLoanInstallmentPaid:(p)=>`Installment paid: -${p.amount} GBP`,
@@ -17541,6 +17683,7 @@ lcDest_secureInfoSub:"and used only to process your request.",
     pvpShareMessage:(p)=>`انضم إلى تحديّ في Theterbank وحاول الفوز بالصندوق 🏆 ${p.url}`,
     lc_commandezTestezSub:"اطلب المنتج وجرّبه في منزلك لمدة 30 يوماً. إذا أعجبك، يُعتمد الشراء تلقائياً. وإلا، أعده واسترد أموالك.",
     lc_mesResultatsNav:"نتائجي",
+    lc_parlerConseiller:"تحدث مع مستشار",
     lc_espaceAdminNav:"مساحة المسؤول",
     lc_securiseBadge:"آمن",
     lc_ajouterUneVideoStatic:"＋ إضافة فيديو",
@@ -18105,8 +18248,34 @@ lc_emailPlaceholder:"البريد الإلكتروني", lc_pointsUnit:"نقطة
     bankLoansRemaining:(p)=>`المتبقي للسداد: ${p.amount} GBP`,
     bankLoansNextPayment:(p)=>`القسط القادم: ${p.amount} GBP في ${p.date}`,
     bankLoansPayBtn:"سدّد", bankLoansFullyRepaidLabel:"تم سداد القرض بالكامل ✓",
-    bankLoansDisclaimer:"تفتح النقاط الأهلية لكل فئة قرض لكنها لا تُخصم أبدًا: يتم إيداع GBP المقترضة فورًا، ويتم السداد فقط على أقساط شهرية من رصيد GBP الخاص بك حتى السداد الكامل.",
-    toastLoanDisbursed:(p)=>`تمت الموافقة على القرض: +${p.amount} GBP تم إيداعها`,
+    bankLoansDisclaimer:"تفتح النقاط الأهلية لكل فئة قرض لكنها لا تُخصم أبدًا: بمجرد استيفاء النقاط والتحقق من الهوية (KYC) وتفعيل حسابك بالجنيه الإسترليني، يتم إيداع GBP المقترضة تلقائيًا بعد 24 ساعة من الطلب، ويتم السداد فقط على أقساط شهرية من رصيد GBP الخاص بك حتى السداد الكامل.",
+    toastLoanDisbursed:(p)=>`تم صرف القرض: +${p.amount} GBP تم إيداعها`,
+    toastLoanRequested:(p)=>`تم تسجيل طلب القرض: سيتم إيداع ${p.amount} GBP خلال 24 ساعة`,
+    bankLoansPendingLabel:"تم تسجيل الطلب · جاري الصرف",
+    bankLoansDisbursesOn:(p)=>`الصرف التلقائي في ${p.date}`,
+    bankLoansMechanismTitle:"كيف تعمل النقاط والتحقق من الهوية والحساب البنكي معًا",
+    bankLoansMechanismText1:"النقاط ليست مجرد رصيد: إنها تعكس مدى التزامك ونشاطك على Theterbank (الادخار، التداول، المبادلة، النتائج...). كلما زاد نشاطك، زاد رصيد نقاطك.",
+    bankLoansMechanismText2:"لكل قرض حد أدنى من النقاط يتدرج من 50,000 إلى 20,000,000 نقطة حسب المبلغ المقترض والمدة المختارة: كلما زاد المبلغ وطالت المدة، ارتفع الحد الأدنى المطلوب من النقاط، لأن الالتزام المطلوب منك يكون أكبر.",
+    bankLoansMechanismText3:"للحصول على صرف فوري، يجب استيفاء ثلاثة شروط معًا: رصيد النقاط المطلوب، التحقق من الهوية (KYC) المعتمد، وحساب بنكي نشط بالجنيه الإسترليني (IBAN). بمجرد استيفاء هذه الشروط الثلاثة، يصبح القرض متاحًا ويتم صرف الأموال تلقائيًا بعد 24 ساعة من تقديم الطلب.",
+    bankLoansFaqTitle:"الأسئلة الشائعة",
+    bankLoansFaqQ1:"لماذا يزداد عدد النقاط المطلوبة مع المبلغ والمدة؟",
+    bankLoansFaqA1:"القرض الأكبر أو الأطول يمثل التزامًا أكبر. لذلك يتدرج حد النقاط بسلاسة من 50,000 نقطة (1,000 جنيه إسترليني على 6 أشهر) إلى 20,000,000 نقطة (500,000 جنيه إسترليني على 36 شهرًا) ليعكس هذا المستوى من الالتزام.",
+    bankLoansFaqQ2:"كيف أكسب النقاط؟",
+    bankLoansFaqA2:"تتراكم النقاط من خلال نشاطك في التطبيق: الادخار، المبادلة، تداول Havre، الألعاب، النتائج، إلخ. كلما استخدمت Theterbank بانتظام أكثر، زاد رصيد نقاطك بشكل أسرع.",
+    bankLoansFaqQ3:"هل يتم خصم النقاط عند الحصول على قرض؟",
+    bankLoansFaqA3:"لا. النقاط تُستخدم فقط كحد أدنى للأهلية: يجب أن يكون لديك على الأقل عدد النقاط المطلوب للفئة المختارة، لكنها لا تُستهلك أبدًا بواسطة القرض. فقط أقساط السداد بالجنيه الإسترليني تُخصم من رصيدك.",
+    bankLoansFaqQ4:"ما هي شروط الأهلية للحصول على قرض؟",
+    bankLoansFaqA4:"يجب استيفاء ثلاثة شروط معًا: رصيد النقاط المطلوب للفئة المختارة، التحقق من الهوية (KYC) المعتمد، وحساب بنكي نشط بالجنيه الإسترليني (مع IBAN). بدون استيفاء هذه الشروط الثلاثة، يبقى طلب القرض معلقًا.",
+    bankLoansFaqQ5:"ما هو KYC ولماذا هو مطلوب؟",
+    bankLoansFaqA5:"KYC (التحقق من هوية العميل) هو خطوة التحقق من الهوية: وثيقة هوية، صورة شخصية (selfie)، وإثبات عنوان. وهو ضروري لتفعيل حسابك البنكي بالجنيه الإسترليني والوصول إلى القروض، تمامًا كما في بنك حقيقي.",
+    bankLoansFaqQ6:"لماذا أحتاج إلى حساب بالجنيه الإسترليني / IBAN؟",
+    bankLoansFaqA6:"الحساب البنكي بالجنيه الإسترليني (مع IBAN) هو المكان الذي تُودع فيه الأموال المقترضة والذي تُخصم منه الأقساط الشهرية. يتم تفعيله تلقائيًا بمجرد الوصول إلى 50,000 نقطة والتحقق من الهوية.",
+    bankLoansFaqQ7:"كم من الوقت يستغرق استلام الأموال؟",
+    bankLoansFaqA7:"بمجرد استيفاء شروط الأهلية الثلاثة (النقاط + KYC + حساب نشط بالجنيه الإسترليني)، يصبح القرض متاحًا. ثم يتم صرفه تلقائيًا بعد 24 ساعة من تقديم الطلب.",
+    bankLoansFaqQ8:"كيف يتم السداد؟",
+    bankLoansFaqA8:"يتم السداد عبر أقساط شهرية متساوية، تُخصم من رصيدك بالجنيه الإسترليني حتى سداد رأس المال والفوائد بالكامل (النسبة السنوية معروضة لكل مدة).",
+    bankLoansFaqQ9:"هل يمكنني السداد مبكرًا، أو ماذا يحدث إذا فشل أحد الأقساط؟",
+    bankLoansFaqA9:"إذا كان رصيدك بالجنيه الإسترليني غير كافٍ وقت السداد، فلن يتم تنفيذ القسط وسيمكنك المحاولة مرة أخرى بمجرد توفر الرصيد الكافي. لا توجد غرامة للسداد المبكر في هذه المحاكاة.",
     toastLoanInsufficientPoints:"رصيد نقاط غير كافٍ لهذا القرض",
     toastLoanInsufficientBalance:"رصيد GBP غير كافٍ لهذا القسط",
     toastLoanInstallmentPaid:(p)=>`تم دفع القسط: -${p.amount} GBP`,
@@ -19459,7 +19628,7 @@ function lcRenderJobs(){
       <div class="lc-job-body">${demoTag}<div class="lc-job-meta"><div><small>${t('lc_salaireIndicatif')}</small><strong>${lcMoney(o)}</strong></div><div><small>${t('lc_participation')}</small><strong>🪙 ${lcJobPointsRequired(o).toLocaleString(fmtLocale())} pts</strong></div></div>
       <div class="lc-job-selection">👥 ${t('lc_candidatsSelectionnes', {count: Number(o.selected_candidates||0)})} · ${t('lc_placesAffichees', {count: places})}</div>
       <div class="lc-job-desc">${esc(lcJobDisplay(o,'description'))}</div><div class="lc-job-conditions"><b>${t('lc_conditionsLabel')}</b><br>${esc(lcJobDisplay(o,'conditions')||t('lc_voirLesConditionsDuPoste'))}</div>
-      <div class="lc-job-actions"><button class="btn btn-secondary" onclick="lcOpenJobDetails('${String(o.id).replace(/'/g,"\\'")}')">${t('lc_voirLePoste')}</button><button class="btn btn-primary" onclick="lcOpenJobReservation('${String(o.id).replace(/'/g,"\\'")}')" ${places<=0?'disabled':''}>${t('lc_postulerAuPoste')}</button></div><button type="button" class="btn lc-job-interview-btn" onclick="goToJobInterview(${o.id})">📅 ${t('lc_prendreUnRendezVous')}</button></div></article>`;
+      <div class="lc-job-actions"><button class="btn btn-secondary" onclick="lcOpenJobDetails('${String(o.id).replace(/'/g,"\\'")}')">${t('lc_voirLePoste')}</button><button class="btn btn-primary" onclick="lcOpenJobReservation('${String(o.id).replace(/'/g,"\\'")}')" ${places<=0?'disabled':''}>${t('lc_postulerAuPoste')}</button></div></article>`;
   }).join('');
 }
 function lcOpenJobDetails(id){
